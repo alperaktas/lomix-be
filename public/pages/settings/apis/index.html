@@ -1,0 +1,247 @@
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">API Endpointleri</h2>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="page-body">
+    <div class="container-xl">
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table">
+                    <thead>
+                        <tr>
+                            <th>Kategori</th>
+                            <th>Metod</th>
+                            <th>Yol (Path)</th>
+                            <th>Açıklama</th>
+                            <th class="w-1">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="endpointTableBody">
+                        <!-- Veriler JS ile buraya gelecek -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal modal-blur fade" id="endpointModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="endpointModalTitle">Endpoint Detayı</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">İstek Örneği (Request)</label>
+                    <pre id="requestSample" class="bg-dark text-white p-2 rounded">{}</pre>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Cevap Örneği (Response)</label>
+                    <pre id="responseSample" class="bg-dark text-white p-2 rounded">{}</pre>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Test Modal -->
+<div class="modal modal-blur fade" id="testModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="testModalTitle">API Test</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">URL</label>
+                    <div class="input-group">
+                        <span class="input-group-text" id="testMethod">GET</span>
+                        <input type="text" class="form-control" id="testUrl" readonly>
+                    </div>
+                </div>
+                <div id="urlParamsContainer"></div>
+                <div class="mb-3">
+                    <label class="form-label">Headers (JSON)</label>
+                    <textarea class="form-control font-monospace" id="testHeaders" rows="3">{}</textarea>
+                </div>
+                <div class="mb-3" id="testBodyContainer">
+                    <label class="form-label">Request Body (JSON)</label>
+                    <textarea class="form-control font-monospace" id="testRequestBody" rows="5">{}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Response</label>
+                    <pre id="testResponse" class="bg-dark text-white p-2 rounded" style="max-height: 300px; overflow-y: auto;">Waiting for request...</pre>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn me-auto" data-bs-dismiss="modal">Kapat</button>
+                <button type="button" class="btn btn-success" onclick="sendRequest()">
+                    <i class="fas fa-paper-plane me-2"></i> Gönder
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var endpointModal;
+    var testModal;
+    var currentEndpoint = null;
+
+    (async () => {
+        await renderEndpointTable();
+        endpointModal = new window.bootstrap.Modal(document.getElementById('endpointModal'));
+        testModal = new window.bootstrap.Modal(document.getElementById('testModal'));
+    })();
+
+    async function renderEndpointTable() {
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch('/api/endpoints', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const endpoints = await res.json();
+                const tbody = document.getElementById('endpointTableBody');
+                tbody.innerHTML = endpoints.map(ep => {
+                    let methodColor = 'bg-secondary';
+                    if (ep.method === 'GET') methodColor = 'bg-blue';
+                    if (ep.method === 'POST') methodColor = 'bg-green';
+                    if (ep.method === 'PUT') methodColor = 'bg-orange';
+                    if (ep.method === 'DELETE') methodColor = 'bg-red';
+
+                    return `
+                    <tr>
+                        <td>${ep.category}</td>
+                        <td><span class="badge ${methodColor} text-white">${ep.method}</span></td>
+                        <td><code>${ep.path}</code></td>
+                        <td class="text-muted">${ep.description || '-'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick='showDetails(${JSON.stringify(ep)})' title="Detay">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-success" onclick='openTestModal(${JSON.stringify(ep)})' title="Test Et">
+                                <i class="fas fa-play"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `}).join('');
+            }
+        } catch (err) { console.error('Endpointler yüklenemedi:', err); }
+    }
+
+    function showDetails(endpoint) {
+        document.getElementById('endpointModalTitle').innerText = `${endpoint.method} ${endpoint.path}`;
+        
+        // JSON formatında göster
+        document.getElementById('requestSample').innerText = endpoint.requestSample ? JSON.stringify(JSON.parse(endpoint.requestSample), null, 2) : '{}';
+        document.getElementById('responseSample').innerText = endpoint.responseSample ? JSON.stringify(JSON.parse(endpoint.responseSample), null, 2) : '{}';
+        
+        endpointModal.show();
+    }
+
+    function openTestModal(endpoint) {
+        currentEndpoint = endpoint;
+        document.getElementById('testMethod').innerText = endpoint.method;
+        document.getElementById('testUrl').value = endpoint.path;
+        
+        // URL parametrelerini bul (:id gibi)
+        const paramsContainer = document.getElementById('urlParamsContainer');
+        paramsContainer.innerHTML = '';
+        const params = endpoint.path.match(/:[a-zA-Z0-9_]+/g);
+        
+        if (params && params.length > 0) {
+            params.forEach(param => {
+                const paramName = param.substring(1); // :id -> id
+                const div = document.createElement('div');
+                div.className = 'mb-3';
+                div.innerHTML = `
+                    <label class="form-label">Parametre: <span class="badge bg-blue-lt">${paramName}</span></label>
+                    <input type="text" class="form-control url-param-input" data-param="${param}" placeholder="${paramName} değeri">
+                `;
+                paramsContainer.appendChild(div);
+            });
+        }
+
+        // Varsayılan Headerları Ayarla
+        const token = localStorage.getItem('token');
+        const defaultHeaders = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        };
+        document.getElementById('testHeaders').value = JSON.stringify(defaultHeaders, null, 2);
+
+        // Body alanını sadece POST ve PUT için göster
+        const bodyContainer = document.getElementById('testBodyContainer');
+        if (endpoint.method === 'POST' || endpoint.method === 'PUT') {
+            bodyContainer.style.display = 'block';
+            // Örnek veriyi yükle
+            try {
+                const sample = endpoint.requestSample ? JSON.parse(endpoint.requestSample) : {};
+                document.getElementById('testRequestBody').value = JSON.stringify(sample, null, 2);
+            } catch (e) {
+                document.getElementById('testRequestBody').value = '{}';
+            }
+        } else {
+            bodyContainer.style.display = 'none';
+            document.getElementById('testRequestBody').value = '{}';
+        }
+
+        document.getElementById('testResponse').innerText = 'Waiting for request...';
+        testModal.show();
+    }
+
+    async function sendRequest() {
+        if (!currentEndpoint) return;
+
+        let url = currentEndpoint.path;
+        
+        // URL parametrelerini değiştir
+        const paramInputs = document.querySelectorAll('.url-param-input');
+        paramInputs.forEach(input => {
+            url = url.replace(input.dataset.param, input.value);
+        });
+
+        const method = currentEndpoint.method;
+        const body = document.getElementById('testRequestBody').value;
+        let headers = {};
+
+        try {
+            headers = JSON.parse(document.getElementById('testHeaders').value);
+        } catch (e) {
+            alert('Headers JSON formatında olmalıdır!');
+            return;
+        }
+
+        const options = {
+            method: method,
+            headers: headers
+        };
+
+        if (method === 'POST' || method === 'PUT') {
+            options.body = body;
+        }
+
+        document.getElementById('testResponse').innerText = 'Sending...';
+
+        try {
+            const res = await fetch(url, options);
+            const data = await res.json();
+            document.getElementById('testResponse').innerText = JSON.stringify(data, null, 2);
+        } catch (err) {
+            document.getElementById('testResponse').innerText = 'Error: ' + err.message;
+        }
+    }
+</script>

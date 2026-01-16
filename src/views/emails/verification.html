@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Email Doğrulama</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border-top: 4px solid #206bc4;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header img {
+            max-height: 50px;
+            margin-bottom: 10px;
+        }
+
+        .code {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            letter-spacing: 5px;
+            color: #206bc4;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <!-- Logo URL'sini sunucunuzun tam adresiyle değiştirin -->
+            <img src="https://your-domain.com/img/logo.png" alt="Lomix Logo">
+            <h2>Lomix Email Doğrulama</h2>
+        </div>
+        <p>Merhaba,</p>
+        <p>Lomix hesabınızı doğrulamak için aşağıdaki kodu kullanın:</p>
+        <div class="code">{{verificationCode}}</div>
+        <p>Bu kodu siz talep etmediyseniz, bu e-postayı görmezden gelebilirsiniz.</p>
+        <div class="footer">
+            &copy; Lomix
+        </div>
+    </div>
+</body>
+
+</html>

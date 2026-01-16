@@ -1,0 +1,385 @@
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">Kullanıcı Listesi</h2>
+            </div>
+            <div class="col-auto ms-auto d-print-none">
+                <div class="d-flex">
+                    <input type="text" class="form-control me-2" placeholder="Ara..." oninput="handleSearch(this.value)">
+                    <button class="btn btn-primary" onclick="openUserModal()">
+                        <i class="fas fa-plus me-2"></i> Yeni Kullanıcı
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="page-body">
+    <div class="container-xl">
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table">
+                    <thead>
+                        <tr>
+                            <th style="cursor: pointer;" onclick="sortUsers('id')">ID <i class="fas fa-sort sort-icon ms-1 text-muted"></i></th>
+                            <th style="cursor: pointer;" onclick="sortUsers('username')">Kullanıcı Adı <i class="fas fa-sort sort-icon ms-1 text-muted"></i></th>
+                            <th style="cursor: pointer;" onclick="sortUsers('email')">E-posta <i class="fas fa-sort sort-icon ms-1 text-muted"></i></th>
+                            <th style="cursor: pointer;" onclick="sortUsers('role')">Rol <i class="fas fa-sort sort-icon ms-1 text-muted"></i></th>
+                            <th>Cinsiyet</th>
+                            <th>Cihaz</th>
+                            <th>Gruplar</th>
+                            <th>Durum</th>
+                            <th class="w-1">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                        <!-- Veriler JS ile buraya gelecek -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer d-flex align-items-center">
+                <p class="m-0 text-muted">Toplam <span id="totalEntries">0</span> kayıttan <span id="startEntry">0</span> - <span id="endEntry">0</span> arası gösteriliyor</p>
+                <ul class="pagination m-0 ms-auto" id="paginationControls"></ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal modal-blur fade" id="userModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userModalTitle">Kullanıcı İşlemleri</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="userForm" onsubmit="saveUser(event)">
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="userId">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label class="form-label">Kullanıcı Adı</label>
+                                <input type="text" class="form-control" name="username" id="userUsername" required>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label class="form-label">E-posta</label>
+                                <input type="email" class="form-control" name="email" id="userEmail" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label class="form-label">Şifre</label>
+                                <input type="password" class="form-control" name="password" id="userPassword" placeholder="Değiştirilmeyecekse boş bırakın">
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label class="form-label">Rol</label>
+                                <select class="form-select" name="role" id="userRole">
+                                    <!-- Roller API'den gelecek -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label class="form-label">Durum</label>
+                                <select class="form-select" name="status" id="userStatus">
+                                    <option value="active">Aktif</option>
+                                    <option value="pending">Onay Bekliyor</option>
+                                    <option value="suspended">Askıya Alındı</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label class="form-label">Telefon</label>
+                                <input type="text" class="form-control" name="phone" id="userPhone">
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label class="form-label">Profil Resmi URL</label>
+                                <input type="text" class="form-control" name="avatar" id="userAvatar">
+                            </div>
+                        </div>
+                        <div class="col-lg-12">
+                            <div class="mb-3">
+                                <label class="form-label">Gruplar</label>
+                                <select class="form-select" name="groups" id="userGroups" multiple size="3">
+                                    <!-- Gruplar API'den gelecek -->
+                                </select>
+                                <small class="form-hint">Birden fazla seçim için Ctrl (Windows) veya Cmd (Mac) tuşuna basılı tutun.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn me-auto" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    var userModal;
+    var allUsers = [];
+    var currentPage = 1;
+    var itemsPerPage = 10;
+    var totalItems = 0;
+    var currentSort = { column: 'id', direction: 'asc' };
+    var searchQuery = '';
+
+    // Sayfa yüklendiğinde
+    (async () => {
+        await renderUserTable(1);
+        userModal = new window.bootstrap.Modal(document.getElementById('userModal'));
+    })();
+
+    async function renderUserTable(page = 1) {
+        currentPage = page;
+        const token = localStorage.getItem('token');
+        try {
+            let url = `/api/users?page=${currentPage}&limit=${itemsPerPage}`;
+            if (searchQuery) {
+                url += `&search=${encodeURIComponent(searchQuery)}`;
+            }
+            const res = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                // API yapısına göre veriyi al
+                if (data.users) {
+                    allUsers = data.users;
+                    totalItems = data.totalItems;
+                } else {
+                    allUsers = data; // Sayfalama yoksa
+                    totalItems = data.length;
+                }
+                renderTableHtml();
+                renderPagination();
+            }
+        } catch (err) {
+            console.error('Kullanıcılar yüklenemedi:', err);
+        }
+    }
+
+    function handleSearch(value) {
+        searchQuery = value;
+        renderUserTable(1);
+    }
+
+    function renderPagination() {
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        const start = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+        const end = Math.min(currentPage * itemsPerPage, totalItems);
+        
+        document.getElementById('startEntry').innerText = start;
+        document.getElementById('endEntry').innerText = end;
+        document.getElementById('totalEntries').innerText = totalItems;
+
+        const controls = document.getElementById('paginationControls');
+        let html = '';
+
+        // Önceki
+        html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        </li>`;
+
+        // Sayfalar
+        for (let i = 1; i <= totalPages; i++) {
+            html += `<li class="page-item ${currentPage === i ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+            </li>`;
+        }
+
+        // Sonraki
+        html += `<li class="page-item ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </li>`;
+
+        controls.innerHTML = html;
+    }
+
+    function changePage(page) {
+        if (page < 1 || page > Math.ceil(totalItems / itemsPerPage)) return;
+        renderUserTable(page);
+    }
+
+    function sortUsers(column) {
+        if (currentSort.column === column) {
+            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSort.column = column;
+            currentSort.direction = 'asc';
+        }
+        renderTableHtml();
+    }
+
+    function renderTableHtml() {
+        const sortedUsers = [...allUsers].sort((a, b) => {
+            let valA = a[currentSort.column];
+            let valB = b[currentSort.column];
+
+            if (valA == null) valA = '';
+            if (valB == null) valB = '';
+
+            if (typeof valA === 'string') valA = valA.toLowerCase();
+            if (typeof valB === 'string') valB = valB.toLowerCase();
+
+            if (valA < valB) return currentSort.direction === 'asc' ? -1 : 1;
+            if (valA > valB) return currentSort.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        const tbody = document.getElementById('userTableBody');
+        tbody.innerHTML = sortedUsers.map(user => {
+            // Rol ismini standartlaştır (örn: ADMIN -> Admin, admin -> Admin)
+            const roleRaw = user.role || 'user';
+            const roleDisplay = roleRaw.charAt(0).toUpperCase() + roleRaw.slice(1).toLowerCase();
+            const groupsDisplay = user.groups && user.groups.length > 0 ? user.groups.map(g => `<span class="badge bg-blue text-blue-fg me-1">${g.name}</span>`).join('') : '-';
+            const genderDisplay = user.gender || '-';
+            const deviceDisplay = user.deviceModel || '-';
+            
+            let statusBadge = '<span class="badge bg-secondary text-secondary-fg">Bilinmiyor</span>';
+            if (user.status === 'active') statusBadge = '<span class="badge bg-green text-green-fg">Aktif</span>';
+            else if (user.status === 'pending') statusBadge = '<span class="badge bg-yellow text-yellow-fg">Onay Bekliyor</span>';
+            else if (user.status === 'suspended') statusBadge = '<span class="badge bg-red text-red-fg">Askıya Alındı</span>';
+
+            return `
+            <tr>
+                <td>${user.id}</td>
+                <td>${user.username}</td>
+                <td>${user.email || '-'}</td>
+                <td><span class="badge bg-blue text-blue-fg">${roleDisplay}</span></td>
+                <td>${genderDisplay}</td>
+                <td class="text-muted text-truncate" style="max-width: 150px;" title="${deviceDisplay}">${deviceDisplay}</td>
+                <td>${groupsDisplay}</td>
+                <td>${statusBadge}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick='editUser(${JSON.stringify(user)})'>Düzenle</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteUser(${user.id})">Sil</button>
+                </td>
+            </tr>
+        `}).join('');
+
+        // İkonları güncelle
+        document.querySelectorAll('.sort-icon').forEach(icon => {
+            icon.className = 'fas fa-sort sort-icon ms-1 text-muted';
+        });
+        const activeHeader = document.querySelector(`th[onclick="sortUsers('${currentSort.column}')"] i`);
+        if (activeHeader) {
+            activeHeader.className = `fas fa-sort-${currentSort.direction === 'asc' ? 'up' : 'down'} sort-icon ms-1`;
+        }
+    }
+
+    async function loadRolesToSelect(selectedRole) {
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch('/api/roles', { headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.ok) {
+                const roles = await res.json();
+                const select = document.getElementById('userRole');
+                select.innerHTML = roles.map(r => `<option value="${r.name}" ${r.name === selectedRole ? 'selected' : ''}>${r.name}</option>`).join('');
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    async function loadGroupsToSelect(selectedGroups = []) {
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch('/api/groups', { headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.ok) {
+                const groups = await res.json();
+                const select = document.getElementById('userGroups');
+                const selectedIds = selectedGroups.map(g => g.id);
+                select.innerHTML = groups.map(g => `<option value="${g.id}" ${selectedIds.includes(g.id) ? 'selected' : ''}>${g.name}</option>`).join('');
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    async function openUserModal() {
+        document.getElementById('userForm').reset();
+        document.getElementById('userId').value = '';
+        document.getElementById('userModalTitle').innerText = 'Yeni Kullanıcı';
+        document.getElementById('userPhone').value = '';
+        document.getElementById('userAvatar').value = '';
+        document.getElementById('userStatus').value = 'active';
+        await loadRolesToSelect('normal'); // Varsayılan rol
+        await loadGroupsToSelect([]);
+        userModal.show();
+    }
+
+    async function editUser(user) {
+        document.getElementById('userId').value = user.id;
+        document.getElementById('userUsername').value = user.username;
+        document.getElementById('userEmail').value = user.email || '';
+        document.getElementById('userPassword').value = '';
+        document.getElementById('userModalTitle').innerText = 'Kullanıcı Düzenle';
+        document.getElementById('userPhone').value = user.phone || '';
+        document.getElementById('userAvatar').value = user.avatar || '';
+        document.getElementById('userStatus').value = user.status || 'pending';
+        await loadRolesToSelect(user.role);
+        await loadGroupsToSelect(user.groups || []);
+        userModal.show();
+    }
+
+    async function saveUser(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        // Çoklu seçim (groups) verisini manuel al
+        const groupsSelect = document.getElementById('userGroups');
+        const selectedGroups = Array.from(groupsSelect.selectedOptions).map(opt => parseInt(opt.value));
+        data.groups = selectedGroups;
+
+        // ID boşsa (yeni kayıt) nesneden sil
+        if (!data.id) delete data.id;
+
+        if (!data.password) delete data.password;
+
+        const token = localStorage.getItem('token');
+        const method = data.id ? 'PUT' : 'POST';
+        const url = data.id ? `/api/users/${data.id}` : '/api/users';
+
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(data)
+            });
+            if (res.ok) {
+                userModal.hide();
+                await renderUserTable(currentPage);
+            } else {
+                alert('İşlem başarısız oldu.');
+            }
+        } catch (err) { console.error(err); }
+    }
+
+    async function deleteUser(id) {
+        if (!confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) return;
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch(`/api/users/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) await renderUserTable();
+            if (res.ok) await renderUserTable(currentPage);
+        } catch (err) { console.error(err); }
+    }
+</script>

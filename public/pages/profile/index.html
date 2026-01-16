@@ -1,0 +1,233 @@
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">Profilim</h2>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row row-cards">
+            <!-- Kullanıcı Bilgileri -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Profil Bilgileri</h3>
+                    </div>
+                    <form id="updateProfileForm" onsubmit="updateProfile(event)">
+                        <div class="card-body">
+                            <div class="mb-3 text-center">
+                                <span class="avatar avatar-xl mb-3 rounded bg-blue-lt" id="avatar-preview-container">
+                                    <img id="avatar-preview" src="" alt="Avatar" style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+                                    <i class="fas fa-user" id="avatar-default-icon" style="font-size: 2rem;"></i>
+                                </span>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Kullanıcı Adı</label>
+                                <input type="text" class="form-control" id="profile-username" disabled>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">E-posta</label>
+                                <input type="text" class="form-control" id="profile-email" disabled>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Rol</label>
+                                <input type="text" class="form-control" id="profile-role" disabled>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Telefon</label>
+                                <input type="text" class="form-control" name="phone" id="profile-phone">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Profil Resmi</label>
+                                <input type="file" class="form-control" name="avatarFile" id="profile-avatar-file" accept="image/*">
+                            </div>
+                        </div>
+                        <div class="card-footer text-end">
+                            <button type="submit" class="btn btn-primary">Bilgileri Güncelle</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <!-- Şifre Değiştirme -->
+            <div class="col-md-6">
+                <form id="changePasswordForm" onsubmit="changePassword(event)">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Şifre Değiştir</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Mevcut Şifre</label>
+                                <input type="password" class="form-control" name="currentPassword" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Yeni Şifre</label>
+                                <input type="password" class="form-control" name="newPassword" required minlength="6">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Yeni Şifre (Tekrar)</label>
+                                <input type="password" class="form-control" name="confirmPassword" required
+                                    minlength="6">
+                            </div>
+                        </div>
+                        <div class="card-footer text-end">
+                            <button type="submit" class="btn btn-primary">Güncelle</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <!-- Loglar Listesi -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Son Aktiviteler (Loglar)</h3>
+                    </div>
+                    <div class="list-group list-group-flush" id="profileLogsList">
+                        <div class="list-group-item text-center text-muted">Yükleniyor...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    // 1. Profil bilgilerini doldur
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user) {
+        document.getElementById('profile-username').value = user.username || '';
+        document.getElementById('profile-email').value = user.email || '';
+        document.getElementById('profile-phone').value = user.phone || '';
+        
+        if (user.avatar) {
+            document.getElementById('avatar-preview').src = user.avatar;
+            document.getElementById('avatar-preview').style.display = 'block';
+            document.getElementById('avatar-default-icon').style.display = 'none';
+        } else {
+            document.getElementById('avatar-preview').style.display = 'none';
+            document.getElementById('avatar-default-icon').style.display = 'block';
+        }
+        document.getElementById('profile-role').value = user.role ? user.role.toUpperCase() : '';
+        loadProfileLogs(user.id);
+    }
+
+    // Profil Güncelleme
+    async function updateProfile(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/auth/profile', {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData // FormData otomatik olarak multipart/form-data header'ını ayarlar
+            });
+            const result = await res.json();
+            if (res.ok) {
+                // localStorage'daki kullanıcı verisini güncelle
+                const currentUser = JSON.parse(localStorage.getItem('user'));
+                const updatedUser = { ...currentUser, ...result.user };
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+                
+                // Avatar önizlemesini güncelle
+                if (updatedUser.avatar) {
+                    document.getElementById('avatar-preview').src = updatedUser.avatar;
+                    document.getElementById('avatar-preview').style.display = 'block';
+                    document.getElementById('avatar-default-icon').style.display = 'none';
+                    // Sol taraftaki karttaki avatarı da güncelle (varsa)
+                    // Bu örnekte sol karttaki avatar statik ikon, dinamik yapmak isterseniz orayı da güncelleyebilirsiniz.
+                }
+                alert(result.message);
+            } else {
+                alert(result.message || 'Hata oluştu');
+            }
+
+        } catch (error) {
+            console.error(error);
+            alert('Sunucu hatası');
+        }
+    }
+
+    // 2. Şifre Değiştirme İşlemi
+    async function changePassword(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        if (data.newPassword !== data.confirmPassword) {
+            alert('Yeni şifreler eşleşmiyor!');
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/auth/change-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await res.json();
+            if (res.ok) {
+                alert(result.message);
+                e.target.reset();
+            } else {
+                alert(result.message || 'Hata oluştu');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Sunucu hatası');
+        }
+    }
+
+    // 3. Logları Yükle
+    async function loadProfileLogs(userId) {
+        const token = localStorage.getItem('token');
+        try {
+            // Sadece son 10 logu getir
+            const res = await fetch(`/api/users/logs?page=1&limit=10&userId=${userId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (res.ok) {
+                const data = await res.json();
+                const logs = data.logs;
+                const list = document.getElementById('profileLogsList');
+                
+                if (logs.length === 0) {
+                    list.innerHTML = '<div class="list-group-item text-center text-muted">Henüz kayıtlı işlem yok.</div>';
+                } else {
+                    list.innerHTML = logs.map(log => {
+                        const badgeColor = log.action === 'LOGIN' ? 'bg-green' : 'bg-orange';
+                        const dateDisplay = new Date(log.createdAt).toLocaleString('tr-TR');
+                        
+                        return `
+                        <div class="list-group-item">
+                            <div class="row align-items-center">
+                                <div class="col-auto"><span class="status-dot ${badgeColor} d-block"></span></div>
+                                <div class="col text-truncate">
+                                    <span class="text-body d-block">${log.action}</span>
+                                    <div class="d-block text-muted text-truncate mt-n1">${log.ipAddress || '-'} &bull; ${log.userAgent || '-'}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <div class="text-muted">${dateDisplay}</div>
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                    }).join('');
+                }
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+</script>

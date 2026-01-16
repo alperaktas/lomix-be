@@ -1,0 +1,197 @@
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">Menü Yönetimi</h2>
+            </div>
+            <div class="col-auto ms-auto d-print-none">
+                <button class="btn btn-primary" onclick="openModal()">
+                    <i class="fas fa-plus me-2"></i> Yeni Menü Ekle
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="page-body">
+    <div class="container-xl">
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table">
+                    <thead>
+                        <tr>
+                            <th>Sıra</th>
+                            <th>Başlık</th>
+                            <th>URL</th>
+                            <th>İkon</th>
+                            <th>Üst Menü ID</th>
+                            <th class="w-1">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="menuTableBody">
+                        <!-- Veriler JS ile buraya gelecek -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal modal-blur fade" id="menuModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Menü Ekle/Düzenle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="menuForm" onsubmit="saveMenu(event)">
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="menuId">
+                    <div class="mb-3">
+                        <label class="form-label">Başlık</label>
+                        <input type="text" class="form-control" name="title" id="menuTitle" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label class="form-label">URL</label>
+                                <input type="text" class="form-control" name="url" id="menuUrl">
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label class="form-label">İkon (FontAwesome)</label>
+                                <input type="text" class="form-control" name="icon" id="menuIcon"
+                                    placeholder="fa-circle">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label class="form-label">Sıra</label>
+                                <input type="number" class="form-control" name="order" id="menuOrder" value="0">
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label class="form-label">Üst Menü</label>
+                                <select class="form-select" name="parent_id" id="menuParentId">
+                                    <option value="">-- Yok --</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn me-auto" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    var menuModal;
+    var allMenus = [];
+
+    // Sayfa yüklendiğinde
+    (async () => {
+        await renderMenuTable();
+        menuModal = new window.bootstrap.Modal(document.getElementById('menuModal'));
+    })();
+
+    async function renderMenuTable() {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/menus?type=flat', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        allMenus = await res.json();
+
+        const tbody = document.getElementById('menuTableBody');
+        tbody.innerHTML = allMenus.map(menu => `
+            <tr>
+                <td>${menu.order}</td>
+                <td>${menu.parent_id ? '<span class="ms-3">↳</span> ' : ''}${menu.title}</td>
+                <td class="text-muted">${menu.url || '-'}</td>
+                <td><i class="fas ${menu.icon}"></i> ${menu.icon || '-'}</td>
+                <td>${menu.parent_id || '-'}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick='editMenu(${JSON.stringify(menu)})'>Düzenle</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteMenu(${menu.id})">Sil</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function updateParentDropdown() {
+        const select = document.getElementById('menuParentId');
+        const currentId = document.getElementById('menuId').value;
+
+        let html = '<option value="">-- Yok --</option>';
+        allMenus.forEach(m => {
+            if (currentId && m.id == currentId) return; // Kendisini seçemesin
+            html += `<option value="${m.id}">${m.title}</option>`;
+        });
+        select.innerHTML = html;
+    }
+
+    function openModal() {
+        document.getElementById('menuForm').reset();
+        document.getElementById('menuId').value = '';
+        updateParentDropdown();
+        document.getElementById('modalTitle').innerText = 'Yeni Menü Ekle';
+        menuModal.show();
+    }
+
+    function editMenu(menu) {
+        document.getElementById('menuId').value = menu.id;
+        updateParentDropdown();
+        document.getElementById('menuTitle').value = menu.title;
+        document.getElementById('menuUrl').value = menu.url;
+        document.getElementById('menuIcon').value = menu.icon;
+        document.getElementById('menuOrder').value = menu.order;
+        document.getElementById('menuParentId').value = menu.parent_id || '';
+        document.getElementById('modalTitle').innerText = 'Menü Düzenle';
+        menuModal.show();
+    }
+
+    async function saveMenu(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+        // Boş stringleri null yap (parentId için önemli)
+        if (!data.parent_id) data.parent_id = null;
+
+        const token = localStorage.getItem('token');
+        const method = data.id ? 'PUT' : 'POST';
+        const url = data.id ? `/api/menus/${data.id}` : '/api/menus';
+
+        await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(data)
+        });
+
+        menuModal.hide();
+        await renderMenuTable();
+        // Sol menüyü yenile (menu.js'deki global fonksiyon)
+        if (window.loadMenus) {
+            await window.loadMenus();
+        }
+    }
+
+    async function deleteMenu(id) {
+        if (!confirm('Bu menüyü silmek istediğinize emin misiniz?')) return;
+        const token = localStorage.getItem('token');
+        await fetch(`/api/menus/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        await renderMenuTable();
+        if (window.loadMenus) {
+            await window.loadMenus();
+        }
+    }
+</script>

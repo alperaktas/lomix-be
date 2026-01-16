@@ -1,0 +1,171 @@
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">Rol Yönetimi</h2>
+            </div>
+            <div class="col-auto ms-auto d-print-none">
+                <button class="btn btn-primary" onclick="openRoleModal()">
+                    <i class="fas fa-plus me-2"></i> Yeni Rol
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="page-body">
+    <div class="container-xl">
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Rol Adı</th>
+                            <th>Kullanıcı Sayısı</th>
+                            <th class="w-1">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="roleTableBody">
+                        <!-- Veriler JS ile buraya gelecek -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal modal-blur fade" id="roleModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="roleModalTitle">Rol İşlemleri</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="roleForm" onsubmit="saveRole(event)">
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="roleId">
+                    <div class="mb-3">
+                        <label class="form-label">Rol Adı</label>
+                        <input type="text" class="form-control" name="name" id="roleName" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn me-auto" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    var roleModal;
+
+    (async () => {
+        await renderRoleTable();
+        roleModal = new window.bootstrap.Modal(document.getElementById('roleModal'));
+    })();
+
+    async function renderRoleTable() {
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch('/api/roles', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const roles = await res.json();
+                const tbody = document.getElementById('roleTableBody');
+                tbody.innerHTML = roles.map(role => {
+                    const count = role.userCount || 0;
+                    const isLocked = count > 0;
+                    const disabledAttr = isLocked ? 'disabled' : '';
+                    const styleAttr = isLocked ? 'style="pointer-events: none;"' : '';
+                    const wrapperStart = isLocked ? `<span class="d-inline-block" tabindex="0" title="Bu role sahip kullanıcılar olduğu için işlem yapılamaz">` : '';
+                    const wrapperEnd = isLocked ? '</span>' : '';
+
+                    return `
+                    <tr>
+                        <td>${role.id}</td>
+                        <td>${role.name}</td>
+                        <td><span class="badge bg-secondary text-secondary-fg">${count}</span></td>
+                        <td>
+                            ${wrapperStart}<button class="btn btn-sm btn-primary" onclick='editRole(${JSON.stringify(role)})' ${disabledAttr} ${styleAttr}>Düzenle</button>${wrapperEnd}
+                            ${wrapperStart}<button class="btn btn-sm btn-danger" onclick="deleteRole(${role.id})" ${disabledAttr} ${styleAttr}>Sil</button>${wrapperEnd}
+                        </td>
+                    </tr>
+                `}).join('');
+            }
+        } catch (err) { console.error('Roller yüklenemedi:', err); }
+    }
+
+    function openRoleModal() {
+        document.getElementById('roleForm').reset();
+        document.getElementById('roleId').value = '';
+        document.getElementById('roleModalTitle').innerText = 'Yeni Rol';
+        roleModal.show();
+    }
+
+    function editRole(role) {
+        document.getElementById('roleId').value = role.id;
+        document.getElementById('roleName').value = role.name;
+        document.getElementById('roleModalTitle').innerText = 'Rol Düzenle';
+        roleModal.show();
+    }
+
+    async function saveRole(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        // ID boşsa (yeni kayıt) nesneden sil ki veritabanı hatası vermesin
+        if (!data.id) delete data.id;
+
+        const token = localStorage.getItem('token');
+        const method = data.id ? 'PUT' : 'POST';
+        const url = data.id ? `/api/roles/${data.id}` : '/api/roles';
+
+        const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(data)
+        });
+
+        if (res.ok) {
+            roleModal.hide();
+            await renderRoleTable();
+        } else {
+            const result = await res.json();
+            Swal.fire('Hata', result.message || 'İşlem başarısız oldu.', 'error');
+        }
+    }
+
+    async function deleteRole(id) {
+        const result = await Swal.fire({
+            title: 'Emin misiniz?',
+            text: "Bu rolü silmek istediğinize emin misiniz?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Evet, Sil',
+            cancelButtonText: 'İptal'
+        });
+
+        if (!result.isConfirmed) return;
+
+        const token = localStorage.getItem('token');
+        const res = await fetch(`/api/roles/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+            await renderRoleTable();
+            Swal.fire('Silindi!', 'Rol başarıyla silindi.', 'success');
+        } else {
+            const data = await res.json();
+            Swal.fire('Hata!', data.message || 'Silme işlemi başarısız.', 'error');
+        }
+    }
+</script>

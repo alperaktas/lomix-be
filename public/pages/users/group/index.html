@@ -1,0 +1,232 @@
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">Grup Yönetimi</h2>
+            </div>
+            <div class="col-auto ms-auto d-print-none">
+                <button class="btn btn-primary" onclick="openGroupModal()">
+                    <i class="fas fa-plus me-2"></i> Yeni Grup
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="page-body">
+    <div class="container-xl">
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Grup Adı</th>
+                            <th>Açıklama</th>
+                            <th>Üye Sayısı</th>
+                            <th class="w-1">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="groupTableBody">
+                        <!-- Veriler JS ile buraya gelecek -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal modal-blur fade" id="groupModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="groupModalTitle">Grup İşlemleri</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="groupForm" onsubmit="saveGroup(event)">
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="groupId">
+                    <div class="mb-3">
+                        <label class="form-label">Grup Adı</label>
+                        <input type="text" class="form-control" name="name" id="groupName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Açıklama</label>
+                        <textarea class="form-control" name="description" id="groupDescription" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn me-auto" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Members Modal -->
+<div class="modal modal-blur fade" id="membersModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Grup Üyeleri</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="list-group list-group-flush" id="membersList">
+                    <!-- Üyeler buraya gelecek -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Kapat</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var groupModal;
+    var membersModal;
+
+    (async () => {
+        await renderGroupTable();
+        groupModal = new window.bootstrap.Modal(document.getElementById('groupModal'));
+        membersModal = new window.bootstrap.Modal(document.getElementById('membersModal'));
+    })();
+
+    async function renderGroupTable() {
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch('/api/groups', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const groups = await res.json();
+                const tbody = document.getElementById('groupTableBody');
+                tbody.innerHTML = groups.map(group => `
+                    <tr>
+                        <td>${group.id}</td>
+                        <td>${group.name}</td>
+                        <td>${group.description || '-'}</td>
+                        <td><span class="badge bg-secondary text-secondary-fg">${group.userCount || 0}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-info" onclick='showGroupMembers(${group.id}, "${group.name}")'>Üyeleri Göster</button>
+                            <button class="btn btn-sm btn-primary" onclick='editGroup(${JSON.stringify(group)})'>Düzenle</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteGroup(${group.id})">Sil</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        } catch (err) { console.error('Gruplar yüklenemedi:', err); }
+    }
+
+    async function showGroupMembers(id, name) {
+        const token = localStorage.getItem('token');
+        document.querySelector('#membersModal .modal-title').innerText = `${name} - Üyeler`;
+        const list = document.getElementById('membersList');
+        list.innerHTML = '<div class="text-center p-3"><div class="spinner-border text-primary" role="status"></div></div>';
+        
+        membersModal.show();
+
+        try {
+            const res = await fetch(`/api/groups/${id}/members`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (res.ok) {
+                const users = await res.json();
+                if (users.length === 0) {
+                    list.innerHTML = '<div class="text-center text-muted p-3">Bu grupta henüz üye yok.</div>';
+                } else {
+                    list.innerHTML = users.map(u => `
+                        <div class="list-group-item">
+                            <div class="row align-items-center">
+                                <div class="col text-truncate">
+                                    <a href="#" class="text-body d-block">${u.username}</a>
+                                    <div class="text-muted text-truncate mt-n1">${u.email}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <span class="badge bg-blue-lt">${u.role}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } else {
+                list.innerHTML = '<div class="text-danger p-3">Üyeler yüklenemedi.</div>';
+            }
+        } catch (e) {
+            console.error(e);
+            list.innerHTML = '<div class="text-danger p-3">Bir hata oluştu.</div>';
+        }
+    }
+
+    function openGroupModal() {
+        document.getElementById('groupForm').reset();
+        document.getElementById('groupId').value = '';
+        document.getElementById('groupModalTitle').innerText = 'Yeni Grup';
+        groupModal.show();
+    }
+
+    function editGroup(group) {
+        document.getElementById('groupId').value = group.id;
+        document.getElementById('groupName').value = group.name;
+        document.getElementById('groupDescription').value = group.description || '';
+        document.getElementById('groupModalTitle').innerText = 'Grup Düzenle';
+        groupModal.show();
+    }
+
+    async function saveGroup(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+        if (!data.id) delete data.id;
+
+        const token = localStorage.getItem('token');
+        const method = data.id ? 'PUT' : 'POST';
+        const url = data.id ? `/api/groups/${data.id}` : '/api/groups';
+
+        const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(data)
+        });
+
+        if (res.ok) {
+            groupModal.hide();
+            await renderGroupTable();
+        } else {
+            const result = await res.json();
+            Swal.fire('Hata', result.message || 'İşlem başarısız oldu.', 'error');
+        }
+    }
+
+    async function deleteGroup(id) {
+        const result = await Swal.fire({
+            title: 'Emin misiniz?',
+            text: "Bu grubu silmek istediğinize emin misiniz?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Evet, Sil',
+            cancelButtonText: 'İptal'
+        });
+
+        if (!result.isConfirmed) return;
+
+        const token = localStorage.getItem('token');
+        const res = await fetch(`/api/groups/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+            await renderGroupTable();
+            Swal.fire('Silindi!', 'Grup başarıyla silindi.', 'success');
+        } else {
+            const data = await res.json();
+            Swal.fire('Hata!', data.message || 'Silme işlemi başarısız.', 'error');
+        }
+    }
+</script>

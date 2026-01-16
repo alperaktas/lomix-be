@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="tr">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Lomix Admin Panel</title>
+    <link href="/libs/tabler/css/tabler.min.css" rel="stylesheet" />
+    <style>
+        @import url('https://rsms.me/inter/inter.css');
+
+        :root {
+            --tblr-font-sans-serif: 'Inter', -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif;
+        }
+
+        body {
+            font-feature-settings: "cv03", "cv04", "cv11";
+            display: none;
+        }
+
+        /* Logo Responsive Ayarı */
+        .responsive-logo {
+            height: 40px;
+            /* Mobilde (Telefon/Tablet) küçük */
+            width: auto;
+        }
+
+        @media (min-width: 992px) {
+            .responsive-logo {
+                height: 40px;
+                /* Masaüstünde (Sidebar açıkken) normal */
+                width: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- LOGIN EKRANI -->
+    <div class="page page-center" id="login-screen">
+        <div class="container container-tight py-4">
+            <div class="text-center mb-4">
+                <a href="." class="navbar-brand navbar-brand-autodark"><img src="/img/logo.png" height="36"
+                        alt="Lomix"></a>
+            </div>
+            <div class="card card-md">
+                <div class="card-body">
+                    <h2 class="h2 text-center mb-4">Hesabınıza giriş yapın</h2>
+                    <form id="login-form" autocomplete="off">
+                        <div class="mb-3">
+                            <label class="form-label">Email veya Kullanıcı Adı</label>
+                            <input type="text" name="username" class="form-control"  required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Şifre</label>
+                            <input type="password" name="password" class="form-control" required>
+                        </div>
+                        <div class="form-footer">
+                            <button type="submit" class="btn btn-primary w-100">Giriş Yap</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UYGULAMA EKRANI -->
+    <div class="page" id="app-screen">
+        <!-- Sidebar -->
+        <aside class="navbar navbar-vertical navbar-expand-lg">
+            <div class="container-fluid">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <h1 class="navbar-brand navbar-brand-autodark">
+                    <a href="/" class="text-decoration-none d-flex align-items-center">
+                        <img src="/img/logo.png" alt="Lomix" class="navbar-brand-image responsive-logo">
+                        <span class="ms-2 d-flex fw-bold" style="font-size: 24px; letter-spacing: 2px;">
+                            <span class="text-blue">L</span>
+                            <span class="text-red">O</span>
+                            <span class="text-yellow">M</span>
+                            <span class="text-green">I</span>
+                            <span class="text-purple">X</span>
+                        </span>
+                    </a>
+                </h1>
+                <div class="collapse navbar-collapse" id="sidebar-menu">
+                    <ul class="navbar-nav pt-lg-3" id="menu-container">
+                        <!-- Menüler buraya dinamik gelecek -->
+                    </ul>
+                </div>
+        </aside>
+
+        <!-- Header ve İçerik -->
+        <div class="page-wrapper">
+            <header class="navbar navbar-expand-md navbar-light d-none d-lg-flex d-print-none">
+                <div class="container-xl">
+                    <div class="navbar-nav flex-row order-md-last">
+                        <div class="nav-item d-none d-md-flex me-3">
+                            <div id="live-clock" class="text-muted" style="font-size: 0.85rem; font-weight: 500;"></div>
+                        </div>
+                        <div class="nav-item dropdown" style="position: relative;">
+                            <a href="#" class="nav-link d-flex lh-1 text-reset p-0" id="header-user-menu-link"
+                                aria-label="Kullanıcı menüsünü aç">
+                                <span class="avatar avatar-sm" id="user-avatar"
+                                    style="background-image: url(/static/avatars/000m.jpg)"></span>
+                                <div class="d-none d-xl-block ps-2">
+                                    <div id="user-name">Admin</div>
+                                    <div class="mt-1 small text-muted">Hesabım</div>
+                                </div>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow"
+                                style="position: absolute; top: 100%; right: 0; margin-top: 12px;">
+                                <a href="/profile" class="dropdown-item">Profil</a>
+                                <div class="dropdown-divider"></div>
+                                <a href="#" class="dropdown-item" onclick="logout()">Çıkış Yap</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="collapse navbar-collapse" id="navbar-menu"></div>
+                </div>
+            </header>
+
+            <div class="page-body">
+                <div class="container-xl" id="main-content">
+                    <!-- Sayfa içeriği buraya yüklenecek -->
+                    <div class="empty">
+                        <div class="empty-header">Yükleniyor...</div>
+                    </div>
+                </div>
+            </div>
+            <footer class="footer footer-transparent d-print-none">
+                <div class="container-xl">
+                    <div class="row text-center align-items-center flex-row-reverse">
+                        <div class="col-12 col-lg-auto mt-3 mt-lg-0">
+                            <ul class="list-inline list-inline-dots mb-0">
+                                <li class="list-inline-item">
+                                    Copyright &copy; <span id="copyright-year">2026</span>
+                                    <a href="." class="link-secondary">Lomix Admin</a>.
+                                    Tüm hakları saklıdır.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+
+        <script src="/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+        <script src="/libs/tabler/js/tabler.min.js"></script>
+        <script>
+            document.body.style.display = 'block';
+
+            // --- AUTH YÖNETİMİ ---
+            function checkAuth() {
+                const token = localStorage.getItem('token');
+                if (token) {
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('app-screen').style.display = 'block';
+                    loadMenus();
+                    updateUserProfile();
+                    handleRouting();
+                } else {
+                    document.getElementById('login-screen').style.display = 'block';
+                    document.getElementById('app-screen').style.display = 'none';
+                }
+            }
+
+            function updateUserProfile() {
+                try {
+                    const user = JSON.parse(localStorage.getItem('user'));
+                    if (user) {
+                        const nameEl = document.getElementById('user-name');
+                        const avatarEl = document.getElementById('user-avatar');
+                        const displayName = user.username || user.email || 'User';
+
+                        if (nameEl) nameEl.textContent = displayName;
+
+                        if (avatarEl) {
+                            if (user.avatar) {
+                                avatarEl.style.backgroundImage = `url(${user.avatar})`;
+                                avatarEl.innerText = '';
+                            } else {
+                                avatarEl.style.backgroundImage = 'none';
+                                let initials = displayName.substring(0, 2).toUpperCase();
+                                if (displayName.includes(' ')) {
+                                    const parts = displayName.split(' ');
+                                    if (parts.length >= 2) initials = (parts[0][0] + parts[1][0]).toUpperCase();
+                                }
+                                avatarEl.innerText = initials;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error("Profil bilgileri yüklenemedi", e);
+                }
+            }
+
+            document.getElementById('login-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const data = Object.fromEntries(formData.entries());
+
+                try {
+                    const res = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    const result = await res.json();
+
+                    if (res.ok) {
+                        localStorage.setItem('token', result.token);
+                        localStorage.setItem('user', JSON.stringify(result.user));
+                        checkAuth();
+                    } else {
+                        alert(result.message || 'Giriş başarısız');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Sunucu hatası');
+                }
+            });
+
+            function logout() {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/';
+            }
+
+            // --- MENÜ YÖNETİMİ ---
+            async function loadMenus() {
+                const token = localStorage.getItem('token');
+                try {
+                    const res = await fetch('/api/menus', {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    if (!res.ok) throw new Error('Menü yüklenemedi');
+
+                    let menus = await res.json();
+
+                    // Eğer API düz liste dönüyorsa (parent_id var ama children yok/boş), ağaç yapısına çevir
+                    const isFlat = menus.some(m => m.parent_id) && !menus.some(m => m.children && m.children.length > 0);
+
+                    if (isFlat) {
+                        const menuMap = {};
+                        const tree = [];
+
+                        menus.forEach(m => {
+                            m.children = [];
+                            menuMap[m.id] = m;
+                        });
+
+                        menus.forEach(m => {
+                            if (m.parent_id && menuMap[m.parent_id]) {
+                                menuMap[m.parent_id].children.push(m);
+                            } else {
+                                tree.push(m);
+                            }
+                        });
+
+                        // Sıralama
+                        const sortFn = (a, b) => (a.order || 0) - (b.order || 0);
+                        tree.sort(sortFn);
+                        Object.values(menuMap).forEach(m => m.children.sort(sortFn));
+
+                        menus = tree;
+                    }
+
+                    const menuContainer = document.getElementById('menu-container');
+                    let menuHtml = '';
+
+                    menus.forEach(menu => {
+                        // Ana menü öğesi
+                        let html = `
+                        <li class="nav-item ${menu.children && menu.children.length > 0 ? 'dropdown' : ''}">
+                            <a class="nav-link ${menu.children && menu.children.length > 0 ? 'dropdown-toggle' : ''}"
+                                href="${menu.children && menu.children.length > 0 ? '#navbar-' + menu.id : menu.url}"
+                                ${menu.children && menu.children.length > 0 ? 'role="button" aria-expanded="false"' : ''}
+                            >
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <i class="ti ${menu.icon || 'ti-circle'}"></i>
+                                </span>
+                                <span class="nav-link-title">${menu.title}</span>
+                            </a>
+                            `;
+
+                        // Alt menüler
+                        if (menu.children && menu.children.length > 0) {
+                            html += `<div class="dropdown-menu">`;
+                            menu.children.forEach(child => {
+                                html += `<a class="dropdown-item" href="${child.url}">${child.title}</a>`;
+                            });
+                            html += `</div>`;
+                        }
+
+                        html += `</li>`;
+                        menuHtml += html;
+                    });
+                    menuContainer.innerHTML = menuHtml;
+
+                    // --- CUSTOM DROPDOWN LOGIC (Bootstrap yerine manuel kontrol) ---
+                    menuContainer.querySelectorAll('.dropdown-toggle').forEach(toggle => {
+                        toggle.addEventListener('click', function (e) {
+                            e.preventDefault();
+                            const parent = this.closest('.dropdown');
+                            const menu = parent.querySelector('.dropdown-menu');
+
+                            if (menu) {
+                                const isOpen = menu.classList.contains('show');
+
+                                // Diğer açık menüleri kapat (Accordion efekti)
+                                document.querySelectorAll('.dropdown-menu.show').forEach(openMenu => {
+                                    if (openMenu !== menu) {
+                                        openMenu.classList.remove('show');
+                                        const toggleBtn = openMenu.closest('.dropdown').querySelector('.dropdown-toggle');
+                                        if (toggleBtn) {
+                                            toggleBtn.classList.remove('show');
+                                            toggleBtn.setAttribute('aria-expanded', 'false');
+                                        }
+                                    }
+                                });
+
+                                if (isOpen) {
+                                    menu.classList.remove('show');
+                                    this.classList.remove('show');
+                                    this.setAttribute('aria-expanded', 'false');
+                                } else {
+                                    menu.classList.add('show');
+                                    this.classList.add('show');
+                                    this.setAttribute('aria-expanded', 'true');
+                                }
+                            }
+                        });
+                    });
+
+                    // Linklere tıklamayı yakala (SPA Routing)
+                    document.querySelectorAll('a.nav-link, a.dropdown-item').forEach(link => {
+                        link.addEventListener('click', (e) => {
+                            const href = link.getAttribute('href');
+                            if (href && href.startsWith('/') && href !== '#') {
+                                e.preventDefault();
+                                history.pushState(null, '', href);
+                                handleRouting();
+
+                                // Mobil menüyü kapat
+                                const sidebarMenu = document.getElementById('sidebar-menu');
+                                if (sidebarMenu && sidebarMenu.classList.contains('show')) {
+                                    sidebarMenu.classList.remove('show');
+                                }
+                            }
+                        });
+                    });
+
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+
+            // --- ROUTING (SAYFA YÜKLEME) ---
+            async function handleRouting() {
+                const path = window.location.pathname;
+                const contentDiv = document.getElementById('main-content');
+
+                let pageUrl;
+                if (path === '/' || path === '/index.html') {
+                    pageUrl = '/pages/dashboard/index.html';
+                } else {
+                    pageUrl = `/pages${path}/index.html`;
+                }
+
+                try {
+                    const res = await fetch(pageUrl);
+                    if (res.ok) {
+                        const html = await res.text();
+                        contentDiv.innerHTML = html;
+
+                        // Yüklenen HTML içindeki scriptleri çalıştır
+                        const scripts = contentDiv.querySelectorAll("script");
+                        scripts.forEach(oldScript => {
+                            const newScript = document.createElement("script");
+                            Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+                            newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+                            oldScript.parentNode.replaceChild(newScript, oldScript);
+                        });
+                    } else {
+                        contentDiv.innerHTML = `<div class="alert alert-danger">Sayfa bulunamadı: ${path}</div>`;
+                    }
+                } catch (err) {
+                    contentDiv.innerHTML = `<div class="alert alert-danger">Yükleme hatası</div>`;
+                }
+            }
+
+            window.addEventListener('popstate', handleRouting);
+
+            // Başlangıç
+            checkAuth();
+
+            // Saat Fonksiyonu
+            function updateClock() {
+                const el = document.getElementById('live-clock');
+                if (el) {
+                    const now = new Date();
+                    el.innerText = now.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' }) + ' ' + now.toLocaleTimeString('tr-TR');
+                }
+            }
+            setInterval(updateClock, 1000);
+            updateClock();
+
+            // Header Dropdown Manuel Kontrol
+            const headerUserMenuLink = document.getElementById('header-user-menu-link');
+            if (headerUserMenuLink) {
+                headerUserMenuLink.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const parent = this.closest('.dropdown');
+                    const menu = parent.querySelector('.dropdown-menu');
+                    if (menu) menu.classList.toggle('show');
+                });
+
+                document.addEventListener('click', function (e) {
+                    const parent = headerUserMenuLink.closest('.dropdown');
+                    if (parent && !parent.contains(e.target)) {
+                        const menu = parent.querySelector('.dropdown-menu');
+                        if (menu) menu.classList.remove('show');
+                    }
+                });
+            }
+
+            // Copyright Yılı Otomatik Güncelleme
+            const copyrightYearEl = document.getElementById('copyright-year');
+            if (copyrightYearEl) {
+                copyrightYearEl.textContent = new Date().getFullYear();
+            }
+        </script>
+</body>
+
+</html>

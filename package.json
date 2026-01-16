@@ -1,0 +1,36 @@
+{
+  "name": "lomix-admin",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@tabler/core": "^1.4.0",
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dbgate-serve": "^6.8.2",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "google-auth-library": "^10.5.0",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.10.1",
+    "multer": "^2.0.2",
+    "nodemailer": "^7.0.12",
+    "pg": "^8.16.3",
+    "pg-hstore": "^2.3.4",
+    "rotating-file-stream": "^3.2.7",
+    "sequelize": "^6.37.7",
+    "systeminformation": "^5.29.0",
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0",
+    "winston-syslog": "^2.7.1",
+    "winston-transport": "^4.9.0"
+  }
+}

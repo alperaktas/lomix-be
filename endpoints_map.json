@@ -1,0 +1,12 @@
+[
+    {
+        "uri": "/api/mobil/users_hikaye",
+        "method": "POST",
+        "response_file": "users_hikaye.json"
+    },
+    {
+        "uri": "/api/mobil/recommended_users",
+        "method": "POST",
+        "response_file": "recommended_users.json"
+    }
+]

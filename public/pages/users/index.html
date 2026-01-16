@@ -1,0 +1,221 @@
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">Kullanıcı Yönetimi</h2>
+            </div>
+            <div class="col-auto ms-auto d-print-none">
+                <button class="btn btn-primary" onclick="openUserModal()">
+                    <i class="fas fa-plus me-2"></i> Yeni Kullanıcı
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="page-body">
+    <div class="container-xl">
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Kullanıcı Adı</th>
+                            <th>E-posta</th>
+                            <th>Rol</th>
+                            <th>Gruplar</th>
+                            <th class="w-1">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                        <!-- Veriler JS ile buraya gelecek -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal modal-blur fade" id="userModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userModalTitle">Kullanıcı İşlemleri</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="userForm" onsubmit="saveUser(event)">
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="userId">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label class="form-label">Kullanıcı Adı</label>
+                                <input type="text" class="form-control" name="username" id="userUsername" required>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label class="form-label">E-posta</label>
+                                <input type="email" class="form-control" name="email" id="userEmail" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label class="form-label">Şifre</label>
+                                <input type="password" class="form-control" name="password" id="userPassword" placeholder="Değiştirilmeyecekse boş bırakın">
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label class="form-label">Rol</label>
+                                <select class="form-select" name="role" id="userRole">
+                                    <option value="user">Kullanıcı</option>
+                                    <option value="admin">Yönetici</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-12">
+                            <div class="mb-3">
+                                <label class="form-label">Gruplar</label>
+                                <select class="form-select" name="groups" id="userGroups" multiple size="3">
+                                    <!-- Gruplar API'den gelecek -->
+                                </select>
+                                <small class="form-hint">Birden fazla seçim için Ctrl (Windows) veya Cmd (Mac) tuşuna basılı tutun.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn me-auto" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    var userModal;
+
+    // Sayfa yüklendiğinde
+    (async () => {
+        await renderUserTable();
+        userModal = new window.bootstrap.Modal(document.getElementById('userModal'));
+    })();
+
+    async function renderUserTable() {
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch('/api/users', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const users = await res.json();
+                const tbody = document.getElementById('userTableBody');
+                tbody.innerHTML = users.map(user => {
+                    const groupsDisplay = user.groups && user.groups.length > 0 ? user.groups.map(g => `<span class="badge bg-blue text-blue-fg me-1">${g.name}</span>`).join('') : '-';
+                    return `
+                    <tr>
+                        <td>${user.id}</td>
+                        <td>${user.username}</td>
+                        <td>${user.email || '-'}</td>
+                        <td><span class="badge bg-${user.role === 'admin' ? 'red' : 'blue'} text-${user.role === 'admin' ? 'red' : 'blue'}-fg">${user.role || 'user'}</span></td>
+                        <td>${groupsDisplay}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick='editUser(${JSON.stringify(user)})'>Düzenle</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteUser(${user.id})">Sil</button>
+                        </td>
+                    </tr>
+                `}).join('');
+            }
+        } catch (err) {
+            console.error('Kullanıcılar yüklenemedi:', err);
+        }
+    }
+
+    async function loadGroupsToSelect(selectedGroups = []) {
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch('/api/groups', { headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.ok) {
+                const groups = await res.json();
+                const select = document.getElementById('userGroups');
+                const selectedIds = selectedGroups.map(g => g.id);
+                select.innerHTML = groups.map(g => `<option value="${g.id}" ${selectedIds.includes(g.id) ? 'selected' : ''}>${g.name}</option>`).join('');
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    async function openUserModal() {
+        document.getElementById('userForm').reset();
+        document.getElementById('userId').value = '';
+        document.getElementById('userModalTitle').innerText = 'Yeni Kullanıcı';
+        await loadGroupsToSelect([]);
+        userModal.show();
+    }
+
+    async function editUser(user) {
+        document.getElementById('userId').value = user.id;
+        document.getElementById('userUsername').value = user.username;
+        document.getElementById('userEmail').value = user.email || '';
+        document.getElementById('userRole').value = user.role || 'user';
+        document.getElementById('userPassword').value = '';
+        document.getElementById('userModalTitle').innerText = 'Kullanıcı Düzenle';
+        await loadGroupsToSelect(user.groups || []);
+        userModal.show();
+    }
+
+    async function saveUser(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+        
+        // Çoklu seçim (groups) verisini manuel al
+        const groupsSelect = document.getElementById('userGroups');
+        const selectedGroups = Array.from(groupsSelect.selectedOptions).map(opt => parseInt(opt.value));
+        data.groups = selectedGroups;
+
+        // Şifre boşsa gönderilmesin (update durumunda)
+        if (!data.password) delete data.password;
+
+        const token = localStorage.getItem('token');
+        const method = data.id ? 'PUT' : 'POST';
+        const url = data.id ? `/api/users/${data.id}` : '/api/users';
+
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(data)
+            });
+            
+            if (res.ok) {
+                userModal.hide();
+                await renderUserTable();
+            } else {
+                alert('İşlem başarısız oldu.');
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    async function deleteUser(id) {
+        if (!confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?')) return;
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch(`/api/users/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                await renderUserTable();
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+</script>

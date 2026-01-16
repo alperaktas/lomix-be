@@ -1,0 +1,70 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 15
+    },
+    "auditLog": "/root/lomix-admin/logs/.7669aae45172a7447566e2c958a1ee7e660bb871-audit.json",
+    "files": [
+        {
+            "date": 1767507279888,
+            "name": "/root/lomix-admin/logs/mobile-2026-01-04.log",
+            "hash": "a905f70e0e199e518ee0a137bb55612fe4137b3a71aadf7b09d673ad26a7a0db"
+        },
+        {
+            "date": 1767599984290,
+            "name": "/root/lomix-admin/logs/mobile-2026-01-05.log",
+            "hash": "63431bc2b984d21e2b8581aa1a5319b1d9a75213a4ba4462e4ff4f5285c7963b"
+        },
+        {
+            "date": 1767688862409,
+            "name": "/root/lomix-admin/logs/mobile-2026-01-06.log",
+            "hash": "565bb13addf8f4caa7d767595c0fb3c29bbfee0be3d9370fcfdbeccc86d65936"
+        },
+        {
+            "date": 1767777869595,
+            "name": "/root/lomix-admin/logs/mobile-2026-01-07.log",
+            "hash": "26af54d3c5ffa6b796ca4023693b53e2b729e52868b09739d62d2d492e5b16b6"
+        },
+        {
+            "date": 1767878879349,
+            "name": "/root/lomix-admin/logs/mobile-2026-01-08.log",
+            "hash": "5f901dc8b0b969b40c274b9a9c54da5d59c28d21caf6a4c5e3260313d9d53add"
+        },
+        {
+            "date": 1767939277245,
+            "name": "/root/lomix-admin/logs/mobile-2026-01-09.log",
+            "hash": "d5cafc3bc405a67f79766c5010592d6916a4cc8bcca41ae0cc518c78ad5da1d6"
+        },
+        {
+            "date": 1768032063296,
+            "name": "/root/lomix-admin/logs/mobile-2026-01-10.log",
+            "hash": "c5b2b9e091e0218452a33adeefbcd528b796c838697bc63c89f1a7fbd69da816"
+        },
+        {
+            "date": 1768123162792,
+            "name": "/root/lomix-admin/logs/mobile-2026-01-11.log",
+            "hash": "4465412146b9756dfead3277ea569fb2e57385234d2818317b11d05744d03913"
+        },
+        {
+            "date": 1768315782358,
+            "name": "/root/lomix-admin/logs/mobile-2026-01-13.log",
+            "hash": "53f0667738d7d57333a227e057b0d49e449ba7c1f870bdc42296c558d1d6f4ba"
+        },
+        {
+            "date": 1768383340928,
+            "name": "/root/lomix-admin/logs/mobile-2026-01-14.log",
+            "hash": "d4e267061aba12bf628443d354797faad86751c8c84414a0efe1f28fcc4def6a"
+        },
+        {
+            "date": 1768453290980,
+            "name": "/root/lomix-admin/logs/mobile-2026-01-15.log",
+            "hash": "740847f7c627bf7ad9fa89c4935b1e56f7c168593df828cd2210a14274413a83"
+        },
+        {
+            "date": 1768536466342,
+            "name": "/root/lomix-admin/logs/mobile-2026-01-16.log",
+            "hash": "4e38a6510b60e7b91c6215d06cd5670bf24721e2d4cebb8c7ab4e3b2616c4029"
+        }
+    ],
+    "hashType": "sha256"
+}

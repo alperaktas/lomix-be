@@ -1,0 +1,167 @@
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">Kullanıcı Logları</h2>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="page-body">
+    <div class="container-xl">
+        <!-- Filtreleme Alanı -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <label class="form-label">Kullanıcı</label>
+                        <select class="form-select" id="filterUser">
+                            <option value="">Tümü</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">IP Adresi</label>
+                        <input type="text" class="form-control" id="filterIp" placeholder="Örn: 192.168...">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Başlangıç Tarihi</label>
+                        <input type="date" class="form-control" id="filterStartDate">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Bitiş Tarihi</label>
+                        <input type="date" class="form-control" id="filterEndDate">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button class="btn btn-primary w-100" onclick="renderLogsTable(1)"><i class="fas fa-filter me-2"></i> Filtrele</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Kullanıcı</th>
+                            <th>İşlem</th>
+                            <th>IP Adresi</th>
+                            <th>Tarih</th>
+                            <th>Tarayıcı</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody">
+                        <!-- Veriler JS ile buraya gelecek -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer d-flex align-items-center">
+                <p class="m-0 text-muted">Toplam <span id="totalLogs">0</span> kayıttan <span id="startLog">0</span> - <span id="endLog">0</span> arası gösteriliyor</p>
+                <ul class="pagination m-0 ms-auto" id="logPagination"></ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var currentLogPage = 1;
+    var logsPerPage = 20;
+    var totalLogs = 0;
+
+    (async () => {
+        await loadUsersForFilter();
+        await renderLogsTable(1);
+    })();
+
+    async function loadUsersForFilter() {
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch('/api/users', { headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.ok) {
+                const users = await res.json();
+                const select = document.getElementById('filterUser');
+                const options = users.map(u => `<option value="${u.id}">${u.username} (${u.email})</option>`).join('');
+                select.innerHTML += options;
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    async function renderLogsTable(page = 1) {
+        currentLogPage = page;
+        const token = localStorage.getItem('token');
+        
+        const userId = document.getElementById('filterUser').value;
+        const ipAddress = document.getElementById('filterIp').value;
+        const startDate = document.getElementById('filterStartDate').value;
+        const endDate = document.getElementById('filterEndDate').value;
+
+        let url = `/api/users/logs?page=${page}&limit=${logsPerPage}`;
+        if (userId) url += `&userId=${userId}`;
+        if (ipAddress) url += `&ipAddress=${encodeURIComponent(ipAddress)}`;
+        if (startDate) url += `&startDate=${startDate}`;
+        if (endDate) url += `&endDate=${endDate}`;
+
+        try {
+            const res = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (res.ok) {
+                const data = await res.json();
+                const logs = data.logs;
+                totalLogs = data.totalItems;
+
+                const tbody = document.getElementById('logsTableBody');
+                if (logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center p-3">Kayıt bulunamadı.</td></tr>';
+                } else {
+                    tbody.innerHTML = logs.map(log => {
+                        const userDisplay = log.user ? `${log.user.username} (${log.user.email})` : '<span class="text-muted">Silinmiş Kullanıcı</span>';
+                        const badgeColor = log.action === 'LOGIN' ? 'bg-green' : 'bg-orange';
+                        const dateDisplay = new Date(log.createdAt).toLocaleString('tr-TR');
+                        
+                        return `
+                        <tr>
+                            <td>${log.id}</td>
+                            <td>${userDisplay}</td>
+                            <td><span class="badge ${badgeColor} text-white">${log.action}</span></td>
+                            <td>${log.ipAddress || '-'}</td>
+                            <td>${dateDisplay}</td>
+                            <td class="text-muted text-truncate" style="max-width: 200px;" title="${log.userAgent}">${log.userAgent || '-'}</td>
+                        </tr>
+                    `}).join('');
+                }
+                renderLogPagination();
+            }
+        } catch (err) {
+            console.error('Loglar yüklenemedi:', err);
+        }
+    }
+
+    function renderLogPagination() {
+        const totalPages = Math.ceil(totalLogs / logsPerPage);
+        const start = totalLogs === 0 ? 0 : (currentLogPage - 1) * logsPerPage + 1;
+        const end = Math.min(currentLogPage * logsPerPage, totalLogs);
+        
+        document.getElementById('startLog').innerText = start;
+        document.getElementById('endLog').innerText = end;
+        document.getElementById('totalLogs').innerText = totalLogs;
+
+        const controls = document.getElementById('logPagination');
+        let html = '';
+
+        html += `<li class="page-item ${currentLogPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="renderLogsTable(${currentLogPage - 1}); return false;"><i class="fas fa-chevron-left"></i></a>
+        </li>`;
+
+        // Basit sayfalama (sadece mevcut sayfa etrafı)
+        html += `<li class="page-item active"><a class="page-link" href="#">${currentLogPage}</a></li>`;
+
+        html += `<li class="page-item ${currentLogPage >= totalPages ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="renderLogsTable(${currentLogPage + 1}); return false;"><i class="fas fa-chevron-right"></i></a>
+        </li>`;
+
+        controls.innerHTML = html;
+    }
+</script>

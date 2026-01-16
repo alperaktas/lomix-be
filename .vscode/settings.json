@@ -1,0 +1,21 @@
+{
+    "sqltools.connections": [
+        {
+            "ssh": "Enabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "sshOptions": {
+                "port": 3254,
+                "host": "89.144.20.141",
+                "username": "root",
+                "privateKeyPath": "/root/lomix-admin/id_rsa"
+            },
+            "driver": "PostgreSQL",
+            "username": "lomix",
+            "password": "Lomix2025New",
+            "name": "lomix",
+            "database": "lomix"
+        }
+    ]
+}
