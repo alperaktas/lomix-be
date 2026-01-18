@@ -121,3 +121,5 @@
 ::ffff:88.230.80.19 - - [16/Jan/2026:18:15:37 +0000] "GET /pages/users/user/index.html HTTP/1.1" 200 17662 "https://admin.lomixlive.com:3000/users/user" "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:146.0) Gecko/20100101 Firefox/146.0"
 ::ffff:88.230.80.19 - - [16/Jan/2026:18:15:38 +0000] "GET /api/users?page=1&limit=10 HTTP/1.1" 200 3455 "https://admin.lomixlive.com:3000/users/user" "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:146.0) Gecko/20100101 Firefox/146.0"
 ::ffff:195.178.110.108 - - [16/Jan/2026:20:07:29 +0000] "GET / HTTP/1.1" 200 20499 "-" "-"
+::ffff:162.216.149.205 - - [18/Jan/2026:06:29:04 +0000] "GET / HTTP/1.1" 200 20499 "-" "Hello from Palo Alto Networks, find out more about our scans in https://docs-cortex.paloaltonetworks.com/r/1/Cortex-Xpanse/Scanning-activity"
+::ffff:88.230.80.19 - - [18/Jan/2026:06:34:02 +0000] "POST /api/mobile/auth/login HTTP/1.1" 200 440 "-" "Dart/3.10 (dart:io)"

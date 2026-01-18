@@ -8,5 +8,20 @@
         "uri": "/api/mobil/recommended_users",
         "method": "POST",
         "response_file": "recommended_users.json"
+    },
+    {
+        "uri": "/api/mobile/story_prices",
+        "method": "GET",
+        "response_file": "story_prices.json"
+    },
+    {
+        "uri": "/api/mobile/add_story",
+        "method": "POST",
+        "response_file": "add_story_success.json"
+    },
+    {
+        "uri": "/api/mobile/profile",
+        "method": "GET",
+        "response_file": "profile.json"
     }
 ]

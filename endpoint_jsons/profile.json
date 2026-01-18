@@ -1,0 +1,66 @@
+{
+  "status": "success",
+  "data": {
+    "user_info": {
+      "id": "00458547",
+      "username": "Gina Ajans",
+      "avatar_url": "https://api.domain.com/images/user_123.jpg",
+      "is_verified": true,
+      "gender": "male",
+      "level": 32,
+      "prestige_points": 12
+    },
+    "social_stats": {
+      "following": 34,
+      "friends": 26,
+      "followers": 1198
+    },
+    "wallet": {
+      "balance": 8342,
+      "currency_symbol": "$",
+      "has_deposit_reward": true,
+      "is_vip": true,
+      "vip_text": "LÜX AYRICALIKLAR"
+    },
+    "dashboard_tools": [
+      {
+        "id": "tool_diamond",
+        "title": "Elmas",
+        "icon_url": "https://.../diamond_icon.png",
+        "action_route": "/diamonds"
+      },
+      {
+        "id": "tool_visitors",
+        "title": "Ziyaretçiler",
+        "icon_url": "https://.../visitor_icon.png",
+        "action_route": "/visitors"
+      },
+      {
+        "id": "tool_tasks",
+        "title": "Görevler",
+        "icon_url": "https://.../tasks_icon.png",
+        "action_route": "/tasks"
+      },
+      {
+        "id": "tool_family",
+        "title": "Aile",
+        "icon_url": "https://.../family_icon.png",
+        "action_route": "/family"
+      }
+    ],
+    "games": [
+      {
+        "id": 101,
+        "name": "Car Tycoon",
+        "thumbnail_url": "https://.../car_tycoon.png",
+        "action_url": "game://car_tycoon"
+      },
+      {
+        "id": 102,
+        "name": "LUDO",
+        "thumbnail_url": "https://.../ludo.png",
+        "action_url": "game://ludo"
+      }
+    ]
+  }
+}

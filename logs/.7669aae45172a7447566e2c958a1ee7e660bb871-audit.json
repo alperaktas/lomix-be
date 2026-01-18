@@ -64,6 +64,11 @@
             "date": 1768536466342,
             "name": "/root/lomix-admin/logs/mobile-2026-01-16.log",
             "hash": "4e38a6510b60e7b91c6215d06cd5670bf24721e2d4cebb8c7ab4e3b2616c4029"
+        },
+        {
+            "date": 1768715325576,
+            "name": "/root/lomix-admin/logs/mobile-2026-01-18.log",
+            "hash": "dedf799743c0d2c91850e9a218bcb95152d26b9ff821344e2b95cf1692a2d2b1"
         }
     ],
     "hashType": "sha256"
