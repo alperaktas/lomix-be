@@ -1,0 +1,27 @@
+import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
+import jwt from 'jsonwebtoken';
+
+export async function POST(req: Request) {
+    try {
+        const authHeader = req.headers.get('authorization');
+        if (authHeader) {
+            const token = authHeader.split(' ')[1];
+            try {
+                const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'gizli_anahtar'); // Mobil secret farklı olabilir
+
+                await prisma.userLog.create({
+                    data: {
+                        userId: decoded.id,
+                        action: 'MOBILE_LOGOUT',
+                        ipAddress: req.headers.get('x-forwarded-for'),
+                        userAgent: req.headers.get('user-agent')
+                    }
+                });
+            } catch (e) { }
+        }
+        return NextResponse.json({ message: 'Mobil oturum sonlandırıldı' });
+    } catch (error: any) {
+        return NextResponse.json({ message: error.message }, { status: 500 });
+    }
+}

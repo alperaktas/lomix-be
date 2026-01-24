@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    Int       @id @default(autoincrement())
+  username              String    @unique
+  email                 String    @unique
+  password              String
+  role                  String    @default("user")
+  gender                String?
+  ipAddress             String?   @map("ip_address")
+  userAgent             String?   @map("user_agent")
+  deviceModel           String?   @map("device_model")
+  avatar                String?
+  phone                 String?
+  status                String    @default("pending")
+  verificationCode      String?   @map("verification_code")
+  resetPasswordCode     String?   @map("reset_password_code")
+  resetPasswordExpires  DateTime? @map("reset_password_expires")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  userGroups            UserGroup[]
+  logs                  UserLog[]
+
+  @@map("users")
+}
+
+model Role {
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("roles")
+}
+
+model Group {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  users       UserGroup[]
+
+  @@map("groups")
+}
+
+model UserGroup {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  groupId   Int      @map("group_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@map("user_groups")
+}
+
+model Menu {
+  id       Int     @id @default(autoincrement())
+  title    String
+  url      String?
+  icon     String?
+  parentId Int?    @map("parent_id")
+  order    Int     @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  parent    Menu?  @relation("MenuHierarchy", fields: [parentId], references: [id])
+  children  Menu[] @relation("MenuHierarchy")
+
+  @@map("menus")
+}
+
+model Endpoint {
+  id             Int     @id @default(autoincrement())
+  category       String
+  method         String
+  path           String
+  description    String?
+  requestSample  String? @map("request_sample")
+  responseSample String? @map("response_sample")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("api_endpoints")
+}
+
+model Log {
+  id        Int      @id @default(autoincrement())
+  level     String
+  message   String
+  meta      String?
+  createdAt DateTime @default(now())
+
+  @@map("logs")
+}
+
+model UserLog {
+  id        Int     @id @default(autoincrement())
+  userId    Int     @map("user_id")
+  action    String
+  ipAddress String? @map("ip_address")
+  userAgent String? @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_logs")
+}
+
+model SocialAuthLog {
+  id                  Int     @id @default(autoincrement())
+  provider            String
+  incomingRequest     String?
+  verificationRequest String?
+  providerResponse    String?
+  appResponse         String?
+  errorMessage        String?
+  ipAddress           String?
+  userAgent           String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("social_auth_logs")
+}
