@@ -41,6 +41,11 @@ export default function RolesPage() {
     };
 
     useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/';
+            return;
+        }
         fetchRoles();
     }, []);
 
@@ -123,7 +128,7 @@ export default function RolesPage() {
                 </div>
             </div>
             <div className="table-responsive">
-                <table className="table card-table table-vcenter text-nowrap datatable">
+                <table className="table card-table table-vcenter text-nowrap">
                     <thead>
                         <tr>
                             <th className="w-1">ID</th>

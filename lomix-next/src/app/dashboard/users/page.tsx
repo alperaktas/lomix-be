@@ -120,7 +120,7 @@ export default function UsersPage() {
                 </div>
             </div>
             <div className="table-responsive">
-                <table className="table card-table table-vcenter text-nowrap datatable">
+                <table className="table card-table table-vcenter text-nowrap">
                     <thead>
                         <tr>
                             <th className="w-1">ID</th>

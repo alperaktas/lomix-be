@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 
@@ -6,6 +10,22 @@ export default function DashboardLayout({
 }: {
     children: React.ReactNode
 }) {
+    const router = useRouter();
+    const [isAuthorized, setIsAuthorized] = useState(false);
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            router.replace('/');
+        } else {
+            setIsAuthorized(true);
+        }
+    }, [router]);
+
+    if (!isAuthorized) {
+        return <div className="page-center p-5 text-center">Yönlendiriliyorsunuz...</div>;
+    }
+
     return (
         <div className="page">
             <Sidebar />
