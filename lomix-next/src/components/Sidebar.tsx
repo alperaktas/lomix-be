@@ -134,6 +134,15 @@ export default function Sidebar() {
                                 </li>
                             );
                         })}
+
+                        <li className="nav-item">
+                            <Link className={`nav-link ${isActive('/dashboard/api-docs') ? 'active' : ''}`} href="/dashboard/api-docs">
+                                <span className="nav-link-icon d-md-none d-lg-inline-block">
+                                    <i className="ti ti-api"></i>
+                                </span>
+                                <span className="nav-link-title">API Dokümanları</span>
+                            </Link>
+                        </li>
                     </ul>
                 </div>
             </div>

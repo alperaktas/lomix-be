@@ -2,6 +2,29 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { sendEmail, getEmailTemplate } from '@/lib/email';
 
+/**
+ * @swagger
+ * /api/mobile/auth/forgot-password:
+ *   post:
+ *     summary: Şifre sıfırlama kodu gönder
+ *     tags: [Mobile Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Kod başarıyla gönderildi
+ *       404:
+ *         description: Kullanıcı bulunamadı
+ */
 export async function POST(req: Request) {
     try {
         const body = await req.json();

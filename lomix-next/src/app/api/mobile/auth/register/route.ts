@@ -3,6 +3,43 @@ import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { sendEmail, getEmailTemplate } from '@/lib/email';
 
+/**
+ * @swagger
+ * /api/mobile/auth/register:
+ *   post:
+ *     summary: Yeni kullanıcı kaydı
+ *     tags: [Mobile Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - email
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               gender:
+ *                 type: string
+ *               deviceModel:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Kayıt başarılı, doğrulama kodu gönderildi
+ *       409:
+ *         description: Kullanıcı zaten mevcut
+ *       400:
+ *         description: Geçersiz veri
+ */
 export async function POST(req: Request) {
     try {
         const body = await req.json();

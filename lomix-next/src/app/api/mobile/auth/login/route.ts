@@ -3,6 +3,39 @@ import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
+/**
+ * @swagger
+ * /api/mobile/auth/login:
+ *   post:
+ *     summary: Mobil kullanıcı girişi
+ *     tags: [Mobile Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: test@example.com
+ *               password:
+ *                 type: string
+ *                 example: Sifre123!
+ *               deviceInfo:
+ *                 type: string
+ *                 example: iPhone 15
+ *     responses:
+ *       200:
+ *         description: Giriş başarılı
+ *       401:
+ *         description: Hatalı bilgiler
+ *       400:
+ *         description: Eksik bilgi
+ */
 export async function POST(req: Request) {
     try {
         const body = await req.json();

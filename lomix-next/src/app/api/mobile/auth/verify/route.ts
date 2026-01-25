@@ -1,6 +1,37 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
+/**
+ * @swagger
+ * /api/mobile/auth/verify:
+ *   post:
+ *     summary: Kod doğrulama (Hesap aktivasyonu veya Şifre sıfırlama)
+ *     tags: [Mobile Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - code
+ *             properties:
+ *               email:
+ *                 type: string
+ *               code:
+ *                 type: string
+ *               type:
+ *                 type: string
+ *                 enum: [activation, reset_password]
+ *     responses:
+ *       200:
+ *         description: Doğrulama başarılı
+ *       400:
+ *         description: Hatalı veya süresi dolmuş kod
+ *       404:
+ *         description: Kullanıcı bulunamadı
+ */
 export async function POST(req: Request) {
     try {
         const body = await req.json();
