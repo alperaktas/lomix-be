@@ -2,6 +2,32 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 
+/**
+ * @swagger
+ * /api/mobile/auth/reset-password:
+ *   post:
+ *     summary: Yeni şifre belirle
+ *     tags: [Mobile Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - code
+ *               - newPassword
+ *             properties:
+ *               email: { type: string }
+ *               code: { type: string }
+ *               newPassword: { type: string }
+ *     responses:
+ *       200:
+ *         description: Şifre başarıyla güncellendi
+ *       400:
+ *         description: Hatalı veya süresi dolmuş kod
+ */
 export async function POST(req: Request) {
     try {
         const body = await req.json();

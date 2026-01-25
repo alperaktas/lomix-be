@@ -15,10 +15,31 @@ export default function DashboardLayout({
 
     useEffect(() => {
         const token = localStorage.getItem('token');
+        const userStr = localStorage.getItem('user');
+
         if (!token) {
             router.replace('/');
-        } else {
+            return;
+        }
+
+        try {
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                if (user.role !== 'admin') {
+                    // Admin değilse yetkisizdir
+                    alert("Bu sayfaya erişmek için Admin yetkiniz olması gerekir.");
+                    router.replace('/');
+                    return;
+                }
+            } else {
+                // Kullanıcı datası yoksa da login'e at
+                router.replace('/');
+                return;
+            }
             setIsAuthorized(true);
+        } catch (e) {
+            console.error("Auth check error:", e);
+            router.replace('/');
         }
     }, [router]);
 

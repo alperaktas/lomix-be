@@ -32,6 +32,23 @@ export async function middleware(request: NextRequest) {
     // Biz şimdilik API güvenliğine odaklanalım.
 
     if (pathname.startsWith('/api/')) {
+        // Mobil API'ler için Public (Açık) yollar
+        const publicMobilePaths = [
+            '/api/mobile/auth/login',
+            '/api/mobile/auth/register',
+            '/api/mobile/auth/forgot-password',
+            '/api/mobile/auth/verify',
+            '/api/mobile/auth/reset-password',
+            '/api/mobile/auth/google',
+            '/api/mobile/auth/facebook',
+            '/api/mobile/auth/apple'
+        ];
+
+        // Eğer yol bu public listesinde ise JWT sorma
+        if (publicMobilePaths.some(path => pathname.startsWith(path))) {
+            return NextResponse.next();
+        }
+
         const authHeader = request.headers.get('authorization');
         const token = authHeader?.split(' ')[1];
 
@@ -40,8 +57,17 @@ export async function middleware(request: NextRequest) {
         }
 
         try {
-            // 'jose' kütüphanesi Edge Runtime uyumludur (jsonwebtoken kütüphanesi middleware'de çalışmaz!)
-            await jwtVerify(token, SECRET_KEY);
+            // JWT'yi doğrula ve içeriği al
+            const { payload } = await jwtVerify(token, SECRET_KEY);
+
+            // Eğer admin paneli API'lerine erişiliyorsa role kontrolü yap
+            const adminOnlyPaths = ['/api/users', '/api/groups', '/api/roles', '/api/menus', '/api/system', '/api/logs', '/api/docs'];
+            if (adminOnlyPaths.some(path => pathname.startsWith(path))) {
+                if (payload.role !== 'admin') {
+                    return NextResponse.json({ message: 'Yetkisiz erişim: Admin yetkisi gerekli' }, { status: 403 });
+                }
+            }
+
             return NextResponse.next();
         } catch (err) {
             return NextResponse.json({ message: 'Geçersiz veya süresi dolmuş token' }, { status: 401 });

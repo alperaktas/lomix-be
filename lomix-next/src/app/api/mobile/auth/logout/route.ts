@@ -2,6 +2,18 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import jwt from 'jsonwebtoken';
 
+/**
+ * @swagger
+ * /api/mobile/auth/logout:
+ *   post:
+ *     summary: Mobil oturumu kapat
+ *     tags: [Mobile Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Oturum kapatıldı
+ */
 export async function POST(req: Request) {
     try {
         const authHeader = req.headers.get('authorization');

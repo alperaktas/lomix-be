@@ -7,6 +7,7 @@ export default function Header() {
     const router = useRouter();
     const [user, setUser] = useState<any>(null);
     const [date, setDate] = useState<string>('');
+    const [showDropdown, setShowDropdown] = useState(false);
 
     useEffect(() => {
         // Kullanıcı bilgisini LocalStorage'dan al
@@ -17,20 +18,30 @@ export default function Header() {
             } catch (e) { }
         }
 
-        // Saat güncellemesi
         const updateClock = () => {
             const now = new Date();
             setDate(now.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' }) + ' ' + now.toLocaleTimeString('tr-TR'));
         };
         updateClock();
         const timer = setInterval(updateClock, 1000);
-        return () => clearInterval(timer);
-    }, []);
+
+        // Dropdown'ı dışarı tıklandığında kapatmak için
+        const handleClickOutside = (event: MouseEvent) => {
+            if (showDropdown && !(event.target as HTMLElement).closest('.nav-item.dropdown')) {
+                setShowDropdown(false);
+            }
+        };
+        document.addEventListener('click', handleClickOutside);
+
+        return () => {
+            clearInterval(timer);
+            document.removeEventListener('click', handleClickOutside);
+        };
+    }, [showDropdown]);
 
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        // API'ye logout isteği de atılabilir ama şimdilik client-side temizlik yeterli
         router.push('/');
     };
 
@@ -43,17 +54,27 @@ export default function Header() {
                             {date}
                         </div>
                     </div>
-                    <div className="nav-item dropdown">
-                        <a href="#" className="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown" aria-label="Open user menu">
+                    <div className={`nav-item dropdown ${showDropdown ? 'show' : ''}`}>
+                        <a
+                            href="#"
+                            className={`nav-link d-flex lh-1 text-reset p-0 ${showDropdown ? 'show' : ''}`}
+                            onClick={(e) => { e.preventDefault(); setShowDropdown(!showDropdown); }}
+                            aria-label="Open user menu"
+                            aria-expanded={showDropdown}
+                        >
                             <span className="avatar avatar-sm" style={{ backgroundImage: user?.avatar ? `url(${user.avatar})` : 'none' }}>
                                 {!user?.avatar && user?.username?.substring(0, 2).toUpperCase()}
                             </span>
                             <div className="d-none d-xl-block ps-2">
                                 <div>{user?.username || 'Admin'}</div>
-                                <div className="mt-1 small text-muted">{user?.role || 'User'}</div>
+                                <div className="mt-1 small text-muted">{user?.role || 'Admin'}</div>
                             </div>
                         </a>
-                        <div className="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                        <div
+                            className={`dropdown-menu dropdown-menu-end dropdown-menu-arrow ${showDropdown ? 'show' : ''}`}
+                            style={{ position: 'absolute', right: 0 }}
+                            data-bs-popper={showDropdown ? 'static' : ''}
+                        >
                             <a href="/dashboard/profile" className="dropdown-item">Profil</a>
                             <div className="dropdown-divider"></div>
                             <a href="#" className="dropdown-item" onClick={(e) => { e.preventDefault(); handleLogout(); }}>Çıkış Yap</a>
