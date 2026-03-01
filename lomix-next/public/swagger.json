@@ -1,0 +1,966 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Lomix Mobile API Documentation",
+    "version": "1.0.0",
+    "description": "API documentation for Lomix Mobile Application"
+  },
+  "servers": [
+    {
+      "url": "https://lomix.vercel.app",
+      "description": "API Server"
+    },
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "paths": {
+    "/api/mobile/add_story": {
+      "post": {
+        "summary": "Yeni Hikaye Ekle",
+        "tags": [
+          "Mobile Stories"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "price": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Hikaye Başarıyla Eklendi"
+          }
+        }
+      }
+    },
+    "/api/mobile/ajans_active": {
+      "get": {
+        "summary": "Aktif Yayıncılar",
+        "tags": [
+          "Mobile Agency"
+        ],
+        "responses": {
+          "200": {
+            "description": "Aktif Ajans Kullanıcıları Listesi"
+          }
+        }
+      }
+    },
+    "/api/mobile/ajans_new": {
+      "get": {
+        "summary": "Yeni Yayıncılar",
+        "tags": [
+          "Mobile Agency"
+        ],
+        "responses": {
+          "200": {
+            "description": "Yeni Ajans Kullanıcıları Listesi"
+          }
+        }
+      }
+    },
+    "/api/mobile/ajans_total": {
+      "get": {
+        "summary": "Toplam Yayıncılar",
+        "tags": [
+          "Mobile Agency"
+        ],
+        "responses": {
+          "200": {
+            "description": "Tüm Ajans Kullanıcıları İstatistik/Listesi"
+          }
+        }
+      }
+    },
+    "/api/mobile/auth/apple": {
+      "post": {
+        "summary": "Apple ile giriş/kayıt",
+        "tags": [
+          "Mobile Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "description": "Apple ID Token"
+                  },
+                  "deviceInfo": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Giriş başarılı"
+          }
+        }
+      }
+    },
+    "/api/mobile/auth/facebook": {
+      "post": {
+        "summary": "Facebook ile giriş/kayıt",
+        "tags": [
+          "Mobile Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "description": "Facebook Access Token"
+                  },
+                  "deviceInfo": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Giriş başarılı"
+          }
+        }
+      }
+    },
+    "/api/mobile/auth/forgot-password": {
+      "post": {
+        "summary": "Şifre sıfırlama kodu gönder",
+        "tags": [
+          "Mobile Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Kod başarıyla gönderildi"
+          },
+          "404": {
+            "description": "Kullanıcı bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/auth/google": {
+      "post": {
+        "summary": "Google ile giriş/kayıt",
+        "tags": [
+          "Mobile Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "description": "Google ID Token"
+                  },
+                  "deviceInfo": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Giriş başarılı"
+          }
+        }
+      }
+    },
+    "/api/mobile/auth/login": {
+      "post": {
+        "summary": "Mobil kullanıcı girişi",
+        "tags": [
+          "Mobile Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "test@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "Sifre123!"
+                  },
+                  "deviceInfo": {
+                    "type": "string",
+                    "example": "iPhone 15"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Giriş başarılı"
+          },
+          "400": {
+            "description": "Eksik bilgi"
+          },
+          "401": {
+            "description": "Hatalı bilgiler"
+          }
+        }
+      }
+    },
+    "/api/mobile/auth/logout": {
+      "post": {
+        "summary": "Mobil oturumu kapat",
+        "tags": [
+          "Mobile Auth"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Oturum kapatıldı"
+          }
+        }
+      }
+    },
+    "/api/mobile/auth/register": {
+      "post": {
+        "summary": "Yeni kullanıcı kaydı",
+        "tags": [
+          "Mobile Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "username",
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "gender": {
+                    "type": "string"
+                  },
+                  "deviceModel": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Kayıt başarılı, doğrulama kodu gönderildi"
+          },
+          "400": {
+            "description": "Geçersiz veri"
+          },
+          "409": {
+            "description": "Kullanıcı zaten mevcut"
+          }
+        }
+      }
+    },
+    "/api/mobile/auth/resend-code": {
+      "post": {
+        "summary": "Yeni OTP Kodu Gönderimi",
+        "tags": [
+          "Mobile Auth"
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Yeni Kod Gönderildi"
+          }
+        }
+      }
+    },
+    "/api/mobile/auth/reset-password": {
+      "post": {
+        "summary": "Yeni şifre belirle",
+        "tags": [
+          "Mobile Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "code",
+                  "newPassword"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string"
+                  },
+                  "newPassword": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Şifre başarıyla güncellendi"
+          },
+          "400": {
+            "description": "Hatalı veya süresi dolmuş kod"
+          }
+        }
+      }
+    },
+    "/api/mobile/auth/verify": {
+      "post": {
+        "summary": "Kod doğrulama (Hesap aktivasyonu veya Şifre sıfırlama)",
+        "tags": [
+          "Mobile Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "code"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "activation",
+                      "reset_password"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Doğrulama başarılı"
+          },
+          "400": {
+            "description": "Hatalı veya süresi dolmuş kod"
+          },
+          "404": {
+            "description": "Kullanıcı bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/families/messages": {
+      "post": {
+        "summary": "Aile grubuna toplu mesaj gönderir.",
+        "tags": [
+          "Mobile Family"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message_text": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mesaj başarıyla gönderildi"
+          },
+          "400": {
+            "description": "Hatalı istek"
+          }
+        }
+      }
+    },
+    "/api/mobile/family/messages": {
+      "get": {
+        "summary": "Aile / Ortak Mesajlar",
+        "tags": [
+          "Mobile Family"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mesaj Geçmişi Listesi"
+          }
+        }
+      }
+    },
+    "/api/mobile/profile/me": {
+      "get": {
+        "summary": "Giriş yapmış kullanıcının profil bilgilerini getirir",
+        "tags": [
+          "Mobile Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profil bilgileri"
+          }
+        }
+      }
+    },
+    "/api/mobile/profile": {
+      "get": {
+        "summary": "Kullanıcı profil bilgilerini getir",
+        "tags": [
+          "Mobile Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profil bilgileri"
+          }
+        }
+      }
+    },
+    "/api/mobile/profile/update": {
+      "post": {
+        "summary": "Profili Güncelle",
+        "tags": [
+          "Mobile Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "bio": {
+                    "type": "string"
+                  },
+                  "profileImage": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profil Güncellendi"
+          }
+        }
+      }
+    },
+    "/api/mobile/queue-status": {
+      "get": {
+        "summary": "Mail kuyruk durumunu getir",
+        "tags": [
+          "Mobile System"
+        ],
+        "responses": {
+          "200": {
+            "description": "Kuyruk istatistikleri",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "waiting": {
+                      "type": "integer"
+                    },
+                    "active": {
+                      "type": "integer"
+                    },
+                    "completed": {
+                      "type": "integer"
+                    },
+                    "failed": {
+                      "type": "integer"
+                    },
+                    "delayed": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mobile/recommended_users": {
+      "get": {
+        "summary": "Anasayfa Önerilen Kullanıcılar",
+        "tags": [
+          "Mobile Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Kullanıcı Listesi"
+          }
+        }
+      }
+    },
+    "/api/mobile/recommended-users": {
+      "get": {
+        "summary": "Önerilen kullanıcıları listele",
+        "tags": [
+          "Mobile Social"
+        ],
+        "responses": {
+          "200": {
+            "description": "Kullanıcı listesi"
+          }
+        }
+      }
+    },
+    "/api/mobile/room/create": {
+      "post": {
+        "summary": "Yeni Oda Oluştur",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "roomImage": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Oda Başarıyla Oluşturuldu",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/mobile/rooms": {
+      "get": {
+        "summary": "Canlı sesli odalar + bannerlar",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Sayfa numarası"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Odalar başarıyla getirildi."
+          }
+        }
+      }
+    },
+    "/api/mobile/rooms/video": {
+      "get": {
+        "summary": "Canlı video odaları",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Video odaları başarıyla getirildi."
+          }
+        }
+      }
+    },
+    "/api/mobile/stories/add": {
+      "post": {
+        "summary": "Yeni hikaye ekle",
+        "tags": [
+          "Mobile Stories"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "duration": {
+                    "type": "integer",
+                    "example": 24
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Başarılı"
+          }
+        }
+      }
+    },
+    "/api/mobile/stories/prices": {
+      "get": {
+        "summary": "Hikaye süre/fiyat listesini getirir",
+        "tags": [
+          "Mobile Stories"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fiyat listesi alındı."
+          }
+        }
+      }
+    },
+    "/api/mobile/stories": {
+      "post": {
+        "summary": "Yeni hikaye oluşturur",
+        "tags": [
+          "Mobile Stories"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "media_file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "duration_hours": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Hikaye başarıyla eklendi."
+          }
+        }
+      }
+    },
+    "/api/mobile/stories/users": {
+      "get": {
+        "summary": "Aktif hikayesi olan kullanıcıları getirir (story bar)",
+        "tags": [
+          "Mobile Stories"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hikayesi olan kullanıcılar listelendi."
+          }
+        }
+      }
+    },
+    "/api/mobile/story_prices": {
+      "get": {
+        "summary": "Hikaye Ücretleri Listesi",
+        "tags": [
+          "Mobile Stories"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tutar Listesi"
+          }
+        }
+      }
+    },
+    "/api/mobile/upload": {
+      "post": {
+        "summary": "Medya Yükleme (Genel)",
+        "tags": [
+          "Mobile Media"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Dosya Başarıyla Yüklendi"
+          }
+        }
+      }
+    },
+    "/api/mobile/users_hikaye": {
+      "get": {
+        "summary": "Anasayfa Hikayeleri",
+        "tags": [
+          "Mobile Stories"
+        ],
+        "responses": {
+          "200": {
+            "description": "Hikayesi Olan Kullanıcılar Listesi"
+          }
+        }
+      }
+    },
+    "/api/mobile/users/recommended": {
+      "get": {
+        "summary": "Takip / arkadaş önerileri",
+        "tags": [
+          "Mobile Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Önerilen kullanıcılar listelendi."
+          }
+        }
+      }
+    }
+  },
+  "tags": []
+}

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { spec } from '@/lib/swagger';
 
-export async function GET() {
-    return NextResponse.json(spec);
+export async function GET(request: Request) {
+    const url = new URL(request.url);
+    url.pathname = '/swagger.json';
+    return NextResponse.redirect(url);
 }

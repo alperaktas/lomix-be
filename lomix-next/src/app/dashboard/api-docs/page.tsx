@@ -14,8 +14,11 @@ export default function ApiDocsPage() {
     const [spec, setSpec] = useState(null);
 
     useEffect(() => {
-        fetch('/api/docs')
-            .then((res) => res.json())
+        fetch('/swagger.json')
+            .then((res) => {
+                if (!res.ok) throw new Error('Swagger spec not found');
+                return res.json();
+            })
             .then((data) => setSpec(data))
             .catch((err) => console.error('Swagger spec yüklenemedi:', err));
     }, []);

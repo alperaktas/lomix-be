@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
 
 /**
  * @swagger
@@ -11,41 +12,38 @@ import { NextResponse } from 'next/server';
  *         description: Kullanıcı listesi
  */
 export async function GET() {
-    return NextResponse.json([
-        {
-            "id": 1,
-            "name": "Ayşe Yılmaz",
-            "image_url": "https://i.pravatar.cc/150?img=32",
-            "is_vip": true,
-            "action_type": "hi"
-        },
-        {
-            "id": 2,
-            "name": "Mehmet Demir",
-            "image_url": "https://i.pravatar.cc/150?img=44",
-            "is_vip": true,
-            "action_type": "hi"
-        },
-        {
-            "id": 3,
-            "name": "Zeynep Kaya",
-            "image_url": "https://i.pravatar.cc/150?img=22",
-            "is_vip": false,
-            "action_type": "chatRoom"
-        },
-        {
-            "id": 4,
-            "name": "Ali Çelik",
-            "image_url": "https://i.pravatar.cc/150?img=11",
-            "is_vip": true,
-            "action_type": "hi"
-        },
-        {
-            "id": 5,
-            "name": "Fatma Şahin",
-            "image_url": "https://i.pravatar.cc/150?img=5",
-            "is_vip": false,
-            "action_type": "hi"
-        }
-    ]);
+    try {
+        // En yüksek prestij puanına veya en son eklenenlere göre önerilen kullanıcıları getirebiliriz
+        const users = await prisma.user.findMany({
+            take: 20,
+            orderBy: {
+                createdAt: 'desc', // default order
+            },
+            include: {
+                rooms: {
+                    where: {
+                        isLive: true
+                    },
+                    take: 1
+                }
+            }
+        });
+
+        const formattedUsers = users.map(user => {
+            return {
+                name: user.fullName || user.username || 'Bilinmeyen Kullanıcı',
+                image_url: user.avatar || 'https://i.pravatar.cc/150?img=' + (user.id % 70), // Fallback image if avatar is missing
+                is_vip: user.isVip || false,
+                action_type: (user.rooms && user.rooms.length > 0) ? 'chatRoom' : 'hi'
+            };
+        });
+
+        return NextResponse.json(formattedUsers);
+    } catch (error) {
+        console.error('Error fetching recommended users:', error);
+        return NextResponse.json(
+            { error: 'Önerilen kullanıcılar alınırken bir hata oluştu.' },
+            { status: 500 }
+        );
+    }
 }
