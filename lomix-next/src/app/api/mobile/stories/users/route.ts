@@ -1,76 +1,56 @@
 import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
+import { getCurrentUserId } from '@/lib/current-user';
 
 /**
  * @swagger
  * /api/mobile/stories/users:
  *   get:
- *     summary: Hikayesi olan kullanıcıları listele
+ *     summary: Aktif hikayesi olan kullanıcıları getirir (story bar)
  *     tags: [Mobile Stories]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Kullanıcı listesi
+ *         description: Hikayesi olan kullanıcılar listelendi.
  */
-export async function GET() {
-    return NextResponse.json([
-        {
-            "id": 1,
-            "first_name": "Ahmet",
-            "last_name": "Yılmaz",
-            "image_url": "https://i.pravatar.cc/300?img=11"
-        },
-        {
-            "id": 2,
-            "first_name": "Ayşe",
-            "last_name": "Demir",
-            "image_url": "https://i.pravatar.cc/300?img=5"
-        },
-        {
-            "id": 3,
-            "first_name": "Mehmet",
-            "last_name": "Öztürk",
-            "image_url": "https://i.pravatar.cc/300?img=3"
-        },
-        {
-            "id": 4,
-            "first_name": "Fatma",
-            "last_name": "Kaya",
-            "image_url": "https://i.pravatar.cc/300?img=9"
-        },
-        {
-            "id": 5,
-            "first_name": "Mustafa",
-            "last_name": "Çelik",
-            "image_url": "https://i.pravatar.cc/300?img=13"
-        },
-        {
-            "id": 6,
-            "first_name": "Zeynep",
-            "last_name": "Şahin",
-            "image_url": "https://i.pravatar.cc/300?img=24"
-        },
-        {
-            "id": 7,
-            "first_name": "Ali",
-            "last_name": "Yıldız",
-            "image_url": "https://i.pravatar.cc/300?img=68"
-        },
-        {
-            "id": 8,
-            "first_name": "Elif",
-            "last_name": "Aydın",
-            "image_url": "https://i.pravatar.cc/300?img=44"
-        },
-        {
-            "id": 9,
-            "first_name": "Burak",
-            "last_name": "Arslan",
-            "image_url": "https://i.pravatar.cc/300?img=53"
-        },
-        {
-            "id": 10,
-            "first_name": "Esra",
-            "last_name": "Doğan",
-            "image_url": "https://i.pravatar.cc/300?img=49"
-        }
-    ]);
+export async function GET(request: Request) {
+    try {
+        // Süresi dolmamış hikayeleri olan kullanıcıları al
+        const now = new Date();
+
+        // Distinct userId ile hikayeleri al
+        const activeStories = await prisma.story.findMany({
+            where: {
+                expiresAt: { gt: now }
+            },
+            distinct: ['userId'],
+            include: {
+                user: {
+                    select: {
+                        fullName: true,
+                        username: true,
+                        avatar: true
+                    }
+                }
+            }
+        });
+
+        const usersData = activeStories.map(story => {
+            const user = story.user;
+            const nameParts = (user?.fullName || user?.username || "").trim().split(" ");
+            const first_name = nameParts[0] || "";
+            const last_name = nameParts.slice(1).join(" ") || "";
+
+            return {
+                first_name,
+                last_name,
+                image_url: user?.avatar || null
+            };
+        });
+
+        return NextResponse.json(usersData);
+    } catch (error: any) {
+        return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    }
 }

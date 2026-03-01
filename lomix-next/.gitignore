@@ -36,7 +36,7 @@ yarn-error.log*
 
 # vercel
 .vercel
-
+logs/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
@@ -45,3 +45,4 @@ next-env.d.ts
 
 !TODO.md
 !env.example
+.vscode/*

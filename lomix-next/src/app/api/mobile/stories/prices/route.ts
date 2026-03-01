@@ -4,28 +4,29 @@ import { NextResponse } from 'next/server';
  * @swagger
  * /api/mobile/stories/prices:
  *   get:
- *     summary: Hikaye fiyatlarını getir
+ *     summary: Hikaye süre/fiyat listesini getirir
  *     tags: [Mobile Stories]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Fiyat listesi
+ *         description: Fiyat listesi alındı.
  */
 export async function GET() {
-    return NextResponse.json([
-        {
-            "duration": 6,
-            "cost": 50,
-            "label": "6 saat"
-        },
-        {
-            "duration": 12,
-            "cost": 100,
-            "label": "12 saat"
-        },
-        {
-            "duration": 24,
-            "cost": 2000,
-            "label": "24 saat"
-        }
-    ]);
+    return NextResponse.json({
+        success: true,
+        message: "Fiyat listesi alındı.",
+        data: [
+            {
+                duration_hours: 6,
+                cost: 50,
+                label: "6 Saat"
+            },
+            {
+                duration_hours: 24,
+                cost: 2000,
+                label: "24 Saat"
+            }
+        ]
+    });
 }

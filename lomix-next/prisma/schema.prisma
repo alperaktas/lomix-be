@@ -23,17 +23,37 @@ model User {
   verificationCode      String?   @map("verification_code")
   resetPasswordCode     String?   @map("reset_password_code")
   resetPasswordExpires  DateTime? @map("reset_password_expires")
+  
+  // New User Profile Fields
+  fullName              String?   @map("full_name")
+  isVerified            Boolean   @default(false) @map("is_verified")
+  level                 Int       @default(1)
+  prestigePoints        Int       @default(0) @map("prestige_points")
+  isVip                 Boolean   @default(false) @map("is_vip")
+  
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
   userGroups            UserGroup[]
   logs                  UserLog[]
+
+  // Realations
+  wallet                Wallet?
+  stories               Story[]
+  rooms                 Room[]
+  sentFamilyMessages    FamilyMessage[]
+  
+  // Follows & Friends
+  followers             UserFollow[] @relation("followers")
+  following             UserFollow[] @relation("following")
+  friends1              UserFriend[] @relation("user1")
+  friends2              UserFriend[] @relation("user2")
 
   @@map("users")
 }
 
 model Role {
   id        Int      @id @default(autoincrement())
-  name      String
+  name      String   @unique
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -60,6 +80,7 @@ model UserGroup {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, groupId])
   @@map("user_groups")
 }
 
@@ -130,3 +151,113 @@ model SocialAuthLog {
 
   @@map("social_auth_logs")
 }
+
+model Wallet {
+  id               Int      @id @default(autoincrement())
+  userId           Int      @unique @map("user_id")
+  balance          Int      @default(0)
+  currency         String   @default("USD")
+  currencySymbol   String   @default("$") @map("currency_symbol")
+  hasDepositReward Boolean  @default(false) @map("has_deposit_reward")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("wallets")
+}
+
+model Story {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  mediaUrl      String   @map("media_url")
+  durationHours Int      @default(24) @map("duration_hours")
+  isSeen        Boolean  @default(false) @map("is_seen")
+  createdAt     DateTime @default(now()) @map("created_at")
+  expiresAt     DateTime @map("expires_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("stories")
+}
+
+model Room {
+  id           Int      @id @default(autoincrement())
+  roomId       String   @unique @map("room_id")
+  name         String
+  ownerId      Int      @map("owner_id")
+  isLive       Boolean  @default(false) @map("is_live")
+  mode         String   @default("pk") // e.g. pk, chat, normal
+  type         String   @default("voice") // voice or video
+  minLevel     Int      @default(1) @map("min_level")
+  thumbnailUrl String?  @map("thumbnail_url")
+  viewerCount  Int      @default(0) @map("viewer_count")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  owner User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  tags  RoomTag[]
+
+  @@map("rooms")
+}
+
+model RoomTag {
+  id       Int     @id @default(autoincrement())
+  roomId   Int     @map("room_id")
+  text     String
+  colorHex String? @map("color_hex")
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@map("room_tags")
+}
+
+model FamilyMessage {
+  id          Int      @id @default(autoincrement())
+  senderId    Int      @map("sender_id")
+  messageText String   @map("message_text")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@map("family_messages")
+}
+
+model RoomBanner {
+  id        Int      @id @default(autoincrement())
+  title     String
+  imageUrl  String   @map("image_url")
+  actionUrl String?  @map("action_url")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("room_banners")
+}
+
+model UserFollow {
+  followerId  Int @map("follower_id")
+  followingId Int @map("following_id")
+  
+  follower    User @relation("following", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User @relation("followers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@id([followerId, followingId])
+  @@map("user_follows")
+}
+
+model UserFriend {
+  user1Id Int @map("user1_id")
+  user2Id Int @map("user2_id")
+
+  user1   User @relation("user1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2   User @relation("user2", fields: [user2Id], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@id([user1Id, user2Id])
+  @@map("user_friends")
+}
+

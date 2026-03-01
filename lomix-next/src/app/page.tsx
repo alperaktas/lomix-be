@@ -49,7 +49,6 @@ export default function LoginPage() {
               // Yedek logo (eğer img/logo.png yoksa)
               e.currentTarget.style.display = 'none';
             }} />
-            <span className="ms-2" style={{ fontSize: '24px', fontWeight: 'bold' }}>LOMIX</span>
           </a>
         </div>
         <div className="card card-md">

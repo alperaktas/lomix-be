@@ -8,9 +8,30 @@ const SECRET_KEY = new TextEncoder().encode(
 );
 
 export async function middleware(request: NextRequest) {
+    // 1. CORS Preflight İsteği (OPTIONS)
+    if (request.method === 'OPTIONS') {
+        return new NextResponse(null, {
+            status: 204,
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+                'Access-Control-Max-Age': '86400',
+            },
+        });
+    }
+
     const { pathname } = request.nextUrl;
 
-    // 1. Auth gerektirmeyen Public yollar
+    // Helper: Response'a CORS header'ları ekler
+    const addCorsHeaders = (res: NextResponse) => {
+        res.headers.set('Access-Control-Allow-Origin', '*');
+        res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+        return res;
+    };
+
+    // 2. Auth gerektirmeyen Public yollar
     const publicPaths = [
         '/',
         '/api/auth/login',
@@ -22,15 +43,10 @@ export async function middleware(request: NextRequest) {
     ];
 
     if (publicPaths.some(path => pathname.startsWith(path))) {
-        return NextResponse.next();
+        return addCorsHeaders(NextResponse.next());
     }
 
-    // 2. Token Kontrolü (Hem API hem Dashboard için)
-    // Dashboard sayfaları için cookie kontrolü, API için Header kontrolü yapabiliriz.
-    // Ancak basitleştirmek adına şimdilik client-side auth kullanıyoruz dashboard'da.
-    // Yine de güvenliği artırmak için Dashboard'a giden isteklerde cookie bakılabilir.
-    // Biz şimdilik API güvenliğine odaklanalım.
-
+    // 3. API İstekleri Kontrolü
     if (pathname.startsWith('/api/')) {
         // Mobil API'ler için Public (Açık) yollar
         const publicMobilePaths = [
@@ -46,14 +62,14 @@ export async function middleware(request: NextRequest) {
 
         // Eğer yol bu public listesinde ise JWT sorma
         if (publicMobilePaths.some(path => pathname.startsWith(path))) {
-            return NextResponse.next();
+            return addCorsHeaders(NextResponse.next());
         }
 
         const authHeader = request.headers.get('authorization');
         const token = authHeader?.split(' ')[1];
 
         if (!token) {
-            return NextResponse.json({ message: 'Yetkisiz erişim: Token yok' }, { status: 401 });
+            return addCorsHeaders(NextResponse.json({ message: 'Yetkisiz erişim: Token yok' }, { status: 401 }));
         }
 
         try {
@@ -64,27 +80,17 @@ export async function middleware(request: NextRequest) {
             const adminOnlyPaths = ['/api/users', '/api/groups', '/api/roles', '/api/menus', '/api/system', '/api/logs', '/api/docs'];
             if (adminOnlyPaths.some(path => pathname.startsWith(path))) {
                 if (payload.role !== 'admin') {
-                    return NextResponse.json({ message: 'Yetkisiz erişim: Admin yetkisi gerekli' }, { status: 403 });
+                    return addCorsHeaders(NextResponse.json({ message: 'Yetkisiz erişim: Admin yetkisi gerekli' }, { status: 403 }));
                 }
             }
 
-            return NextResponse.next();
+            return addCorsHeaders(NextResponse.next());
         } catch (err) {
-            return NextResponse.json({ message: 'Geçersiz veya süresi dolmuş token' }, { status: 401 });
+            return addCorsHeaders(NextResponse.json({ message: 'Geçersiz veya süresi dolmuş token' }, { status: 401 }));
         }
     }
 
-    // Dashboard sayfaları (Server-side koruma isterseniz burayı açın)
-    /*
-    if (pathname.startsWith('/dashboard')) {
-        const token = request.cookies.get('token')?.value;
-        if (!token) {
-            return NextResponse.redirect(new URL('/', request.url));
-        }
-    }
-    */
-
-    return NextResponse.next();
+    return addCorsHeaders(NextResponse.next());
 }
 
 export const config = {
