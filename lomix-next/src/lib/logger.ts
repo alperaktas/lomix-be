@@ -20,9 +20,15 @@ if (logChannels.includes('console')) {
 }
 
 // 2. Dosya Loglama
+// Vercel gibi serverless ortamlarda dosya sistemine yazmak 'EROFS' (read-only) hatasına neden olur.
+// Eğer file loglama açıksa, tmp dizinini kullanmasını sağlayabiliriz.
 if (logChannels.includes('file')) {
+    const logDirectory = process.env.VERCEL
+        ? '/tmp/logs'
+        : path.join(process.cwd(), 'logs');
+
     transports.push(new winston.transports.DailyRotateFile({
-        filename: path.join(process.cwd(), 'logs', 'application-%DATE%.log'),
+        filename: path.join(logDirectory, 'application-%DATE%.log'),
         datePattern: 'YYYY-MM-DD',
         zippedArchive: true,
         maxSize: '20m',
