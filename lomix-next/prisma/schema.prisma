@@ -47,6 +47,9 @@ model User {
   following             UserFollow[] @relation("following")
   friends1              UserFriend[] @relation("user1")
   friends2              UserFriend[] @relation("user2")
+  // Agency Relation
+  ownedAgency           Agency?         @relation("AgencyOwner")
+  agencyMembership      AgencyMember?
 
   @@map("users")
 }
@@ -261,3 +264,53 @@ model UserFriend {
   @@map("user_friends")
 }
 
+model StoryPrice {
+  id            Int      @id @default(autoincrement())
+  durationHours Int      @map("duration_hours")
+  cost          Int
+  label         String
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("story_prices")
+}
+
+model Agency {
+  id          Int      @id @default(autoincrement())
+  name        String
+  ownerId     Int      @unique @map("owner_id")
+  logo        String?
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  owner       User           @relation("AgencyOwner", fields: [ownerId], references: [id])
+  members     AgencyMember[]
+  invites     AgencyInvite[]
+
+  @@map("agencies")
+}
+
+model AgencyMember {
+  id        Int      @id @default(autoincrement())
+  agencyId  Int      @map("agency_id")
+  userId    Int      @unique @map("user_id")
+  status    String   @default("pending") // pending, approved, rejected
+  createdAt DateTime @default(now()) @map("created_at")
+
+  agency    Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("agency_members")
+}
+
+model AgencyInvite {
+  id        Int      @id @default(autoincrement())
+  agencyId  Int      @map("agency_id")
+  code      String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  agency    Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@map("agency_invites")
+}

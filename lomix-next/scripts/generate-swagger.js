@@ -12,12 +12,12 @@ const options = {
         },
         servers: [
             {
-                url: process.env.NEXT_PUBLIC_API_URL || 'https://lomix.vercel.app',
-                description: 'API Server',
+                url: 'http://localhost:3000',
+                description: 'Local server (Development)',
             },
             {
-                url: 'http://localhost:3000',
-                description: 'Development server',
+                url: process.env.NEXT_PUBLIC_API_URL || 'https://lomix.vercel.app',
+                description: 'Production server',
             }
         ],
         components: {

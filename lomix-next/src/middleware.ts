@@ -8,41 +8,44 @@ const SECRET_KEY = new TextEncoder().encode(
 );
 
 export async function middleware(request: NextRequest) {
+    const { pathname } = request.nextUrl;
+    console.log(`[Middleware] Request Path: ${pathname}, Method: ${request.method}`);
+
     // 1. CORS Preflight İsteği (OPTIONS)
     if (request.method === 'OPTIONS') {
         return new NextResponse(null, {
             status: 204,
             headers: {
                 'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+                'Access-Control-Allow-Headers': '*',
                 'Access-Control-Max-Age': '86400',
             },
         });
     }
 
-    const { pathname } = request.nextUrl;
-
     // Helper: Response'a CORS header'ları ekler
     const addCorsHeaders = (res: NextResponse) => {
         res.headers.set('Access-Control-Allow-Origin', '*');
-        res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-        res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+        res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+        res.headers.set('Access-Control-Allow-Headers', '*');
         return res;
     };
 
     // 2. Auth gerektirmeyen Public yollar
     const publicPaths = [
-        '/',
         '/api/auth/login',
         '/api/auth/register',
         '/api/auth/forgot-password',
+        '/api/docs',
+        '/swagger.json',
         '/img',
         '/libs',
-        '/uploads' // Statik dosyalar
+        '/uploads'
     ];
 
-    if (publicPaths.some(path => pathname.startsWith(path))) {
+    // Tam eşleşme veya bir alt yol ise izin ver
+    if (pathname === '/' || publicPaths.some(path => pathname.startsWith(path))) {
         return addCorsHeaders(NextResponse.next());
     }
 
@@ -77,7 +80,7 @@ export async function middleware(request: NextRequest) {
             const { payload } = await jwtVerify(token, SECRET_KEY);
 
             // Eğer admin paneli API'lerine erişiliyorsa role kontrolü yap
-            const adminOnlyPaths = ['/api/users', '/api/groups', '/api/roles', '/api/menus', '/api/system', '/api/logs', '/api/docs'];
+            const adminOnlyPaths = ['/api/users', '/api/groups', '/api/roles', '/api/menus', '/api/system', '/api/logs'];
             if (adminOnlyPaths.some(path => pathname.startsWith(path))) {
                 if (payload.role !== 'admin') {
                     return addCorsHeaders(NextResponse.json({ message: 'Yetkisiz erişim: Admin yetkisi gerekli' }, { status: 403 }));
@@ -96,6 +99,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
     matcher: [
         '/dashboard/:path*',
-        '/api/:path*'
+        '/api/:path*',
+        '/swagger.json'
     ],
 };

@@ -47,3 +47,6 @@ next-env.d.ts
 !TODO.md
 !env.example
 .vscode/*
+
+endpoint_jsons/*
+endpoints_map.json

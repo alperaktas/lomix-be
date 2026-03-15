@@ -9,39 +9,35 @@ export async function GET(request: Request) {
             return NextResponse.json({ status: false, message: "Unauthorized" }, { status: 401 });
         }
 
+        // @ts-ignore
         const agency = await prisma.agency.findUnique({
             where: { ownerId: userId }
         });
 
         if (!agency) {
-            return NextResponse.json({ status: false, message: "Agency not found" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Ajans bulunamadı" }, { status: 404 });
         }
 
-        const activeMembers = await prisma.agencyMember.findMany({
-            where: {
+        // Rastgele 8 haneli kod oluştur
+        const inviteCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7); // 7 gün geçerli
+
+        // @ts-ignore
+        await prisma.agencyInvite.create({
+            data: {
                 agencyId: agency.id,
-                status: "approved"
-            },
-            include: {
-                user: {
-                    select: {
-                        id: true,
-                        fullName: true,
-                        username: true,
-                        avatar: true
-                    }
-                }
+                code: inviteCode,
+                expiresAt: expiresAt
             }
         });
 
         return NextResponse.json({
             status: true,
-            data: activeMembers.map(m => ({
-                user_id: String(m.userId),
-                username: m.user.fullName || m.user.username,
-                avatar: m.user.avatar || "/img/avatars/default.png",
-                is_active: true
-            }))
+            message: "Link oluşturuldu.",
+            data: {
+                url: `https://lomix.com/agency/join/${inviteCode}`
+            }
         });
     } catch (error: any) {
         return NextResponse.json({ status: false, message: error.message }, { status: 500 });

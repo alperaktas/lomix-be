@@ -7,12 +7,12 @@
   },
   "servers": [
     {
-      "url": "https://lomix.vercel.app",
-      "description": "API Server"
+      "url": "http://localhost:3000",
+      "description": "Local server (Development)"
     },
     {
-      "url": "http://localhost:3000",
-      "description": "Development server"
+      "url": "https://lomix.vercel.app",
+      "description": "Production server"
     }
   ],
   "components": {
@@ -25,81 +25,6 @@
     }
   },
   "paths": {
-    "/api/mobile/add_story": {
-      "post": {
-        "summary": "Yeni Hikaye Ekle",
-        "tags": [
-          "Mobile Stories"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "file": {
-                    "type": "string",
-                    "format": "binary"
-                  },
-                  "price": {
-                    "type": "integer"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Hikaye Başarıyla Eklendi"
-          }
-        }
-      }
-    },
-    "/api/mobile/ajans_active": {
-      "get": {
-        "summary": "Aktif Yayıncılar",
-        "tags": [
-          "Mobile Agency"
-        ],
-        "responses": {
-          "200": {
-            "description": "Aktif Ajans Kullanıcıları Listesi"
-          }
-        }
-      }
-    },
-    "/api/mobile/ajans_new": {
-      "get": {
-        "summary": "Yeni Yayıncılar",
-        "tags": [
-          "Mobile Agency"
-        ],
-        "responses": {
-          "200": {
-            "description": "Yeni Ajans Kullanıcıları Listesi"
-          }
-        }
-      }
-    },
-    "/api/mobile/ajans_total": {
-      "get": {
-        "summary": "Toplam Yayıncılar",
-        "tags": [
-          "Mobile Agency"
-        ],
-        "responses": {
-          "200": {
-            "description": "Tüm Ajans Kullanıcıları İstatistik/Listesi"
-          }
-        }
-      }
-    },
     "/api/mobile/auth/apple": {
       "post": {
         "summary": "Apple ile giriş/kayıt",
@@ -512,45 +437,9 @@
         }
       }
     },
-    "/api/mobile/family/messages": {
-      "get": {
-        "summary": "Aile / Ortak Mesajlar",
-        "tags": [
-          "Mobile Family"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Mesaj Geçmişi Listesi"
-          }
-        }
-      }
-    },
     "/api/mobile/profile/me": {
       "get": {
         "summary": "Giriş yapmış kullanıcının profil bilgilerini getirir",
-        "tags": [
-          "Mobile Profile"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Profil bilgileri"
-          }
-        }
-      }
-    },
-    "/api/mobile/profile": {
-      "get": {
-        "summary": "Kullanıcı profil bilgilerini getir",
         "tags": [
           "Mobile Profile"
         ],
@@ -673,60 +562,6 @@
         }
       }
     },
-    "/api/mobile/room/create": {
-      "post": {
-        "summary": "Yeni Oda Oluştur",
-        "tags": [
-          "Mobile Rooms"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "title": {
-                    "type": "string"
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "roomImage": {
-                    "type": "string",
-                    "format": "binary"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Oda Başarıyla Oluşturuldu",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "boolean"
-                    },
-                    "message": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/mobile/rooms": {
       "get": {
         "summary": "Canlı sesli odalar + bannerlar",
@@ -807,24 +642,6 @@
         }
       }
     },
-    "/api/mobile/stories/prices": {
-      "get": {
-        "summary": "Hikaye süre/fiyat listesini getirir",
-        "tags": [
-          "Mobile Stories"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Fiyat listesi alındı."
-          }
-        }
-      }
-    },
     "/api/mobile/stories": {
       "post": {
         "summary": "Yeni hikaye oluşturur",
@@ -875,24 +692,6 @@
         "responses": {
           "200": {
             "description": "Hikayesi olan kullanıcılar listelendi."
-          }
-        }
-      }
-    },
-    "/api/mobile/story_prices": {
-      "get": {
-        "summary": "Hikaye Ücretleri Listesi",
-        "tags": [
-          "Mobile Stories"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Tutar Listesi"
           }
         }
       }
