@@ -9,10 +9,7 @@ import {
   ShieldCheck,
   FileText,
   Settings,
-  Terminal,
-  ChevronRight,
-  MonitorPlay,
-  History
+  ChevronRight
 } from "lucide-react"
 
 import {
@@ -27,26 +24,21 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarRail,
+  useSidebar
 } from "@/components/ui/sidebar"
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
+import { cn } from "@/lib/utils"
 
-// Menü Verisi
 const data = {
-  user: {
-    name: "Admin",
-    email: "admin@lomix.com",
-    avatar: "/avatars/admin.jpg",
-  },
   navMain: [
     {
       title: "Dashboard",
       url: "/dashboard",
       icon: LayoutDashboard,
-      isActive: true,
     },
     {
       title: "Kullanıcı Yönetimi",
@@ -69,7 +61,7 @@ const data = {
         },
         {
           title: "Sistem Logları",
-          url: "/dashboard/logs",
+          url: "/dashboard/system-logs",
         },
       ],
     },
@@ -79,93 +71,152 @@ const data = {
       icon: Settings,
     },
   ],
-  navSecondary: [
-    {
-      title: "API Dokümanları",
-      url: "/dashboard/api-docs",
-      icon: Terminal,
-    },
-  ],
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
+  const { state, setOpen, open } = useSidebar()
+  const [isHovered, setIsHovered] = React.useState(false)
+  const wasExpandedRef = React.useRef(open)
+
+  // Hover anında state'i güncelle
+  const handleMouseEnter = () => {
+    if (!open) {
+      wasExpandedRef.current = false
+      setOpen(true)
+      setIsHovered(true)
+    } else {
+      wasExpandedRef.current = true
+    }
+  }
+
+  const handleMouseLeave = () => {
+    if (isHovered && !wasExpandedRef.current) {
+      setOpen(false)
+      setIsHovered(false)
+    }
+  }
 
   return (
-    <Sidebar collapsible="icon" {...props} className="border-r border-border bg-sidebar">
-      <SidebarHeader className="h-16 border-b border-border flex items-center justify-center">
-        <Link href="/dashboard" className="flex items-center gap-2 px-4">
-             <span className="flex font-bold text-2xl tracking-tighter">
-                <span className="text-blue-500">L</span>
-                <span className="text-red-500">O</span>
-                <span className="text-yellow-500">M</span>
-                <span className="text-green-500">I</span>
-                <span className="text-purple-500">X</span>
+    <Sidebar
+      collapsible="icon"
+      {...props}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className={cn(
+        "border-r border-border transition-all duration-300 ease-in-out",
+        !open && "shadow-none",
+        isHovered && "shadow-2xl z-50"
+      )}
+    >
+      <SidebarHeader className="h-16 border-b border-border p-0 flex flex-row items-center bg-card overflow-hidden">
+        <Link
+          href="/dashboard"
+          className={cn(
+            "flex h-full items-center transition-all duration-300 w-full px-2.5",
+            open && "px-4"
+          )}
+        >
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background shadow-sm border border-border/60">
+            <img
+              src="/img/logo.png"
+              alt="Lomix"
+              className="h-5 w-5 object-contain"
+            />
+          </div>
+          {open && (
+            <span className="font-bold text-base tracking-tighter whitespace-nowrap animate-in fade-in duration-500 ml-3 text-black">
+              Lomix Admin
             </span>
+          )}
         </Link>
       </SidebarHeader>
-      <SidebarContent>
+
+      <SidebarContent className="no-scrollbar overflow-x-hidden bg-card">
         <SidebarMenu className="px-2 py-4">
           {data.navMain.map((item) => {
-             const active = pathname === item.url || item.children?.some(child => pathname === child.url)
-             
-             if (item.children) {
-                return (
-                    <Collapsible
-                      key={item.title}
-                      asChild
-                      defaultOpen={active}
-                      className="group/collapsible"
-                    >
-                      <SidebarMenuItem>
-                        <CollapsibleTrigger asChild>
-                          <SidebarMenuButton tooltip={item.title} isActive={active}>
-                            {item.icon && <item.icon />}
-                            <span>{item.title}</span>
-                            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                          </SidebarMenuButton>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <SidebarMenuSub>
-                            {item.children?.map((subItem) => (
-                              <SidebarMenuSubItem key={subItem.title}>
-                                <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
-                                  <Link href={subItem.url}>
-                                    <span>{subItem.title}</span>
-                                  </Link>
-                                </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>
-                            ))}
-                          </SidebarMenuSub>
-                        </CollapsibleContent>
-                      </SidebarMenuItem>
-                    </Collapsible>
-                )
-             }
+            const active = pathname === item.url || item.children?.some(child => pathname === child.url)
 
-             return (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title} isActive={pathname === item.url}>
-                    <Link href={item.url}>
-                      {item.icon && <item.icon />}
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+            if (item.children) {
+              return (
+                <Collapsible
+                  key={item.title}
+                  asChild
+                  defaultOpen={active}
+                  className="group/collapsible"
+                >
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton
+                        tooltip={!open ? item.title : undefined}
+                        isActive={active}
+                        className={cn(
+                          "transition-all duration-200",
+                          active && "bg-primary/5 text-primary border-r-2 border-r-primary rounded-none shadow-[inset_4px_0_0_0_rgba(var(--primary),1)]"
+                        )}
+                      >
+                        {item.icon && <item.icon className={cn(active && "text-primary")} />}
+                        <span className={cn(active && "font-bold text-primary")}>{item.title}</span>
+                        <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        {item.children?.map((subItem) => (
+                          <SidebarMenuSubItem key={subItem.title}>
+                            <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
+                              <Link href={subItem.url} className={cn("whitespace-nowrap transition-colors", pathname === subItem.url && "text-primary font-bold")}>
+                                <span>{subItem.title}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
               )
+            }
+
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton
+                  asChild
+                  tooltip={!open ? item.title : undefined}
+                  isActive={pathname === item.url}
+                  className={cn(
+                    "transition-all duration-200",
+                    pathname === item.url && "bg-primary/5 text-primary border-r-2 border-r-primary rounded-none"
+                  )}
+                >
+                  <Link href={item.url}>
+                    {item.icon && <item.icon className={cn(pathname === item.url && "text-primary")} />}
+                    <span className={cn("text-black", pathname === item.url && "font-bold text-primary")}>
+                      {item.title}
+                    </span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
           })}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter className="border-t border-border p-4">
-          <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <Users className="h-4 w-4 text-primary" />
-              </div>
-              <div className="flex flex-col text-sm truncate">
-                <span className="font-medium text-foreground">Admin</span>
-                <span className="text-muted-foreground text-xs">admin@lomix.com</span>
-              </div>
+
+      <SidebarFooter className="border-t border-border p-0 min-h-14 bg-card overflow-hidden">
+        <div className={cn(
+          "flex h-full items-center transition-all duration-300 py-3 px-2.5",
+          open && "px-4"
+        )}>
+          <div className="h-8 w-8 shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
+            <Users className="h-4 w-4 text-primary" />
           </div>
+          {open && (
+            <div className="flex flex-col text-sm truncate animate-in fade-in duration-300 ml-3 whitespace-nowrap">
+              <span className="font-semibold text-black leading-none">Admin</span>
+              <span className="text-muted-foreground text-[10px] mt-1 uppercase tracking-tighter">Lomix Panel</span>
+            </div>
+          )}
+        </div>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
