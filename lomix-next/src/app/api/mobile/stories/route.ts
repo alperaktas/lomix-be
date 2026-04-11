@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
         const userId = await getCurrentUserId(request);
 
         if (!userId) {
-            return NextResponse.json({ message: "Yetkisiz erişim" }, { status: 401 });
+            return ApiResponseHelper.error("Yetkisiz erişim", 401);
         }
 
         const formData = await request.formData();
@@ -51,15 +51,11 @@ export async function POST(request: Request) {
             }
         });
 
-        return NextResponse.json({
-            success: true,
-            message: "Hikaye başarıyla eklendi.",
-            data: {
-                story_id: `st_${newStory.id}`,
-                created_at: newStory.createdAt.toISOString()
-            }
-        }, { status: 201 });
-    } catch (error) {
-        return NextResponse.json({ success: false, message: "Hikaye eklenemedi." }, { status: 400 });
+        return ApiResponseHelper.success({
+            story_id: `st_${newStory.id}`,
+            created_at: newStory.createdAt.toISOString()
+        }, "Hikaye başarıyla eklendi.", 201);
+    } catch (error: any) {
+        return ApiResponseHelper.error(error.message || "Hikaye eklenemedi.", 400);
     }
 }

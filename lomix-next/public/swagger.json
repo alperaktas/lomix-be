@@ -402,41 +402,6 @@
         }
       }
     },
-    "/api/mobile/families/messages": {
-      "post": {
-        "summary": "Aile grubuna toplu mesaj gönderir.",
-        "tags": [
-          "Mobile Family"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "message_text": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Mesaj başarıyla gönderildi"
-          },
-          "400": {
-            "description": "Hatalı istek"
-          }
-        }
-      }
-    },
     "/api/mobile/profile/me": {
       "get": {
         "summary": "Giriş yapmış kullanıcının profil bilgilerini getirir",
@@ -626,7 +591,11 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "duration": {
+                  "mediaUrl": {
+                    "type": "string",
+                    "example": "https://example.com/video.mp4"
+                  },
+                  "durationHours": {
                     "type": "integer",
                     "example": 24
                   }
@@ -638,6 +607,12 @@
         "responses": {
           "200": {
             "description": "Başarılı"
+          },
+          "400": {
+            "description": "Hatalı istek"
+          },
+          "401": {
+            "description": "Yetkisiz"
           }
         }
       }
