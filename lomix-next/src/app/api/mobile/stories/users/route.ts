@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
+import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
-import { getCurrentUserId } from '@/lib/current-user';
+
 
 /**
  * @swagger
@@ -49,8 +49,8 @@ export async function GET(request: Request) {
             };
         });
 
-        return NextResponse.json(usersData);
+        return ApiResponseHelper.success(usersData, "Hikayesi olan kullanıcılar listelendi.");
     } catch (error: any) {
-        return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+        return ApiResponseHelper.error(error.message, 500);
     }
 }

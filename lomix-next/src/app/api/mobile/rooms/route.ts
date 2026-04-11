@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 
 /**
@@ -20,50 +20,53 @@ import prisma from '@/lib/prisma';
  *         description: Odalar başarıyla getirildi.
  */
 export async function GET(request: Request) {
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || "1", 10);
-    const pageSize = 10;
+    try {
+        const { searchParams } = new URL(request.url);
+        const page = parseInt(searchParams.get('page') || "1", 10);
+        const pageSize = 10;
 
-    // Veritabanından canlı ("voice") odaları al
-    const rooms = await prisma.room.findMany({
-        where: {
-            isLive: true,
-            type: "voice" // Sadece sesli odalar
-        },
-        include: {
-            owner: true,
-            tags: true
-        },
-        skip: (page - 1) * pageSize,
-        take: pageSize
-    });
+        // Veritabanından canlı ("voice") odaları al
+        const rooms = await prisma.room.findMany({
+            where: {
+                isLive: true,
+                type: "voice" // Sadece sesli odalar
+            },
+            include: {
+                owner: true,
+                tags: true
+            },
+            skip: (page - 1) * pageSize,
+            take: pageSize
+        });
 
-    const totalCount = await prisma.room.count({
-        where: { isLive: true, type: "voice" }
-    });
+        const totalCount = await prisma.room.count({
+            where: { isLive: true, type: "voice" }
+        });
 
-    // Banner'ları veritabanından al
-    const databaseBanners = await prisma.roomBanner.findMany({
-        where: { isActive: true },
-        orderBy: { createdAt: 'desc' },
-        take: 5
-    });
+        // Banner'ları veritabanından al
+        const databaseBanners = await prisma.roomBanner.findMany({
+            where: { isActive: true },
+            orderBy: { createdAt: 'desc' },
+            take: 5
+        });
 
-    return NextResponse.json({
-        success: true,
-        message: "Odalar başarıyla getirildi.",
-        data: {
+        return ApiResponseHelper.success({
             banners: databaseBanners.length > 0 ? databaseBanners.map(b => ({
                 id: b.id,
                 title: b.title,
                 image_url: b.imageUrl,
-                action_url: b.actionUrl
+                action_url: b.actionUrl,
+                background_colors: ["#1A237E", "#000000"]
             })) : [
                 {
-                    id: 101,
-                    title: "Önemli Güncellemeler",
-                    image_url: "https://api.lomix.com/uploads/banner.png",
-                    action_url: "https://lomix.com/updates"
+                    "id": 101,
+                    "title": "Önemli Güncellemeler",
+                    "image_url": "https://api.lomix.com/uploads/banner_update.png",
+                    "action_url": "https://lomix.com/updates",
+                    "background_colors": [
+                        "#4A0000",
+                        "#B71C1C"
+                    ]
                 }
             ],
             rooms: rooms.map(room => ({
@@ -82,10 +85,11 @@ export async function GET(request: Request) {
                     color_hex: tag.colorHex || "#000000"
                 }))
             }))
-        },
-        meta: {
+        }, "Odalar başarıyla getirildi.", 200, {
             current_page: page,
             total_pages: Math.ceil(totalCount / pageSize) || 1
-        }
-    });
+        });
+    } catch (error: any) {
+        return ApiResponseHelper.error(error.message, 500);
+    }
 }

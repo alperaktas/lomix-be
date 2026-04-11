@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 
 /**
@@ -14,26 +14,34 @@ import prisma from '@/lib/prisma';
  *         description: Video odaları başarıyla getirildi.
  */
 export async function GET() {
-    const videoRooms = await prisma.room.findMany({
-        where: {
-            isLive: true,
-            type: "video" // Sadece video odaları
-        },
-        include: {
-            tags: true,
-            owner: true
-        },
-        orderBy: {
-            viewerCount: 'desc'
-        },
-        take: 20
-    });
+    try {
+        const videoRooms = await prisma.room.findMany({
+            where: {
+                isLive: true,
+                type: "video" // Sadece video odaları
+            },
+            include: {
+                tags: true,
+                owner: true
+            },
+            orderBy: {
+                viewerCount: 'desc'
+            },
+            take: 20
+        });
 
-    return NextResponse.json({
-        success: true,
-        message: "Video odaları başarıyla getirildi.",
-        data: {
-            banners: [],
+        return ApiResponseHelper.success({
+            banners: [
+                {
+                    "id": 201,
+                    "title": "Video Gecesi Etkinliği",
+                    "image_url": "https://admin.lomixlive.com:3000/uploads/banner_video.png",
+                    "background_colors": [
+                        "#1A237E",
+                        "#000000"
+                    ]
+                }
+            ],
             rooms: videoRooms.map(room => ({
                 id: room.roomId,
                 name: room.name,
@@ -45,6 +53,8 @@ export async function GET() {
                     color_hex: tag.colorHex || "#000000"
                 }))
             }))
-        }
-    });
+        }, "Video odaları başarıyla getirildi.");
+    } catch (error: any) {
+        return ApiResponseHelper.error(error.message, 500);
+    }
 }
