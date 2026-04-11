@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { sendEmail, getEmailTemplate } from '@/lib/email';
@@ -47,10 +47,7 @@ export async function POST(req: Request) {
 
         // 1. Zorunlu alan kontrolü
         if (!username || !email || !password) {
-            return NextResponse.json({
-                error_code: 'VALIDATION_ERROR',
-                message: 'Kullanıcı adı, e-posta ve şifre zorunludur.'
-            }, { status: 400 });
+            return ApiResponseHelper.error('Kullanıcı adı, e-posta ve şifre zorunludur.', 400);
         }
 
         // 2. Kullanıcı var mı kontrolü
@@ -61,10 +58,7 @@ export async function POST(req: Request) {
         });
 
         if (existingUser) {
-            return NextResponse.json({
-                error_code: 'USER_ALREADY_EXISTS',
-                message: 'Bu kullanıcı adı veya e-posta zaten kullanımda.'
-            }, { status: 409 });
+            return ApiResponseHelper.error('Bu kullanıcı adı veya e-posta zaten kullanımda.', 409);
         }
 
         // 3. Şifreleme ve Kod Üretme
@@ -97,22 +91,18 @@ export async function POST(req: Request) {
             verificationCode
         });
 
-        // Arka planda gönder (await beklemeyebiliriz ama Next.js serveless function'da beklemek daha güvenlidir)
+        // Arka planda gönder (Next.js serverless function'da beklemek daha güvenlidir)
         await sendEmail(email, 'Lomix - Üyelik Doğrulama', htmlContent);
 
-        return NextResponse.json({
-            message: 'Kayıt başarılı. Doğrulama kodu e-posta adresinize gönderildi.',
+        return ApiResponseHelper.success({
             userId: newUser.id,
             status: 'pending'
-        }, { status: 201 });
+        }, 'Kayıt başarılı. Doğrulama kodu e-posta adresinize gönderildi.', 201);
 
     } catch (error: any) {
         const { default: logger } = await import('@/lib/logger');
         logger.error(`Mobil Kayıt Hatası: ${error.message}`, { error });
 
-        return NextResponse.json({
-            error_code: 'SERVER_ERROR',
-            message: error.message || 'Sunucu hatası'
-        }, { status: 500 });
+        return ApiResponseHelper.error(error.message || 'Sunucu hatası', 500);
     }
 }

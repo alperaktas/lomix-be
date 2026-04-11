@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 
 /**
@@ -38,15 +38,12 @@ export async function POST(req: Request) {
         const { email, code, type } = body; // type: 'activation' | 'reset_password'
 
         if (!email || !code) {
-            return NextResponse.json({
-                error_code: 'VALIDATION_ERROR',
-                message: 'E-posta ve doğrulama kodu zorunludur.'
-            }, { status: 400 });
+            return ApiResponseHelper.error('E-posta ve doğrulama kodu zorunludur.', 400);
         }
 
         const user = await prisma.user.findFirst({ where: { email } });
         if (!user) {
-            return NextResponse.json({ error_code: 'USER_NOT_FOUND', message: 'Kullanıcı bulunamadı.' }, { status: 404 });
+            return ApiResponseHelper.error('Kullanıcı bulunamadı.', 404);
         }
 
         console.log(`Doğrulama: ${type || 'activation'} - Email: ${email}`);
@@ -54,23 +51,23 @@ export async function POST(req: Request) {
         // Şifre Sıfırlama
         if (type === 'reset_password' || (!type && user.status === 'active')) {
             if (!user.resetPasswordCode) {
-                return NextResponse.json({ error_code: 'CODE_NOT_FOUND', message: 'Talep bulunamadı.' }, { status: 400 });
+                return ApiResponseHelper.error('Talep bulunamadı.', 400);
             }
             if (user.resetPasswordExpires && new Date() > user.resetPasswordExpires) {
-                return NextResponse.json({ error_code: 'CODE_EXPIRED', message: 'Kod süresi dolmuş.' }, { status: 400 });
+                return ApiResponseHelper.error('Kod süresi dolmuş.', 400);
             }
             if (String(user.resetPasswordCode).trim() !== String(code).trim()) {
-                return NextResponse.json({ error_code: 'INVALID_CODE', message: 'Geçersiz kod.' }, { status: 400 });
+                return ApiResponseHelper.error('Geçersiz kod.', 400);
             }
-            return NextResponse.json({ message: 'Kod doğrulandı.' });
+            return ApiResponseHelper.success({}, 'Kod doğrulandı.');
         }
         // Hesap Aktivasyonu
         else {
             if (user.status === 'active') {
-                return NextResponse.json({ message: 'Hesap zaten aktif.' });
+                return ApiResponseHelper.success({}, 'Hesap zaten aktif.');
             }
             if (String(user.verificationCode).trim() !== String(code).trim()) {
-                return NextResponse.json({ error_code: 'INVALID_CODE', message: 'Geçersiz kod.' }, { status: 400 });
+                return ApiResponseHelper.error('Geçersiz kod.', 400);
             }
 
             await prisma.user.update({
@@ -87,10 +84,10 @@ export async function POST(req: Request) {
                 console.error("Welcome mail hatası:", mailErr);
             }
 
-            return NextResponse.json({ message: 'Hesap başarıyla doğrulandı.' });
+            return ApiResponseHelper.success({}, 'Hesap başarıyla doğrulandı.');
         }
 
     } catch (error: any) {
-        return NextResponse.json({ error_code: 'SERVER_ERROR', message: error.message }, { status: 500 });
+        return ApiResponseHelper.error(error.message, 500);
     }
 }

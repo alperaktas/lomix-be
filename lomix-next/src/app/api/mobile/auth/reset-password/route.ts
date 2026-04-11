@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 
@@ -34,12 +34,12 @@ export async function POST(req: Request) {
         const { email, code, newPassword } = body;
 
         const user = await prisma.user.findFirst({ where: { email } });
-        if (!user) return NextResponse.json({ message: 'Kullanıcı bulunamadı' }, { status: 404 });
+        if (!user) return ApiResponseHelper.error('Kullanıcı bulunamadı', 404);
 
         if (user.resetPasswordCode === code) {
             // Süre kontrolü (resetPasswordExpires > now)
             if (user.resetPasswordExpires && user.resetPasswordExpires < new Date()) {
-                return NextResponse.json({ message: 'Kodun süresi dolmuş' }, { status: 400 });
+                return ApiResponseHelper.error('Kodun süresi dolmuş', 400);
             }
 
             const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -53,11 +53,11 @@ export async function POST(req: Request) {
                 }
             });
 
-            return NextResponse.json({ message: 'Şifre başarıyla değiştirildi' });
+            return ApiResponseHelper.success({}, 'Şifre başarıyla değiştirildi');
         } else {
-            return NextResponse.json({ message: 'Hatalı kod' }, { status: 400 });
+            return ApiResponseHelper.error('Hatalı kod', 400);
         }
     } catch (error: any) {
-        return NextResponse.json({ message: error.message }, { status: 500 });
+        return ApiResponseHelper.error(error.message, 500);
     }
 }

@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 import jwt from 'jsonwebtoken';
 
@@ -32,8 +32,8 @@ export async function POST(req: Request) {
                 });
             } catch (e) { }
         }
-        return NextResponse.json({ message: 'Mobil oturum sonlandırıldı' });
+        return ApiResponseHelper.success({}, 'Mobil oturum sonlandırıldı');
     } catch (error: any) {
-        return NextResponse.json({ message: error.message }, { status: 500 });
+        return ApiResponseHelper.error(error.message, 500);
     }
 }

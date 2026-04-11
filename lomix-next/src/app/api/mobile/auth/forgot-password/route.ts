@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 import { sendEmail, getEmailTemplate } from '@/lib/email';
 
@@ -31,12 +31,12 @@ export async function POST(req: Request) {
         const { email } = body;
 
         if (!email) {
-            return NextResponse.json({ error_code: 'VALIDATION_ERROR', message: 'E-posta zorunlu.' }, { status: 400 });
+            return ApiResponseHelper.error('E-posta zorunlu.', 400);
         }
 
         const user = await prisma.user.findFirst({ where: { email } });
         if (!user) {
-            return NextResponse.json({ error_code: 'USER_NOT_FOUND', message: 'Kullanıcı bulunamadı.' }, { status: 404 });
+            return ApiResponseHelper.error('Kullanıcı bulunamadı.', 404);
         }
 
         const code = Math.floor(1000 + Math.random() * 9000).toString();
@@ -50,8 +50,8 @@ export async function POST(req: Request) {
         const htmlContent = getEmailTemplate('reset-password', { resetCode: code });
         await sendEmail(email, 'Lomix - Şifre Sıfırlama', htmlContent);
 
-        return NextResponse.json({ message: 'Şifre sıfırlama kodu gönderildi.' });
+        return ApiResponseHelper.success({}, 'Şifre sıfırlama kodu gönderildi.');
     } catch (error: any) {
-        return NextResponse.json({ error_code: 'SERVER_ERROR', message: error.message }, { status: 500 });
+        return ApiResponseHelper.error(error.message, 500);
     }
 }

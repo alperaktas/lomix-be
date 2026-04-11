@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -43,19 +43,13 @@ export async function POST(req: Request) {
         const ipAddress = req.headers.get('x-forwarded-for') || 'unknown';
 
         if (!email || !password) {
-            return NextResponse.json({
-                error_code: 'VALIDATION_ERROR',
-                message: 'Lütfen email ve şifre giriniz.'
-            }, { status: 400 });
+            return ApiResponseHelper.error('Lütfen email ve şifre giriniz.', 400);
         }
 
         const user = await prisma.user.findFirst({ where: { email } });
 
         if (!user || !(await bcrypt.compare(password, user.password))) {
-            return NextResponse.json({
-                error_code: 'AUTH_FAILED',
-                message: 'Email adresi veya şifre hatalı.'
-            }, { status: 401 });
+            return ApiResponseHelper.error('Email adresi veya şifre hatalı.', 401);
         }
 
         const token = jwt.sign(
@@ -78,8 +72,7 @@ export async function POST(req: Request) {
         const { default: logger } = await import('@/lib/logger');
         logger.info(`Mobil Giriş: ${user.email}`, { userId: user.id, ip: ipAddress, device: deviceInfo });
 
-        return NextResponse.json({
-            message: 'Giriş başarılı.',
+        return ApiResponseHelper.success({
             token: token,
             user: {
                 id: user.id,
@@ -88,12 +81,12 @@ export async function POST(req: Request) {
                 role: user.role,
                 avatar: user.avatar
             }
-        });
+        }, 'Giriş başarılı.');
 
     } catch (error: any) {
         const { default: logger } = await import('@/lib/logger');
         logger.error(`Mobil Login Hatası: ${error.message}`, { error });
 
-        return NextResponse.json({ error_code: 'SERVER_ERROR', message: error.message }, { status: 500 });
+        return ApiResponseHelper.error(error.message, 500);
     }
 }

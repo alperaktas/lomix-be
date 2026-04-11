@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { ApiResponseHelper } from '@/lib/api-response';
 
 /**
  * @swagger
@@ -24,11 +24,8 @@ export async function POST(request: Request) {
     try {
         const body = await request.json();
 
-        return NextResponse.json({
-            status: true,
-            message: "Yeni doğrulama kodu e-posta adresinize gönderildi."
-        });
+        return ApiResponseHelper.success({}, "Yeni doğrulama kodu e-posta adresinize gönderildi.");
     } catch (error) {
-        return NextResponse.json({ status: false, message: "Geçersiz istek" }, { status: 400 });
+        return ApiResponseHelper.error("Geçersiz istek", 400);
     }
 }
