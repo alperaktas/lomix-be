@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Loader2, Plus, RefreshCcw, Search as SearchIcon, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -95,12 +96,15 @@ export default function UsersPage() {
         user.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const router = useRouter();
+
     const columns = getColumns({
         onEdit: (user) => {
             setEditingUser(user);
             setEditForm({ username: user.username, email: user.email, role: user.role, status: user.status || 'active', password: '' });
         },
-        onDelete: (id) => setDeletingUserId(id)
+        onDelete: (id) => setDeletingUserId(id),
+        onDetail: (id) => router.push(`/dashboard/users/${id}`),
     });
 
     return (

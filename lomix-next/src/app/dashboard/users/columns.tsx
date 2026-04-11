@@ -8,7 +8,8 @@ import {
   Trash2, 
   ShieldCheck, 
   User as UserIcon,
-  ShieldAlert
+  ShieldAlert,
+  ExternalLink
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -32,9 +33,10 @@ export type User = {
 interface ColumnsProps {
   onEdit: (user: User) => void
   onDelete: (id: number) => void
+  onDetail: (id: number) => void
 }
 
-export const getColumns = ({ onEdit, onDelete }: ColumnsProps): ColumnDef<User>[] => [
+export const getColumns = ({ onEdit, onDelete, onDetail }: ColumnsProps): ColumnDef<User>[] => [
   {
     accessorKey: "username",
     header: "Kullanıcı",
@@ -137,6 +139,12 @@ export const getColumns = ({ onEdit, onDelete }: ColumnsProps): ColumnDef<User>[
           <DropdownMenuContent align="end" className="w-[160px]">
             <DropdownMenuLabel className="text-xs text-zinc-400 font-normal">İşlemler</DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              onClick={() => onDetail(user.id)}
+              className="cursor-pointer gap-2 text-sm"
+            >
+              <ExternalLink className="h-3.5 w-3.5" /> Detay
+            </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => onEdit(user)}
               className="cursor-pointer gap-2 text-sm"

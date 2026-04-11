@@ -24,19 +24,34 @@ model User {
   resetPasswordCode     String?   @map("reset_password_code")
   resetPasswordExpires  DateTime? @map("reset_password_expires")
   
-  // New User Profile Fields
+  // Profile Fields
   fullName              String?   @map("full_name")
+  nickname              String?
   isVerified            Boolean   @default(false) @map("is_verified")
   level                 Int       @default(1)
   prestigePoints        Int       @default(0) @map("prestige_points")
+  
+  // VIP
   isVip                 Boolean   @default(false) @map("is_vip")
+  vipLevel              Int       @default(0) @map("vip_level")
+  vipExpiresAt          DateTime? @map("vip_expires_at")
+  
+  // Ban
+  bannedUntil           DateTime? @map("banned_until")
+  banReason             String?   @map("ban_reason")
+  isPermanentBan        Boolean   @default(false) @map("is_permanent_ban")
+  bannedDeviceId        String?   @map("banned_device_id")
+  
+  // Limits
+  visitorViewLimit      Int       @default(10) @map("visitor_view_limit")
   
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
   userGroups            UserGroup[]
   logs                  UserLog[]
+  bans                  UserBan[]
 
-  // Realations
+  // Relations
   wallet                Wallet?
   stories               Story[]
   rooms                 Room[]
@@ -300,4 +315,20 @@ model AgencyInvite {
   agency    Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
 
   @@map("agency_invites")
+}
+
+model UserBan {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("user_id")
+  type        String    // "temporary", "permanent", "device"
+  reason      String?
+  duration    String?   // "1h", "7d", "30d", "365d" etc.
+  expiresAt   DateTime? @map("expires_at")
+  deviceId    String?   @map("device_id")
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_bans")
 }
