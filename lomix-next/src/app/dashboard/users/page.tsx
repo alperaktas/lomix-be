@@ -1,46 +1,50 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import Modal from '@/components/Modal';
+import { Loader2, Plus, RefreshCcw, Search as SearchIcon, Trash2 } from 'lucide-react';
 
-interface User {
-    id: number;
-    username: string;
-    email: string;
-    role: string;
-    status: string;
-    createdAt: string;
-}
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { DataTable } from '@/components/ui/data-table';
+import { getColumns, User } from './columns';
+import { cn } from '@/lib/utils';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from '@/components/ui/dialog';
 
 export default function UsersPage() {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // --- STATES ---
-    // ADD
+    // Modal states
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [newUser, setNewUser] = useState({ username: '', email: '', password: '', role: 'user', status: 'active' });
-
-    // EDIT
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [editForm, setEditForm] = useState({ username: '', email: '', role: 'user', status: 'active', password: '' });
-
-    // DELETE
     const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
 
     const fetchUsers = async () => {
+        setLoading(true);
         try {
             const token = localStorage.getItem('token');
             const res = await fetch('/api/users', { headers: { 'Authorization': 'Bearer ' + token } });
             if (res.ok) setUsers(await res.json());
-        } catch (err) { console.error(err); }
-        finally { setLoading(false); }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
     };
 
     useEffect(() => { fetchUsers(); }, []);
 
-    // EKLEME
+    // CRUD handlers
     const handleAddUser = async (e: React.FormEvent) => {
         e.preventDefault();
         const token = localStorage.getItem('token');
@@ -51,8 +55,7 @@ export default function UsersPage() {
                 body: JSON.stringify(newUser)
             });
             if (res.ok) {
-                alert('Kullanıcı eklendi');
-                setNewUser({ username: '', email: '', password: '', role: 'user', status: 'active' }); // Reset
+                setNewUser({ username: '', email: '', password: '', role: 'user', status: 'active' });
                 setIsAddModalOpen(false);
                 fetchUsers();
             } else {
@@ -62,14 +65,6 @@ export default function UsersPage() {
         } catch (error) { console.error(error); }
     };
 
-    // FİLTRELEME
-    const filteredUsers = users.filter(user =>
-        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    // DELETE ve UPDATE (Önceki kodlardan aynı mantıkla fonksiyonlar)
-    const openDeleteConfirm = (id: number) => setDeletingUserId(id);
     const confirmDelete = async () => {
         if (!deletingUserId) return;
         const token = localStorage.getItem('token');
@@ -78,11 +73,6 @@ export default function UsersPage() {
             setUsers(p => p.filter(u => u.id !== deletingUserId));
             setDeletingUserId(null);
         } else { alert('Silinemedi'); }
-    };
-
-    const openEditModal = (user: User) => {
-        setEditingUser(user);
-        setEditForm({ username: user.username, email: user.email, role: user.role, status: user.status || 'active', password: '' });
     };
 
     const handleUpdate = async (e: React.FormEvent) => {
@@ -100,112 +90,177 @@ export default function UsersPage() {
         } else { alert('Güncelleme başarısız'); }
     };
 
-    if (loading) return <div>Yükleniyor...</div>;
+    const filteredUsers = users.filter(user =>
+        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const columns = getColumns({
+        onEdit: (user) => {
+            setEditingUser(user);
+            setEditForm({ username: user.username, email: user.email, role: user.role, status: user.status || 'active', password: '' });
+        },
+        onDelete: (id) => setDeletingUserId(id)
+    });
 
     return (
-        <div className="card">
-            <div className="card-header">
-                <h3 className="card-title">Kullanıcı Listesi</h3>
-                <div className="card-actions d-flex gap-2">
-                    <input
-                        type="text"
-                        className="form-control form-control-sm"
-                        placeholder="Ara..."
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                    />
-                    <button className="btn btn-primary" onClick={() => setIsAddModalOpen(true)}>
-                        + Yeni Kullanıcı
-                    </button>
+        <div className="flex flex-col gap-6 p-6">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-semibold text-zinc-900 tracking-tight">Kullanıcı Yönetimi</h1>
+                    <p className="text-sm text-zinc-500 mt-1">
+                        Toplam {users.length} kayıtlı kullanıcı
+                    </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <div className="relative w-64">
+                        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                        <Input
+                            placeholder="Ara..."
+                            className="pl-10 h-9 text-sm"
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 px-3"
+                        onClick={fetchUsers}
+                        disabled={loading}
+                    >
+                        <RefreshCcw className={cn("h-4 w-4", loading && "animate-spin")} />
+                    </Button>
+                    <Button
+                        size="sm"
+                        className="h-9 gap-1.5 px-4 bg-zinc-900 text-white hover:bg-zinc-800 font-semibold"
+                        onClick={() => setIsAddModalOpen(true)}
+                    >
+                        <Plus className="h-4 w-4" />
+                        Yeni Kullanıcı
+                    </Button>
                 </div>
             </div>
-            <div className="table-responsive">
-                <table className="table card-table table-vcenter text-nowrap">
-                    <thead>
-                        <tr>
-                            <th className="w-1">ID</th>
-                            <th>Kullanıcı Adı</th>
-                            <th>Email</th>
-                            <th>Rol</th>
-                            <th>Durum</th>
-                            <th>Kayıt Tarihi</th>
-                            <th>İşlemler</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredUsers.map((user) => (
-                            <tr key={user.id}>
-                                <td><span className="text-muted">{user.id}</span></td>
-                                <td>{user.username}</td>
-                                <td>{user.email}</td>
-                                <td><span className={`badge ${user.role === 'admin' ? 'bg-red-lt' : 'bg-blue-lt'}`}>{user.role}</span></td>
-                                <td><span className={`badge ${user.status === 'active' ? 'bg-success' : 'bg-warning'}`}>{user.status || 'Bilinmiyor'}</span></td>
-                                <td>{new Date(user.createdAt).toLocaleDateString('tr-TR')}</td>
-                                <td>
-                                    <button className="btn btn-sm btn-outline-primary me-2" onClick={() => openEditModal(user)}>Düzenle</button>
-                                    <button className="btn btn-sm btn-outline-danger" onClick={() => openDeleteConfirm(user.id)}>Sil</button>
-                                </td>
-                            </tr>
-                        ))}
-                        {filteredUsers.length === 0 && <tr><td colSpan={7} className="text-center text-muted">Kayıt bulunamadı.</td></tr>}
-                    </tbody>
-                </table>
-            </div>
 
-            {/* ADD MODAL */}
-            <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Yeni Kullanıcı Ekle" size="lg">
-                <form onSubmit={handleAddUser}>
-                    <div className="row">
-                        <div className="col-md-6 mb-3">
-                            <label className="form-label">Kullanıcı Adı</label>
-                            <input type="text" className="form-control" value={newUser.username} onChange={e => setNewUser({ ...newUser, username: e.target.value })} required />
+            {/* Table */}
+            {loading && users.length === 0 ? (
+                <div className="flex items-center justify-center py-24">
+                    <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+                </div>
+            ) : (
+                <DataTable columns={columns} data={filteredUsers} />
+            )}
+
+            {/* ───── ADD USER DIALOG ───── */}
+            <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+                <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle className="text-lg font-semibold">Yeni Kullanıcı Ekle</DialogTitle>
+                        <DialogDescription>Sisteme yeni bir kullanıcı eklemek için aşağıdaki formu doldurun.</DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleAddUser} className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-700">Kullanıcı Adı</label>
+                            <Input className="h-9" value={newUser.username} onChange={e => setNewUser({ ...newUser, username: e.target.value })} required />
                         </div>
-                        <div className="col-md-6 mb-3">
-                            <label className="form-label">Email</label>
-                            <input type="email" className="form-control" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} required />
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-700">Email</label>
+                            <Input className="h-9" type="email" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} required />
                         </div>
-                        <div className="col-md-6 mb-3">
-                            <label className="form-label">Şifre</label>
-                            <input type="password" className="form-control" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} required />
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-700">Şifre</label>
+                            <Input className="h-9" type="password" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} required />
                         </div>
-                        <div className="col-md-6 mb-3">
-                            <label className="form-label">Rol</label>
-                            <select className="form-select" value={newUser.role} onChange={e => setNewUser({ ...newUser, role: e.target.value })}>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-700">Rol</label>
+                            <select className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-950" value={newUser.role} onChange={e => setNewUser({ ...newUser, role: e.target.value })}>
                                 <option value="user">User</option>
                                 <option value="admin">Admin</option>
                                 <option value="moderator">Moderator</option>
                             </select>
                         </div>
-                        <div className="col-md-6 mb-3">
-                            <label className="form-label">Durum</label>
-                            <select className="form-select" value={newUser.status} onChange={e => setNewUser({ ...newUser, status: e.target.value })}>
+                        <div className="space-y-1.5 sm:col-span-2">
+                            <label className="text-xs font-semibold text-zinc-700">Durum</label>
+                            <select className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-950" value={newUser.status} onChange={e => setNewUser({ ...newUser, status: e.target.value })}>
                                 <option value="active">Aktif</option>
                                 <option value="pending">Bekliyor</option>
                                 <option value="suspended">Askıya Alınmış</option>
                             </select>
                         </div>
-                    </div>
-                    <div className="d-flex justify-content-end gap-2">
-                        <button type="button" className="btn btn-link link-secondary" onClick={() => setIsAddModalOpen(false)}>İptal</button>
-                        <button type="submit" className="btn btn-primary">Kaydet</button>
-                    </div>
-                </form>
-            </Modal>
+                        <DialogFooter className="sm:col-span-2 pt-2 border-t border-zinc-100">
+                            <Button type="button" variant="ghost" size="sm" onClick={() => setIsAddModalOpen(false)}>İptal</Button>
+                            <Button type="submit" size="sm" className="bg-zinc-900 text-white hover:bg-zinc-800 px-6 font-semibold">Kaydet</Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
 
-            {/* EDIT and DELETE Modals (Previously implemented, keeping concise) */}
-            <Modal isOpen={!!editingUser} onClose={() => setEditingUser(null)} title="Kullanıcı Düzenle" size="lg">
-                <form onSubmit={handleUpdate}>
-                    <div className="mb-3"><label className="form-label">Kullanıcı Adı</label><input type="text" className="form-control" value={editForm.username} onChange={e => setEditForm({ ...editForm, username: e.target.value })} required /></div>
-                    <div className="mb-3"><label className="form-label">Email</label><input type="email" className="form-control" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} required /></div>
-                    <div className="mb-3"><label className="form-label">Rol</label><select className="form-select" value={editForm.role} onChange={e => setEditForm({ ...editForm, role: e.target.value })}><option value="user">User</option><option value="admin">Admin</option></select></div>
-                    <div className="mb-3"><label className="form-label">Durum</label><select className="form-select" value={editForm.status} onChange={e => setEditForm({ ...editForm, status: e.target.value })}><option value="active">Aktif</option><option value="pending">Bekliyor</option><option value="suspended">Askıya Alınmış</option></select></div>
-                    <div className="mb-3"><label className="form-label">Yeni Şifre</label><input type="password" className="form-control" value={editForm.password} onChange={e => setEditForm({ ...editForm, password: e.target.value })} /></div>
-                    <div className="d-flex justify-content-end gap-2"><button type="submit" className="btn btn-primary">Güncelle</button></div>
-                </form>
-            </Modal>
-            <Modal isOpen={!!deletingUserId} onClose={() => setDeletingUserId(null)} title="Kullanıcı Sil?" size="sm" footer={<><button className="btn btn-link link-secondary me-auto" onClick={() => setDeletingUserId(null)}>İptal</button><button className="btn btn-danger" onClick={confirmDelete}>Evet, Sil</button></>}>
-                <p>Silmek istediğinize emin misiniz?</p>
-            </Modal>
+            {/* ───── EDIT USER DIALOG ───── */}
+            <Dialog open={!!editingUser} onOpenChange={(open) => { if (!open) setEditingUser(null); }}>
+                <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle className="text-lg font-semibold">Kullanıcı Düzenle</DialogTitle>
+                        <DialogDescription>Kullanıcı bilgilerini aşağıdan güncelleyebilirsiniz.</DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleUpdate} className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-700">Kullanıcı Adı</label>
+                            <Input className="h-9" value={editForm.username} onChange={e => setEditForm({ ...editForm, username: e.target.value })} required />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-700">Email</label>
+                            <Input className="h-9" type="email" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} required />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-700">Rol</label>
+                            <select className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-950" value={editForm.role} onChange={e => setEditForm({ ...editForm, role: e.target.value })}>
+                                <option value="user">User</option>
+                                <option value="admin">Admin</option>
+                                <option value="moderator">Moderator</option>
+                            </select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-700">Durum</label>
+                            <select className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-950" value={editForm.status} onChange={e => setEditForm({ ...editForm, status: e.target.value })}>
+                                <option value="active">Aktif</option>
+                                <option value="pending">Bekliyor</option>
+                                <option value="suspended">Askıya Alınmış</option>
+                            </select>
+                        </div>
+                        <div className="space-y-1.5 sm:col-span-2">
+                            <label className="text-xs font-semibold text-zinc-700">Yeni Şifre <span className="text-zinc-400 font-normal">(boş bırakılabilir)</span></label>
+                            <Input className="h-9" type="password" value={editForm.password} onChange={e => setEditForm({ ...editForm, password: e.target.value })} placeholder="••••••••" />
+                        </div>
+                        <DialogFooter className="sm:col-span-2 pt-2 border-t border-zinc-100">
+                            <Button type="button" variant="ghost" size="sm" onClick={() => setEditingUser(null)}>Vazgeç</Button>
+                            <Button type="submit" size="sm" className="bg-zinc-900 text-white hover:bg-zinc-800 px-6 font-semibold">Güncelle</Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* ───── DELETE CONFIRM DIALOG ───── */}
+            <Dialog open={!!deletingUserId} onOpenChange={(open) => { if (!open) setDeletingUserId(null); }}>
+                <DialogContent className="sm:max-w-sm">
+                    <div className="flex flex-col items-center text-center gap-4 py-2">
+                        <div className="w-14 h-14 rounded-full bg-rose-50 flex items-center justify-center border border-rose-100">
+                            <Trash2 className="h-7 w-7 text-rose-600" />
+                        </div>
+                        <DialogHeader className="items-center">
+                            <DialogTitle className="text-lg font-semibold">Emin misiniz?</DialogTitle>
+                            <DialogDescription className="max-w-[240px]">
+                                Bu kullanıcı kalıcı olarak silinecek. Bu işlem geri alınamaz.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="flex gap-2 w-full pt-2 border-t border-zinc-100">
+                            <Button variant="outline" size="sm" className="flex-1" onClick={() => setDeletingUserId(null)}>İptal</Button>
+                            <Button variant="destructive" size="sm" className="flex-1 font-semibold" onClick={confirmDelete}>Evet, Sil</Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
