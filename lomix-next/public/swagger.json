@@ -27,72 +27,12 @@
   "paths": {
     "/api/mobile/auth/apple": {
       "post": {
-        "summary": "Apple ile giriş/kayıt",
-        "tags": [
-          "Mobile Auth"
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "token"
-                ],
-                "properties": {
-                  "token": {
-                    "type": "string",
-                    "description": "Apple ID Token"
-                  },
-                  "deviceInfo": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Giriş başarılı"
-          }
-        }
+        "summary": "Apple ile giriş/kayıt"
       }
     },
     "/api/mobile/auth/facebook": {
       "post": {
-        "summary": "Facebook ile giriş/kayıt",
-        "tags": [
-          "Mobile Auth"
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "token"
-                ],
-                "properties": {
-                  "token": {
-                    "type": "string",
-                    "description": "Facebook Access Token"
-                  },
-                  "deviceInfo": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Giriş başarılı"
-          }
-        }
+        "summary": "Facebook ile giriş/kayıt"
       }
     },
     "/api/mobile/auth/forgot-password": {
@@ -146,8 +86,7 @@
                 ],
                 "properties": {
                   "token": {
-                    "type": "string",
-                    "description": "Google ID Token"
+                    "type": "string"
                   },
                   "deviceInfo": {
                     "type": "string"
@@ -569,50 +508,6 @@
         "responses": {
           "200": {
             "description": "Video odaları başarıyla getirildi."
-          }
-        }
-      }
-    },
-    "/api/mobile/stories/add": {
-      "post": {
-        "summary": "Yeni hikaye ekle",
-        "tags": [
-          "Mobile Stories"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "mediaUrl": {
-                    "type": "string",
-                    "example": "https://example.com/video.mp4"
-                  },
-                  "durationHours": {
-                    "type": "integer",
-                    "example": 24
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Başarılı"
-          },
-          "400": {
-            "description": "Hatalı istek"
-          },
-          "401": {
-            "description": "Yetkisiz"
           }
         }
       }

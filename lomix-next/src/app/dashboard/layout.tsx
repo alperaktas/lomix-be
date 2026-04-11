@@ -2,8 +2,21 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Sidebar from '@/components/Sidebar';
-import Header from '@/components/Header';
+import { AppSidebar } from "@/components/app-sidebar"
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
+import { Separator } from "@/components/ui/separator"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 
 export default function DashboardLayout({
     children,
@@ -26,13 +39,11 @@ export default function DashboardLayout({
             if (userStr) {
                 const user = JSON.parse(userStr);
                 if (user.role !== 'admin') {
-                    // Admin değilse yetkisizdir
                     alert("Bu sayfaya erişmek için Admin yetkiniz olması gerekir.");
                     router.replace('/');
                     return;
                 }
             } else {
-                // Kullanıcı datası yoksa da login'e at
                 router.replace('/');
                 return;
             }
@@ -44,35 +55,36 @@ export default function DashboardLayout({
     }, [router]);
 
     if (!isAuthorized) {
-        return <div className="page-center p-5 text-center">Yönlendiriliyorsunuz...</div>;
+        return <div className="flex h-screen w-full items-center justify-center p-5 text-center bg-background">Yönlendiriliyorsunuz...</div>;
     }
 
     return (
-        <div className="page">
-            <Sidebar />
-            <div className="page-wrapper">
-                <Header />
-                <div className="page-body">
-                    <div className="container-xl">
-                        {children}
+        <SidebarProvider>
+            <AppSidebar />
+            <SidebarInset>
+                <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b border-border">
+                    <div className="flex items-center gap-2 px-4">
+                        <SidebarTrigger className="-ml-1" />
+                        <Separator orientation="vertical" className="mr-2 h-4" />
+                        <Breadcrumb>
+                            <BreadcrumbList>
+                                <BreadcrumbItem className="hidden md:block">
+                                    <BreadcrumbLink href="/dashboard">
+                                        Lomix Admin
+                                    </BreadcrumbLink>
+                                </BreadcrumbItem>
+                                <BreadcrumbSeparator className="hidden md:block" />
+                                <BreadcrumbItem>
+                                    <BreadcrumbPage>Dashboard</BreadcrumbPage>
+                                </BreadcrumbItem>
+                            </BreadcrumbList>
+                        </Breadcrumb>
                     </div>
-                </div>
-                <footer className="footer footer-transparent d-print-none">
-                    <div className="container-xl">
-                        <div className="row text-center align-items-center flex-row-reverse">
-                            <div className="col-12 col-lg-auto mt-3 mt-lg-0">
-                                <ul className="list-inline list-inline-dots mb-0">
-                                    <li className="list-inline-item">
-                                        Copyright &copy; {new Date().getFullYear()}
-                                        <a href="." className="link-secondary ms-1">Lomix Admin</a>.
-                                        Tüm hakları saklıdır.
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </footer>
-            </div>
-        </div>
+                </header>
+                <main className="flex flex-1 flex-col gap-4 p-4 pt-4 bg-muted/5">
+                    {children}
+                </main>
+            </SidebarInset>
+        </SidebarProvider>
     );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -49,12 +50,31 @@ const STATIC_MENUS: MenuItem[] = [
 
 export default function Sidebar() {
     const pathname = usePathname();
+    const [openMenus, setOpenMenus] = useState<string[]>([]);
+
+    // Sayfa değiştiğinde veya ilk açılışta aktif olan parent'ı açık getir
+    useEffect(() => {
+        const activeParent = STATIC_MENUS.find(menu => 
+            menu.children?.some(child => child.url && pathname.startsWith(child.url))
+        );
+        if (activeParent && !openMenus.includes(activeParent.id)) {
+            setOpenMenus(prev => [...prev, activeParent.id]);
+        }
+    }, [pathname]);
 
     const isActive = (url?: string) => {
         if (!url) return false;
         if (url === '/dashboard' && pathname === '/dashboard') return true;
         if (url !== '/dashboard' && pathname.startsWith(url)) return true;
         return false;
+    };
+
+    const toggleMenu = (id: string) => {
+        if (openMenus.includes(id)) {
+            setOpenMenus(openMenus.filter(m => m !== id));
+        } else {
+            setOpenMenus([...openMenus, id]);
+        }
     };
 
     return (
@@ -79,26 +99,23 @@ export default function Sidebar() {
                     <ul className="navbar-nav pt-lg-3">
                         {STATIC_MENUS.map(menu => {
                             const hasChildren = menu.children && menu.children.length > 0;
-                            const active = isActive(menu.url) || menu.children?.some(c => isActive(c.url));
+                            const isMenuOpen = openMenus.includes(menu.id);
 
                             return (
                                 <li key={menu.id} className={`nav-item ${hasChildren ? 'dropdown' : ''}`}>
                                     {hasChildren ? (
                                         <>
-                                            <a
-                                                className={`nav-link dropdown-toggle ${active ? 'show' : ''}`}
-                                                href="#navbar-base"
-                                                data-bs-toggle="dropdown"
-                                                data-bs-auto-close="false"
-                                                role="button"
-                                                aria-expanded={active}
+                                            <div
+                                                className={`nav-link dropdown-toggle ${isMenuOpen ? 'show' : ''}`}
+                                                style={{ cursor: 'pointer' }}
+                                                onClick={() => toggleMenu(menu.id)}
                                             >
                                                 <span className="nav-link-icon d-md-none d-lg-inline-block">
                                                     <i className={`ti ${menu.icon || 'ti-circle'}`}></i>
                                                 </span>
                                                 <span className="nav-link-title">{menu.title}</span>
-                                            </a>
-                                            <div className={`dropdown-menu ${active ? 'show' : ''}`}>
+                                            </div>
+                                            <div className={`dropdown-menu ${isMenuOpen ? 'show' : ''}`}>
                                                 <div className="dropdown-menu-columns">
                                                     <div className="dropdown-menu-column">
                                                         {menu.children!.map(child => (
