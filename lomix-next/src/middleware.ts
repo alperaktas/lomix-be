@@ -80,7 +80,7 @@ export async function middleware(request: NextRequest) {
             const { payload } = await jwtVerify(token, SECRET_KEY);
 
             // Eğer admin paneli API'lerine erişiliyorsa role kontrolü yap
-            const adminOnlyPaths = ['/api/users', '/api/groups', '/api/roles', '/api/menus', '/api/system', '/api/logs'];
+            const adminOnlyPaths = ['/api/users', '/api/groups', '/api/roles', '/api/system', '/api/logs'];
             if (adminOnlyPaths.some(path => pathname.startsWith(path))) {
                 if (payload.role !== 'admin') {
                     return addCorsHeaders(NextResponse.json({ message: 'Yetkisiz erişim: Admin yetkisi gerekli' }, { status: 403 }));

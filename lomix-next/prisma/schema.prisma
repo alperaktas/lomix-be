@@ -87,20 +87,7 @@ model UserGroup {
   @@map("user_groups")
 }
 
-model Menu {
-  id       Int     @id @default(autoincrement())
-  title    String
-  url      String?
-  icon     String?
-  parentId Int?    @map("parent_id")
-  order    Int     @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  parent    Menu?  @relation("MenuHierarchy", fields: [parentId], references: [id])
-  children  Menu[] @relation("MenuHierarchy")
-
-  @@map("menus")
-}
+// No menu model anymore
 
 model Endpoint {
   id             Int     @id @default(autoincrement())

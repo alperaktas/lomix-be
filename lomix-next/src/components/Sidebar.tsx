@@ -1,77 +1,60 @@
 "use client";
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 interface MenuItem {
-    id: number;
+    id: string;
     title: string;
     url?: string;
     icon?: string;
-    parentId?: number | null;
     children?: MenuItem[];
 }
 
+const STATIC_MENUS: MenuItem[] = [
+    {
+        id: 'dashboard',
+        title: 'Dashboard',
+        url: '/dashboard',
+        icon: 'ti-home'
+    },
+    {
+        id: 'users',
+        title: 'Kullanıcı Yönetimi',
+        url: '/dashboard/users',
+        icon: 'ti-users'
+    },
+    {
+        id: 'roles',
+        title: 'Roller & Yetkiler',
+        url: '/dashboard/roles',
+        icon: 'ti-shield'
+    },
+    {
+        id: 'content',
+        title: 'İçerik Yönetimi',
+        icon: 'ti-file-text',
+        children: [
+            { id: 'endpoints', title: 'Endpoints', url: '/dashboard/endpoints' },
+            { id: 'logs', title: 'Sistem Logları', url: '/dashboard/logs' }
+        ]
+    },
+    {
+        id: 'settings',
+        title: 'Ayarlar',
+        url: '/dashboard/settings',
+        icon: 'ti-settings'
+    }
+];
+
 export default function Sidebar() {
-    const [menus, setMenus] = useState<MenuItem[]>([]);
-    const [openMenus, setOpenMenus] = useState<number[]>([]); // Açık olan dropdown ID'leri
     const pathname = usePathname();
-
-    useEffect(() => {
-        const fetchMenus = async () => {
-            const token = localStorage.getItem('token');
-            if (!token) return;
-
-            try {
-                const res = await fetch('/api/menus', {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                if (res.ok) {
-                    const data: MenuItem[] = await res.json();
-                    const tree = buildMenuTree(data);
-                    setMenus(tree);
-                }
-            } catch (err) {
-                console.error("Menü yüklenemedi", err);
-            }
-        };
-
-        fetchMenus();
-    }, []);
-
-    const buildMenuTree = (flatMenus: MenuItem[]) => {
-        const map: { [key: number]: MenuItem } = {};
-        const tree: MenuItem[] = [];
-
-        flatMenus.forEach(m => {
-            map[m.id] = { ...m, children: [] };
-        });
-
-        // Prisma'da düz array dönerse (parent include yoksa)
-        flatMenus.forEach(m => {
-            if (m.parentId && map[m.parentId]) {
-                map[m.parentId].children!.push(map[m.id]);
-            } else {
-                // Sadece root elemanları tree'ye ekle
-                if (!m.parentId) tree.push(map[m.id]);
-            }
-        });
-        return tree;
-    };
-
-    const toggleMenu = (id: number) => {
-        if (openMenus.includes(id)) {
-            setOpenMenus(openMenus.filter(m => m !== id));
-        } else {
-            setOpenMenus([...openMenus, id]);
-        }
-    };
 
     const isActive = (url?: string) => {
         if (!url) return false;
-        if (url === '/' && pathname === '/dashboard') return true;
-        return pathname.startsWith(url);
+        if (url === '/dashboard' && pathname === '/dashboard') return true;
+        if (url !== '/dashboard' && pathname.startsWith(url)) return true;
+        return false;
     };
 
     return (
@@ -94,42 +77,49 @@ export default function Sidebar() {
                 </h1>
                 <div className="collapse navbar-collapse" id="sidebar-menu">
                     <ul className="navbar-nav pt-lg-3">
-                        {menus.map(menu => {
+                        {STATIC_MENUS.map(menu => {
                             const hasChildren = menu.children && menu.children.length > 0;
-                            const isOpen = openMenus.includes(menu.id);
+                            const active = isActive(menu.url) || menu.children?.some(c => isActive(c.url));
 
                             return (
                                 <li key={menu.id} className={`nav-item ${hasChildren ? 'dropdown' : ''}`}>
-                                    <Link
-                                        className={`nav-link ${hasChildren ? 'dropdown-toggle' : ''} ${isActive(menu.url) ? 'active' : ''} ${isOpen ? 'show' : ''}`}
-                                        href={hasChildren ? '#navbar-' + menu.id : (menu.url === '/dashboard' ? '/dashboard' : menu.url || '#')}
-                                        role="button"
-                                        aria-expanded={isOpen}
-                                        onClick={(e) => {
-                                            if (hasChildren) {
-                                                e.preventDefault();
-                                                toggleMenu(menu.id);
-                                            }
-                                        }}
-                                    >
-                                        <span className="nav-link-icon d-md-none d-lg-inline-block">
-                                            {menu.icon && menu.icon.startsWith('fa-') ? (
-                                                <i className={`fas ${menu.icon} me-2`}></i>
-                                            ) : (
+                                    {hasChildren ? (
+                                        <>
+                                            <a
+                                                className={`nav-link dropdown-toggle ${active ? 'show' : ''}`}
+                                                href="#navbar-base"
+                                                data-bs-toggle="dropdown"
+                                                data-bs-auto-close="false"
+                                                role="button"
+                                                aria-expanded={active}
+                                            >
+                                                <span className="nav-link-icon d-md-none d-lg-inline-block">
+                                                    <i className={`ti ${menu.icon || 'ti-circle'}`}></i>
+                                                </span>
+                                                <span className="nav-link-title">{menu.title}</span>
+                                            </a>
+                                            <div className={`dropdown-menu ${active ? 'show' : ''}`}>
+                                                <div className="dropdown-menu-columns">
+                                                    <div className="dropdown-menu-column">
+                                                        {menu.children!.map(child => (
+                                                            <Link key={child.id} className={`dropdown-item ${isActive(child.url) ? 'active' : ''}`} href={child.url || '#'}>
+                                                                {child.title}
+                                                            </Link>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <Link
+                                            className={`nav-link ${isActive(menu.url) ? 'active' : ''}`}
+                                            href={menu.url || '#'}
+                                        >
+                                            <span className="nav-link-icon d-md-none d-lg-inline-block">
                                                 <i className={`ti ${menu.icon || 'ti-circle'}`}></i>
-                                            )}
-                                        </span>
-                                        <span className="nav-link-title">{menu.title}</span>
-                                    </Link>
-
-                                    {hasChildren && (
-                                        <div className={`dropdown-menu ${isOpen ? 'show' : ''}`} data-bs-popper={isOpen ? "static" : ""}>
-                                            {menu.children!.map(child => (
-                                                <Link key={child.id} className={`dropdown-item ${isActive(child.url) ? 'active' : ''}`} href={child.url || '#'}>
-                                                    {child.title}
-                                                </Link>
-                                            ))}
-                                        </div>
+                                            </span>
+                                            <span className="nav-link-title">{menu.title}</span>
+                                        </Link>
                                     )}
                                 </li>
                             );

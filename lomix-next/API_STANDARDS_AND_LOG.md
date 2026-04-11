@@ -41,10 +41,16 @@ return ApiResponseHelper.error("Hata mesajı", 400);
 - Redundant olan `/api/mobile/families` klasörü silindi.
 - Tüm mesajlaşma trafiği tekilleştirilmiş olan **`/api/mobile/family/messages`** üzerinden dönmektedir.
 
-### Önerilen Kullanıcılar
-- `/api/mobile/users/recommended` endpoint'i veritabanı boşsa `endpoint_jsons/recommended_users.json` dosyasındaki mock verileri dönecek şekilde (fallback) yapılandırılmıştır.
+### Dashboard (Admin Paneli) Sadeleştirilmesi
+- Dinamik menü yapısı ve `Menu` veritabanı tablosu kaldırıldı.
+- `src/components/Sidebar.tsx` artık statik bir menü yapısı (`STATIC_MENUS`) kullanıyor.
+- Dinamik sayfa yapısı (`[...slug]`) ve menü yönetim sayfaları temizlendi.
 
-## 3. Standardize Edilmiş Endpoint Listesi (11 Nisan 2026)
+## 3. Dil ve Mesajlar
+- Şu an için API dönüş mesajları **Türkçe** olarak yapılandırılmıştır. 
+- İleride çoklu dil desteği (i18n) eklendiğinde bu mesajlar dinamik hale getirilecektir.
+
+## 4. Standardize Edilmiş Endpoint Listesi
 Aşağıdaki yollar yeni `ApiResponseHelper` yapısına ve standart dönüş formatına (`success`, `message`, `data`) geçirilmiştir:
 - `/api/mobile/profile`
 - `/api/mobile/rooms`
@@ -53,10 +59,6 @@ Aşağıdaki yollar yeni `ApiResponseHelper` yapısına ve standart dönüş for
 - `/api/mobile/stories/users`
 - `/api/mobile/users/recommended`
 - `/api/mobile/auth/*` (Login, Register, Verify, Password Reset, Social Auth vb.)
-
-## 4. Dil ve Mesajlar
-- Şu an için API dönüş mesajları **Türkçe** olarak yapılandırılmıştır. 
-- İleride çoklu dil desteği (i18n) eklendiğinde bu mesajlar dinamik hale getirilecektir.
 
 ## 5. İpucu: DB vs API Mapping
 Mobil uygulamanın beklediği alan isimleri (`image_url`, `action_type` vb.) ile veritabanı sütun isimleri (`avatar`, `interaction_type`) farklı olabilir. Bu durumda veritabanını güncellemek yerine `route.ts` içerisinde mapping (eşleştirme) yapılması tercih edilir.
