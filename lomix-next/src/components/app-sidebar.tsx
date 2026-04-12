@@ -60,6 +60,10 @@ const data = {
           url: "/dashboard/endpoints",
         },
         {
+          title: "API Dökümantasyonu",
+          url: "/dashboard/api-docs",
+        },
+        {
           title: "Sistem Logları",
           url: "/dashboard/system-logs",
         },

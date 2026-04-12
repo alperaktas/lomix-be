@@ -466,6 +466,84 @@
         }
       }
     },
+    "/api/mobile/room/create": {
+      "post": {
+        "summary": "Yeni Oda Oluştur",
+        "description": "Kullanıcı için yeni bir sesli veya görüntülü oda oluşturur.",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "description": "Oda başlığı"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Oda açıklaması"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "voice",
+                      "video"
+                    ],
+                    "description": "Oda tipi"
+                  },
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Oda kapak fotoğrafı"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Oda başarıyla oluşturuldu",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "room_id": {
+                          "type": "string"
+                        },
+                        "share_url": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/mobile/rooms": {
       "get": {
         "summary": "Canlı sesli odalar + bannerlar",
@@ -508,6 +586,106 @@
         "responses": {
           "200": {
             "description": "Video odaları başarıyla getirildi."
+          }
+        }
+      }
+    },
+    "/api/mobile/search": {
+      "post": {
+        "summary": "ID'ye Göre Arama (Kullanıcı veya Oda)",
+        "description": "Kullanıcı ID'si veya Oda ID'sine (roomId) göre tam eşleşme araması yapar.",
+        "tags": [
+          "Mobile Search"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "query",
+                  "category"
+                ],
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "example": "admin"
+                  },
+                  "category": {
+                    "type": "string",
+                    "enum": [
+                      "kullanıcı",
+                      "oda"
+                    ],
+                    "example": "kullanıcı"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Arama sonuçları listelendi",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "display_id": {
+                            "type": "string"
+                          },
+                          "avatar_url": {
+                            "type": "string"
+                          },
+                          "room_id": {
+                            "type": "string"
+                          },
+                          "owner_id": {
+                            "type": "string"
+                          },
+                          "viewer_count": {
+                            "type": "integer"
+                          },
+                          "is_live": {
+                            "type": "boolean"
+                          },
+                          "mode": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }

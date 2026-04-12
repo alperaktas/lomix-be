@@ -8,63 +8,49 @@ datasource db {
 }
 
 model User {
-  id                    Int       @id @default(autoincrement())
-  username              String    @unique
-  email                 String    @unique
-  password              String
-  role                  String    @default("user")
-  gender                String?
-  ipAddress             String?   @map("ip_address")
-  userAgent             String?   @map("user_agent")
-  deviceModel           String?   @map("device_model")
-  avatar                String?
-  phone                 String?
-  status                String    @default("pending")
-  verificationCode      String?   @map("verification_code")
-  resetPasswordCode     String?   @map("reset_password_code")
-  resetPasswordExpires  DateTime? @map("reset_password_expires")
-  
-  // Profile Fields
-  fullName              String?   @map("full_name")
-  nickname              String?
-  isVerified            Boolean   @default(false) @map("is_verified")
-  level                 Int       @default(1)
-  prestigePoints        Int       @default(0) @map("prestige_points")
-  
-  // VIP
-  isVip                 Boolean   @default(false) @map("is_vip")
-  vipLevel              Int       @default(0) @map("vip_level")
-  vipExpiresAt          DateTime? @map("vip_expires_at")
-  
-  // Ban
-  bannedUntil           DateTime? @map("banned_until")
-  banReason             String?   @map("ban_reason")
-  isPermanentBan        Boolean   @default(false) @map("is_permanent_ban")
-  bannedDeviceId        String?   @map("banned_device_id")
-  
-  // Limits
-  visitorViewLimit      Int       @default(10) @map("visitor_view_limit")
-  
-  createdAt             DateTime  @default(now()) @map("created_at")
-  updatedAt             DateTime  @updatedAt @map("updated_at")
-  userGroups            UserGroup[]
-  logs                  UserLog[]
-  bans                  UserBan[]
-
-  // Relations
-  wallet                Wallet?
-  stories               Story[]
-  rooms                 Room[]
-  sentFamilyMessages    FamilyMessage[]
-  
-  // Follows & Friends
-  followers             UserFollow[] @relation("followers")
-  following             UserFollow[] @relation("following")
-  friends1              UserFriend[] @relation("user1")
-  friends2              UserFriend[] @relation("user2")
-  // Agency Relation
-  ownedAgency           Agency?         @relation("AgencyOwner")
-  agencyMembership      AgencyMember?
+  id                   Int             @id @default(autoincrement())
+  username             String          @unique
+  password             String
+  email                String          @unique
+  role                 String          @default("user")
+  createdAt            DateTime        @default(now()) @map("created_at")
+  updatedAt            DateTime        @updatedAt @map("updated_at")
+  gender               String?
+  ipAddress            String?         @map("ip_address")
+  userAgent            String?         @map("user_agent")
+  deviceModel          String?         @map("device_model")
+  avatar               String?
+  phone                String?
+  status               String          @default("pending")
+  verificationCode     String?         @map("verification_code")
+  resetPasswordCode    String?         @map("reset_password_code")
+  resetPasswordExpires DateTime?       @map("reset_password_expires")
+  fullName             String?         @map("full_name")
+  isVerified           Boolean         @default(false) @map("is_verified")
+  isVip                Boolean         @default(false) @map("is_vip")
+  level                Int             @default(1)
+  prestigePoints       Int             @default(0) @map("prestige_points")
+  banReason            String?         @map("ban_reason")
+  bannedDeviceId       String?         @map("banned_device_id")
+  bannedUntil          DateTime?       @map("banned_until")
+  isPermanentBan       Boolean         @default(false) @map("is_permanent_ban")
+  nickname             String?
+  vipExpiresAt         DateTime?       @map("vip_expires_at")
+  vipLevel             Int             @default(0) @map("vip_level")
+  visitorViewLimit     Int             @default(10) @map("visitor_view_limit")
+  ownedAgency          Agency?         @relation("AgencyOwner")
+  agencyMembership     AgencyMember?
+  sentFamilyMessages   FamilyMessage[]
+  rooms                Room[]
+  stories              Story[]
+  bans                 UserBan[]
+  following            UserFollow[]    @relation("following")
+  followers            UserFollow[]    @relation("followers")
+  friends1             UserFriend[]    @relation("user1")
+  friends2             UserFriend[]    @relation("user2")
+  userGroups           UserGroup[]
+  logs                 UserLog[]
+  wallet               Wallet?
 
   @@map("users")
 }
@@ -79,11 +65,11 @@ model Role {
 }
 
 model Group {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
+  id          Int         @id @default(autoincrement())
+  name        String      @unique
   description String?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
   users       UserGroup[]
 
   @@map("groups")
@@ -95,23 +81,21 @@ model UserGroup {
   groupId   Int      @map("group_id")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, groupId])
   @@map("user_groups")
 }
 
-// No menu model anymore
-
 model Endpoint {
-  id             Int     @id @default(autoincrement())
+  id             Int      @id @default(autoincrement())
   category       String
   method         String
   path           String
   description    String?
-  requestSample  String? @map("request_sample")
-  responseSample String? @map("response_sample")
+  requestSample  String?  @map("request_sample")
+  responseSample String?  @map("response_sample")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
@@ -129,20 +113,20 @@ model Log {
 }
 
 model UserLog {
-  id        Int     @id @default(autoincrement())
-  userId    Int     @map("user_id")
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
   action    String
-  ipAddress String? @map("ip_address")
-  userAgent String? @map("user_agent")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_logs")
 }
 
 model SocialAuthLog {
-  id                  Int     @id @default(autoincrement())
+  id                  Int      @id @default(autoincrement())
   provider            String
   incomingRequest     String?
   verificationRequest String?
@@ -166,8 +150,7 @@ model Wallet {
   hasDepositReward Boolean  @default(false) @map("has_deposit_reward")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("wallets")
 }
@@ -180,28 +163,27 @@ model Story {
   isSeen        Boolean  @default(false) @map("is_seen")
   createdAt     DateTime @default(now()) @map("created_at")
   expiresAt     DateTime @map("expires_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("stories")
 }
 
 model Room {
-  id           Int      @id @default(autoincrement())
-  roomId       String   @unique @map("room_id")
+  id           Int       @id @default(autoincrement())
+  roomId       String    @unique @map("room_id")
   name         String
-  ownerId      Int      @map("owner_id")
-  isLive       Boolean  @default(false) @map("is_live")
-  mode         String   @default("pk") // e.g. pk, chat, normal
-  type         String   @default("voice") // voice or video
-  minLevel     Int      @default(1) @map("min_level")
-  thumbnailUrl String?  @map("thumbnail_url")
-  viewerCount  Int      @default(0) @map("viewer_count")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-
-  owner User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  tags  RoomTag[]
+  ownerId      Int       @map("owner_id")
+  isLive       Boolean   @default(false) @map("is_live")
+  mode         String    @default("pk")
+  type         String    @default("voice")
+  minLevel     Int       @default(1) @map("min_level")
+  description  String?
+  thumbnailUrl String?   @map("thumbnail_url")
+  viewerCount  Int       @default(0) @map("viewer_count")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  tags         RoomTag[]
+  owner        User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@map("rooms")
 }
@@ -211,8 +193,7 @@ model RoomTag {
   roomId   Int     @map("room_id")
   text     String
   colorHex String? @map("color_hex")
-
-  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  room     Room    @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@map("room_tags")
 }
@@ -222,8 +203,7 @@ model FamilyMessage {
   senderId    Int      @map("sender_id")
   messageText String   @map("message_text")
   createdAt   DateTime @default(now()) @map("created_at")
-
-  sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  sender      User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   @@map("family_messages")
 }
@@ -241,26 +221,22 @@ model RoomBanner {
 }
 
 model UserFollow {
-  followerId  Int @map("follower_id")
-  followingId Int @map("following_id")
-  
-  follower    User @relation("following", fields: [followerId], references: [id], onDelete: Cascade)
-  following   User @relation("followers", fields: [followingId], references: [id], onDelete: Cascade)
-
+  followerId  Int      @map("follower_id")
+  followingId Int      @map("following_id")
   createdAt   DateTime @default(now()) @map("created_at")
+  follower    User     @relation("following", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User     @relation("followers", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@id([followerId, followingId])
   @@map("user_follows")
 }
 
 model UserFriend {
-  user1Id Int @map("user1_id")
-  user2Id Int @map("user2_id")
-
-  user1   User @relation("user1", fields: [user1Id], references: [id], onDelete: Cascade)
-  user2   User @relation("user2", fields: [user2Id], references: [id], onDelete: Cascade)
-  
-  createdAt   DateTime @default(now()) @map("created_at")
+  user1Id   Int      @map("user1_id")
+  user2Id   Int      @map("user2_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  user1     User     @relation("user1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2     User     @relation("user2", fields: [user2Id], references: [id], onDelete: Cascade)
 
   @@id([user1Id, user2Id])
   @@map("user_friends")
@@ -277,17 +253,16 @@ model StoryPrice {
 }
 
 model Agency {
-  id          Int      @id @default(autoincrement())
+  id          Int            @id @default(autoincrement())
   name        String
-  ownerId     Int      @unique @map("owner_id")
+  ownerId     Int            @unique @map("owner_id")
   logo        String?
   description String?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
   owner       User           @relation("AgencyOwner", fields: [ownerId], references: [id])
-  members     AgencyMember[]
   invites     AgencyInvite[]
+  members     AgencyMember[]
 
   @@map("agencies")
 }
@@ -296,9 +271,8 @@ model AgencyMember {
   id        Int      @id @default(autoincrement())
   agencyId  Int      @map("agency_id")
   userId    Int      @unique @map("user_id")
-  status    String   @default("pending") // pending, approved, rejected
+  status    String   @default("pending")
   createdAt DateTime @default(now()) @map("created_at")
-
   agency    Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -311,24 +285,22 @@ model AgencyInvite {
   code      String   @unique
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
-
   agency    Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
 
   @@map("agency_invites")
 }
 
 model UserBan {
-  id          Int       @id @default(autoincrement())
-  userId      Int       @map("user_id")
-  type        String    // "temporary", "permanent", "device"
-  reason      String?
-  duration    String?   // "1h", "7d", "30d", "365d" etc.
-  expiresAt   DateTime? @map("expires_at")
-  deviceId    String?   @map("device_id")
-  isActive    Boolean   @default(true) @map("is_active")
-  createdAt   DateTime  @default(now()) @map("created_at")
-
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  type      String
+  reason    String?
+  duration  String?
+  expiresAt DateTime? @map("expires_at")
+  deviceId  String?   @map("device_id")
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_bans")
 }
