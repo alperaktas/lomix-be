@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Mic, MicOff, PhoneOff, Headphones, Loader2, Volume2, VolumeX } from "lucide-react";
+import { Mic, MicOff, PhoneOff, Headphones, Loader2, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -49,7 +49,7 @@ export default function RoomClientPage() {
             clientRef.current = client;
 
             // Uzak kullanıcı gelince sesini çal
-            client.on("user-published", async (remoteUser: any, mediaType: string) => {
+            client.on("user-published", async (remoteUser: any, mediaType: "audio" | "video") => {
                 await client.subscribe(remoteUser, mediaType);
                 if (mediaType === "audio") {
                     remoteUser.audioTrack?.play();
