@@ -2,6 +2,31 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 
+/**
+ * @swagger
+ * /api/mobile/room/leave:
+ *   post:
+ *     summary: Odadan Ayrıl
+ *     tags: [Mobile Rooms]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - roomId
+ *             properties:
+ *               roomId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Odadan başarıyla ayrıldınız
+ *       404:
+ *         description: Oda bulunamadı
+ */
 export async function POST(request: Request) {
     try {
         const userId = await getCurrentUserId(request);

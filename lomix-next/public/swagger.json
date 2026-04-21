@@ -466,6 +466,60 @@
         }
       }
     },
+    "/api/mobile/room/create": {
+      "post": {
+        "summary": "Yeni Oda Oluştur",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "default": "Yeni Oda"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "voice",
+                      "video"
+                    ],
+                    "default": "voice"
+                  },
+                  "image": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Oda başarıyla oluşturuldu"
+          },
+          "400": {
+            "description": "Hatalı istek"
+          },
+          "401": {
+            "description": "Yetkisiz erişim"
+          }
+        }
+      }
+    },
     "/api/mobile/room/detay": {
       "post": {
         "summary": "Oda Detayı Getir",
@@ -505,6 +559,129 @@
         "responses": {
           "200": {
             "description": "Oda detayı başarıyla getirildi"
+          }
+        }
+      }
+    },
+    "/api/mobile/room/join": {
+      "post": {
+        "summary": "Odaya Katıl",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomId"
+                ],
+                "properties": {
+                  "roomId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Odaya başarıyla katıldınız"
+          },
+          "403": {
+            "description": "Seviye yetersiz veya oda aktif değil"
+          },
+          "404": {
+            "description": "Oda bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/room/leave": {
+      "post": {
+        "summary": "Odadan Ayrıl",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomId"
+                ],
+                "properties": {
+                  "roomId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Odadan başarıyla ayrıldınız"
+          },
+          "404": {
+            "description": "Oda bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/room/token-refresh": {
+      "post": {
+        "summary": "Agora Token Yenile",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomId"
+                ],
+                "properties": {
+                  "roomId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token başarıyla yenilendi"
+          },
+          "403": {
+            "description": "Oda aktif değil"
+          },
+          "404": {
+            "description": "Oda bulunamadı"
           }
         }
       }

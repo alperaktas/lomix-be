@@ -3,6 +3,33 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { generateAgoraToken } from '@/lib/agora';
 
+/**
+ * @swagger
+ * /api/mobile/room/join:
+ *   post:
+ *     summary: Odaya Katıl
+ *     tags: [Mobile Rooms]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - roomId
+ *             properties:
+ *               roomId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Odaya başarıyla katıldınız
+ *       403:
+ *         description: Seviye yetersiz veya oda aktif değil
+ *       404:
+ *         description: Oda bulunamadı
+ */
 export async function POST(request: Request) {
     try {
         const userId = await getCurrentUserId(request);
