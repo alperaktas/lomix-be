@@ -52,6 +52,13 @@ export async function POST(req: Request) {
             return ApiResponseHelper.error('Email adresi veya şifre hatalı.', 401);
         }
 
+        // Ban kontrolü
+        const { checkUserBanStatus } = await import('@/lib/ban-check');
+        const banStatus = await checkUserBanStatus(user.id);
+        if (banStatus.banned) {
+            return ApiResponseHelper.error(banStatus.message || 'Hesabınız askıya alınmıştır.', 403);
+        }
+
         const token = jwt.sign(
             { id: user.id, email: user.email, role: user.role },
             process.env.JWT_SECRET || 'gizli_anahtar',

@@ -51,6 +51,11 @@ model User {
   userGroups           UserGroup[]
   logs                 UserLog[]
   wallet               Wallet?
+  roomParticipations   RoomParticipant[]
+  roomMicSlots         RoomMicSlot[]
+  roomMessages         RoomMessage[]
+  roomReports          RoomReport[]
+  adminActions         RoomAdminLog[]    @relation("AdminActions")
 
   @@map("users")
 }
@@ -169,21 +174,31 @@ model Story {
 }
 
 model Room {
-  id           Int       @id @default(autoincrement())
-  roomId       String    @unique @map("room_id")
+  id           Int               @id @default(autoincrement())
+  roomId       String            @unique @map("room_id")
   name         String
-  ownerId      Int       @map("owner_id")
-  isLive       Boolean   @default(false) @map("is_live")
-  mode         String    @default("pk")
-  type         String    @default("voice")
-  minLevel     Int       @default(1) @map("min_level")
+  ownerId      Int               @map("owner_id")
+  isLive       Boolean           @default(false) @map("is_live")
+  isClosed     Boolean           @default(false) @map("is_closed")
+  isVip        Boolean           @default(false) @map("is_vip")
+  isLocked     Boolean           @default(false) @map("is_locked")
+  password     String?
+  micCount     Int               @default(8) @map("mic_count")
+  mode         String            @default("pk")
+  type         String            @default("voice")
+  minLevel     Int               @default(1) @map("min_level")
   description  String?
-  thumbnailUrl String?   @map("thumbnail_url")
-  viewerCount  Int       @default(0) @map("viewer_count")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  thumbnailUrl String?           @map("thumbnail_url")
+  viewerCount  Int               @default(0) @map("viewer_count")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
   tags         RoomTag[]
-  owner        User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  participants RoomParticipant[]
+  micSlots     RoomMicSlot[]
+  messages     RoomMessage[]
+  reports      RoomReport[]
+  adminLogs    RoomAdminLog[]
+  owner        User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@map("rooms")
 }
@@ -303,4 +318,82 @@ model UserBan {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_bans")
+}
+
+model RoomParticipant {
+  id         Int      @id @default(autoincrement())
+  roomId     Int      @map("room_id")
+  userId     Int      @map("user_id")
+  frameAsset String?  @map("frame_asset")
+  joinedAt   DateTime @default(now()) @map("joined_at")
+  room       Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@map("room_participants")
+}
+
+model RoomMicSlot {
+  id        Int     @id @default(autoincrement())
+  roomId    Int     @map("room_id")
+  slotIndex Int     @map("slot_index")
+  label     String
+  icon      String  @default("mic_none_outlined")
+  isLocked  Boolean @default(false) @map("is_locked")
+  isMuted   Boolean @default(false) @map("is_muted")
+  userId    Int?    @map("user_id")
+  room      Room    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user      User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([roomId, slotIndex])
+  @@map("room_mic_slots")
+}
+
+model RoomMessage {
+  id         Int      @id @default(autoincrement())
+  roomId     Int      @map("room_id")
+  userId     Int      @map("user_id")
+  message    String
+  emoji      String?
+  levelColor String?  @map("level_color")
+  createdAt  DateTime @default(now()) @map("created_at")
+  room       Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("room_messages")
+}
+
+model RoomReport {
+  id         Int      @id @default(autoincrement())
+  roomId     Int      @map("room_id")
+  reporterId Int      @map("reporter_id")
+  reason     String
+  status     String   @default("pending")
+  createdAt  DateTime @default(now()) @map("created_at")
+  room       Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  reporter   User     @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@map("room_reports")
+}
+
+model RoomWordFilter {
+  id        Int      @id @default(autoincrement())
+  word      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("room_word_filters")
+}
+
+model RoomAdminLog {
+  id        Int      @id @default(autoincrement())
+  roomId    Int      @map("room_id")
+  adminId   Int      @map("admin_id")
+  action    String
+  targetId  Int?     @map("target_id")
+  details   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  admin     User     @relation("AdminActions", fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@map("room_admin_logs")
 }

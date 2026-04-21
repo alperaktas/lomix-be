@@ -9,7 +9,8 @@ import {
   ShieldCheck,
   FileText,
   Settings,
-  ChevronRight
+  ChevronRight,
+  Radio,
 } from "lucide-react"
 
 import {
@@ -67,6 +68,17 @@ const data = {
           title: "Sistem Logları",
           url: "/dashboard/system-logs",
         },
+      ],
+    },
+    {
+      title: "Oda Yönetimi",
+      url: "#",
+      icon: Radio,
+      children: [
+        { title: "Odalar", url: "/dashboard/rooms" },
+        { title: "Raporlar", url: "/dashboard/rooms/reports" },
+        { title: "Kelime Filtresi", url: "/dashboard/rooms/word-filters" },
+        { title: "Test İstemcisi", url: "/dashboard/rooms/client" },
       ],
     },
     {

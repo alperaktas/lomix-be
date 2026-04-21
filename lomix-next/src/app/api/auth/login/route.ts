@@ -47,6 +47,13 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: 'Hatalı şifre' }, { status: 401 });
         }
 
+        // Ban kontrolü
+        const { checkUserBanStatus } = await import('@/lib/ban-check');
+        const banStatus = await checkUserBanStatus(user.id);
+        if (banStatus.banned) {
+            return NextResponse.json({ message: banStatus.message }, { status: 403 });
+        }
+
         // Token oluştur
         const token = jwt.sign(
             { id: user.id, role: user.role, email: user.email },

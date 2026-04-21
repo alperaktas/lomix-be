@@ -466,10 +466,10 @@
         }
       }
     },
-    "/api/mobile/room/create": {
+    "/api/mobile/room/detay": {
       "post": {
-        "summary": "Yeni Oda Oluştur",
-        "description": "Kullanıcı için yeni bir sesli veya görüntülü oda oluşturur.",
+        "summary": "Oda Detayı Getir",
+        "description": "Belirli bir odanın detay bilgilerini getirir.",
         "tags": [
           "Mobile Rooms"
         ],
@@ -481,30 +481,21 @@
         "requestBody": {
           "required": true,
           "content": {
-            "multipart/form-data": {
+            "application/json": {
               "schema": {
                 "type": "object",
+                "required": [
+                  "roomId",
+                  "ownerId"
+                ],
                 "properties": {
-                  "title": {
+                  "roomId": {
                     "type": "string",
-                    "description": "Oda başlığı"
+                    "description": "Oda ID"
                   },
-                  "description": {
-                    "type": "string",
-                    "description": "Oda açıklaması"
-                  },
-                  "type": {
-                    "type": "string",
-                    "enum": [
-                      "voice",
-                      "video"
-                    ],
-                    "description": "Oda tipi"
-                  },
-                  "image": {
-                    "type": "string",
-                    "format": "binary",
-                    "description": "Oda kapak fotoğrafı"
+                  "ownerId": {
+                    "type": "integer",
+                    "description": "Oda sahibinin kullanıcı ID'si"
                   }
                 }
               }
@@ -513,33 +504,7 @@
         },
         "responses": {
           "200": {
-            "description": "Oda başarıyla oluşturuldu",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "boolean"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "room_id": {
-                          "type": "string"
-                        },
-                        "share_url": {
-                          "type": "string"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
+            "description": "Oda detayı başarıyla getirildi"
           }
         }
       }

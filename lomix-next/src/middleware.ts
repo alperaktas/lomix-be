@@ -79,6 +79,24 @@ export async function middleware(request: NextRequest) {
             // JWT'yi doğrula ve içeriği al
             const { payload } = await jwtVerify(token, SECRET_KEY);
 
+            // REAL-TIME BAN KONTROLÜ
+            // Sadece API ve dashboard isteklerinde kontrol yapalım
+            try {
+                const origin = request.nextUrl.origin;
+                const banCheckResponse = await fetch(`${origin}/api/auth/check-ban?userId=${payload.id}`);
+                const banStatus = await banCheckResponse.json();
+
+                if (banStatus.banned) {
+                    return addCorsHeaders(NextResponse.json({ 
+                        message: banStatus.message || 'Hesabınız askıya alınmıştır.',
+                        banned: true 
+                    }, { status: 403 }));
+                }
+            } catch (banError) {
+                console.error("Middleware ban check silent error:", banError);
+                // Sessiz hata: DB/API ulaşılmazsa geçişe izin veriyoruz (fail-open)
+            }
+
             // Eğer admin paneli API'lerine erişiliyorsa role kontrolü yap
             const adminOnlyPaths = ['/api/users', '/api/groups', '/api/roles', '/api/system', '/api/logs'];
             if (adminOnlyPaths.some(path => pathname.startsWith(path))) {
