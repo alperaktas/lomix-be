@@ -25,22 +25,19 @@ export async function GET(request: Request) {
         const page = parseInt(searchParams.get('page') || "1", 10);
         const pageSize = 10;
 
-        // Veritabanından canlı ("voice") odaları al
         const rooms = await prisma.room.findMany({
-            where: {
-                isLive: true,
-                type: "voice" // Sadece sesli odalar
-            },
+            where: { isLive: true },
             include: {
                 owner: true,
                 tags: true
             },
+            orderBy: { createdAt: 'desc' },
             skip: (page - 1) * pageSize,
             take: pageSize
         });
 
         const totalCount = await prisma.room.count({
-            where: { isLive: true, type: "voice" }
+            where: { isLive: true }
         });
 
         // Banner'ları veritabanından al
