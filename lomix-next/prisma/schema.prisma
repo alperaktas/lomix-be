@@ -56,6 +56,7 @@ model User {
   roomMessages         RoomMessage[]
   roomReports          RoomReport[]
   adminActions         RoomAdminLog[]    @relation("AdminActions")
+  micRequests          RoomMicRequest[]
 
   @@map("users")
 }
@@ -189,16 +190,18 @@ model Room {
   minLevel     Int               @default(1) @map("min_level")
   description  String?
   thumbnailUrl String?           @map("thumbnail_url")
-  viewerCount  Int               @default(0) @map("viewer_count")
-  createdAt    DateTime          @default(now()) @map("created_at")
-  updatedAt    DateTime          @updatedAt @map("updated_at")
-  tags         RoomTag[]
-  participants RoomParticipant[]
-  micSlots     RoomMicSlot[]
-  messages     RoomMessage[]
-  reports      RoomReport[]
-  adminLogs    RoomAdminLog[]
-  owner        User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  viewerCount    Int               @default(0) @map("viewer_count")
+  memberOnlyMic  Boolean           @default(false) @map("member_only_mic")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+  tags           RoomTag[]
+  participants   RoomParticipant[]
+  micSlots       RoomMicSlot[]
+  messages       RoomMessage[]
+  reports        RoomReport[]
+  adminLogs      RoomAdminLog[]
+  micRequests    RoomMicRequest[]
+  owner          User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@map("rooms")
 }
@@ -396,4 +399,17 @@ model RoomAdminLog {
   admin     User     @relation("AdminActions", fields: [adminId], references: [id], onDelete: Cascade)
 
   @@map("room_admin_logs")
+}
+
+model RoomMicRequest {
+  id        Int      @id @default(autoincrement())
+  roomId    Int      @map("room_id")
+  userId    Int      @map("user_id")
+  status    String   @default("pending")
+  createdAt DateTime @default(now()) @map("created_at")
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@map("room_mic_requests")
 }

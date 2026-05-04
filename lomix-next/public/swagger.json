@@ -520,6 +520,54 @@
         }
       }
     },
+    "/api/mobile/room/desc": {
+      "post": {
+        "summary": "Oda açıklamasını güncelle",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomId",
+                  "description"
+                ],
+                "properties": {
+                  "roomId": {
+                    "type": "string",
+                    "description": "Oda ID (room_XXXXXX veya sayısal)"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Yeni açıklama metni"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Açıklama güncellendi"
+          },
+          "403": {
+            "description": "Yetkisiz (sadece oda sahibi güncelleyebilir)"
+          },
+          "404": {
+            "description": "Oda bulunamadı"
+          }
+        }
+      }
+    },
     "/api/mobile/room/detay": {
       "post": {
         "summary": "Oda Detayı Getir",
@@ -637,6 +685,103 @@
         "responses": {
           "200": {
             "description": "Odadan başarıyla ayrıldınız"
+          },
+          "404": {
+            "description": "Oda bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/room/request": {
+      "post": {
+        "summary": "Mikrofon talebini kabul et veya reddet (sadece oda sahibi)",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomId",
+                  "userId",
+                  "requestType"
+                ],
+                "properties": {
+                  "roomId": {
+                    "type": "string"
+                  },
+                  "userId": {
+                    "type": "integer",
+                    "description": "Talebi yapan kullanıcının ID'si"
+                  },
+                  "requestType": {
+                    "type": "string",
+                    "enum": [
+                      "accept",
+                      "reject"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Talep güncellendi"
+          },
+          "403": {
+            "description": "Yetkisiz"
+          },
+          "404": {
+            "description": "Oda veya talep bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/room/requests": {
+      "post": {
+        "summary": "Bekleyen mikrofon taleplerini listele (sadece oda sahibi)",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomId"
+                ],
+                "properties": {
+                  "roomId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Talepler listelendi"
+          },
+          "403": {
+            "description": "Yetkisiz"
           },
           "404": {
             "description": "Oda bulunamadı"
