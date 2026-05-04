@@ -692,6 +692,51 @@
         }
       }
     },
+    "/api/mobile/room/mic-request": {
+      "post": {
+        "summary": "Mikrofon talebi gönder",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomId"
+                ],
+                "properties": {
+                  "roomId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Talep gönderildi"
+          },
+          "400": {
+            "description": "Zaten bekleyen talep var"
+          },
+          "403": {
+            "description": "Odada değilsiniz"
+          },
+          "404": {
+            "description": "Oda bulunamadı"
+          }
+        }
+      }
+    },
     "/api/mobile/room/request": {
       "post": {
         "summary": "Mikrofon talebini kabul et veya reddet (sadece oda sahibi)",
