@@ -179,7 +179,10 @@ export default function UserDetailPage() {
                             </Badge>
                             {isBanned && <Badge variant="destructive" className="font-bold">BANLI</Badge>}
                         </div>
-                        <p className="text-sm text-zinc-500 mt-1">{user.email}</p>
+                        <p className="text-sm text-zinc-500 mt-1">
+                            <span className="font-mono text-xs bg-zinc-100 text-zinc-500 px-1.5 py-0.5 rounded mr-2">#{user.id}</span>
+                            {user.email}
+                        </p>
                         <div className="flex items-center gap-4 mt-3 flex-wrap">
                             <InfoPill icon={<TrendingUp className="h-3 w-3" />} label="Level" value={user.level} />
                             {user.isVip && <InfoPill icon={<Crown className="h-3 w-3 text-amber-500" />} label="VIP" value={`Lv.${user.vipLevel}`} className="text-amber-700 bg-amber-50 border-amber-200" />}

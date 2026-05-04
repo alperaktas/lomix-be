@@ -50,3 +50,6 @@ next-env.d.ts
 
 endpoint_jsons/*
 endpoints_map.json
+
+.vercel
+.env*.local

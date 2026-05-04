@@ -57,7 +57,7 @@ export const getColumns = ({ onEdit, onDelete, onDetail }: ColumnsProps): Column
           </div>
           <div className="flex flex-col min-w-0">
             <span className="font-bold text-zinc-900 text-sm truncate">{user.username}</span>
-            <span className="text-[11px] text-zinc-400 truncate">{user.email}</span>
+            <span className="text-[11px] text-zinc-400 truncate">#{user.id}</span>
           </div>
         </div>
       )
