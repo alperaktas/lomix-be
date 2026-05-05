@@ -1198,6 +1198,9 @@
             "multipart/form-data": {
               "schema": {
                 "type": "object",
+                "required": [
+                  "file"
+                ],
                 "properties": {
                   "file": {
                     "type": "string",
@@ -1210,7 +1213,10 @@
         },
         "responses": {
           "200": {
-            "description": "Dosya Başarıyla Yüklendi"
+            "description": "Dosya başarıyla yüklendi"
+          },
+          "400": {
+            "description": "Dosya bulunamadı veya geçersiz"
           }
         }
       }

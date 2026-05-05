@@ -55,6 +55,7 @@ export async function POST(request: Request) {
         if (image && typeof image !== 'string') {
             const blob = await put(image.name, image, {
                 access: 'public',
+                addRandomSuffix: true,
             });
             thumbnailUrl = blob.url;
         }
