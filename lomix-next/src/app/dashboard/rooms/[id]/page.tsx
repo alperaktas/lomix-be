@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import {
     Loader2, ArrowLeft, Crown, Lock, Users, Mic, MicOff,
     MessageSquare, ShieldAlert, History, XCircle, UserX, RefreshCcw,
-    Headphones, PhoneOff,
+    Headphones, PhoneOff, Pencil, Check, X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -45,6 +45,8 @@ export default function RoomDetailPage() {
     const [kickingUserId, setKickingUserId] = useState<number | null>(null);
     const [closingRoom, setClosingRoom] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
+    const [micCountEdit, setMicCountEdit] = useState<number | null>(null);
+    const [micCountSaving, setMicCountSaving] = useState(false);
 
     // Admin gizli katılım
     const [isListening, setIsListening] = useState(false);
@@ -99,6 +101,23 @@ export default function RoomDetailPage() {
     const handleCloseRoom = async () => {
         await doAction('close');
         setClosingRoom(false);
+    };
+
+    const handleMicCountSave = async () => {
+        if (micCountEdit === null || micCountEdit === room?.micCount) return;
+        setMicCountSaving(true);
+        try {
+            const token = localStorage.getItem('token');
+            await fetch(`/api/rooms/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                body: JSON.stringify({ micCount: micCountEdit }),
+            });
+            await fetchRoom();
+            setMicCountEdit(null);
+        } finally {
+            setMicCountSaving(false);
+        }
     };
 
     const handleAdminJoin = async () => {
@@ -268,7 +287,44 @@ export default function RoomDetailPage() {
                 )}
 
                 {activeTab === 'Mikrofon Slotları' && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className="flex flex-col gap-4">
+                        {/* Mic sayısı düzenleyici */}
+                        <div className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-white px-4 py-3">
+                            <Mic className="h-4 w-4 text-zinc-400 shrink-0" />
+                            <span className="text-sm text-zinc-600">Toplam Mikrofon Sayısı</span>
+                            <div className="ml-auto flex items-center gap-2">
+                                {micCountEdit === null ? (
+                                    <>
+                                        <span className="text-sm font-bold text-zinc-900">{room.micCount}</span>
+                                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0"
+                                            onClick={() => setMicCountEdit(room.micCount)}>
+                                            <Pencil className="h-3.5 w-3.5 text-zinc-400" />
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <select
+                                            value={micCountEdit}
+                                            onChange={e => setMicCountEdit(Number(e.target.value))}
+                                            className="h-7 rounded border border-zinc-200 bg-white px-2 text-sm text-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-400"
+                                        >
+                                            {[2, 4, 6, 8, 10, 12, 16].map(n => (
+                                                <option key={n} value={n}>{n}</option>
+                                            ))}
+                                        </select>
+                                        <Button size="sm" className="h-7 w-7 p-0 bg-emerald-600 hover:bg-emerald-700 text-white"
+                                            onClick={handleMicCountSave} disabled={micCountSaving}>
+                                            {micCountSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                                        </Button>
+                                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0"
+                                            onClick={() => setMicCountEdit(null)} disabled={micCountSaving}>
+                                            <X className="h-3.5 w-3.5 text-zinc-400" />
+                                        </Button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                         {room.micSlots.map(slot => (
                             <div key={slot.id} className="rounded-lg border border-zinc-200 bg-white p-3 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
@@ -291,6 +347,7 @@ export default function RoomDetailPage() {
                             </div>
                         ))}
                         {room.micSlots.length === 0 && <p className="text-sm text-zinc-400">Mic slot bulunamadı.</p>}
+                        </div>
                     </div>
                 )}
 
