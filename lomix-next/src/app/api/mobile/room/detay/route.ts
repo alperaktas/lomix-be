@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
+import { getRoomRole } from '@/lib/room-permissions';
 
 function formatGoldAmount(balance: number): string {
     if (balance >= 1000000) return (balance / 1000000).toFixed(1) + 'M';
@@ -45,20 +46,17 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json();
-        const { roomId, ownerId } = body;
+        const { roomId } = body;
 
-        if (!roomId || !ownerId) {
+        if (!roomId) {
             return NextResponse.json(
-                { status: false, message: "roomId ve ownerId zorunludur" },
+                { status: false, message: "roomId zorunludur" },
                 { status: 400 }
             );
         }
 
         const room = await prisma.room.findFirst({
-            where: {
-                roomId: String(roomId),
-                ownerId: Number(ownerId),
-            },
+            where: { roomId: String(roomId) },
             include: {
                 owner: {
                     select: {
@@ -124,6 +122,7 @@ export async function POST(request: Request) {
         const hostName = room.owner.fullName || room.owner.username;
         const hostAvatar = room.owner.avatar || "";
         const goldAmount = formatGoldAmount(room.owner.wallet?.balance ?? 0);
+        const myRole = await getRoomRole(room.id, userId, room.ownerId);
 
         const participants = room.participants.map((p) => ({
             id: String(p.user.id),
@@ -168,6 +167,9 @@ export async function POST(request: Request) {
                 onlineCount: participants.length,
                 micCount: room.micCount,
                 memberOnlyMic: room.memberOnlyMic,
+                myRole,
+                canManageMic: myRole === 'owner' || myRole === 'admin',
+                canUseMic: myRole !== 'visitor' || !room.memberOnlyMic,
                 participants,
                 micSlots,
                 messages,

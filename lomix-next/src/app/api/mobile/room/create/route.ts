@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { put } from '@vercel/blob';
+import { logRoomEvent } from '@/lib/room-log';
 
 /**
  * @swagger
@@ -63,6 +64,8 @@ export async function POST(request: Request) {
         const roomId = "room_" + Math.floor(100000 + Math.random() * 900000);
         const channelName = roomId; // Agora channel adı = roomId
 
+        const DEFAULT_MIC_COUNT = 8;
+
         const newRoom = await prisma.room.create({
             data: {
                 name: title,
@@ -74,8 +77,20 @@ export async function POST(request: Request) {
                 viewerCount: 0,
                 roomId,
                 thumbnailUrl,
+                micCount: DEFAULT_MIC_COUNT,
+                members: {
+                    create: { userId, role: 'owner' },
+                },
+                micSlots: {
+                    create: Array.from({ length: DEFAULT_MIC_COUNT }, (_, i) => ({
+                        slotIndex: i,
+                        label: `Mikrofon ${i + 1}`,
+                    })),
+                },
             }
         });
+
+        logRoomEvent(newRoom.id, userId, 'ROOM_CREATED');
 
         return NextResponse.json({
             status: true,
@@ -83,6 +98,7 @@ export async function POST(request: Request) {
             data: {
                 room_id: newRoom.roomId,
                 channel_name: channelName,
+                mic_count: DEFAULT_MIC_COUNT,
                 share_url: `https://lomix.com/room/${newRoom.roomId.replace('room_', '')}`,
             }
         });

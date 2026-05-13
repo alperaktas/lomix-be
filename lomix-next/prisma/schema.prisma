@@ -55,8 +55,12 @@ model User {
   roomMicSlots         RoomMicSlot[]
   roomMessages         RoomMessage[]
   roomReports          RoomReport[]
-  adminActions         RoomAdminLog[]    @relation("AdminActions")
+  adminActions         RoomAdminLog[]      @relation("AdminActions")
   micRequests          RoomMicRequest[]
+  roomMemberships      RoomMember[]        @relation("RoomMemberUser")
+  invitedMembers       RoomMember[]        @relation("RoomMemberInviter")
+  receivedInvites      RoomMemberInvite[]  @relation("InviteRecipient")
+  sentInvites          RoomMemberInvite[]  @relation("InviteSender")
 
   @@map("users")
 }
@@ -201,6 +205,8 @@ model Room {
   reports        RoomReport[]
   adminLogs      RoomAdminLog[]
   micRequests    RoomMicRequest[]
+  members        RoomMember[]
+  memberInvites  RoomMemberInvite[]
   owner          User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@map("rooms")
@@ -412,4 +418,34 @@ model RoomMicRequest {
 
   @@unique([roomId, userId])
   @@map("room_mic_requests")
+}
+
+model RoomMember {
+  id        Int      @id @default(autoincrement())
+  roomId    Int      @map("room_id")
+  userId    Int      @map("user_id")
+  role      String   @default("member") // "admin" | "member"
+  invitedBy Int?     @map("invited_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user      User     @relation("RoomMemberUser", fields: [userId], references: [id], onDelete: Cascade)
+  inviter   User?    @relation("RoomMemberInviter", fields: [invitedBy], references: [id], onDelete: SetNull)
+
+  @@unique([roomId, userId])
+  @@map("room_members")
+}
+
+model RoomMemberInvite {
+  id        Int      @id @default(autoincrement())
+  roomId    Int      @map("room_id")
+  userId    Int      @map("user_id")
+  invitedBy Int      @map("invited_by")
+  status    String   @default("pending") // "pending" | "accepted" | "rejected"
+  createdAt DateTime @default(now()) @map("created_at")
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user      User     @relation("InviteRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  inviter   User     @relation("InviteSender", fields: [invitedBy], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@map("room_member_invites")
 }

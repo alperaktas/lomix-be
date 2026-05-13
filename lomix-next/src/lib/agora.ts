@@ -1,7 +1,9 @@
-import { RtcTokenBuilder, RtcRole, RtmTokenBuilder } from 'agora-token';
+import { RtcTokenBuilder, RtcRole, RtmTokenBuilder, ChatTokenBuilder } from 'agora-token';
 
 const APP_ID = () => process.env.AGORA_APP_ID!;
 const APP_CERT = () => process.env.AGORA_APP_CERTIFICATE!;
+const CUSTOMER_KEY = () => process.env.AGORA_CUSTOMER_KEY!;
+const CUSTOMER_SECRET = () => process.env.AGORA_CUSTOMER_SECRET!;
 
 export function generateAgoraToken(channelName: string, uid: number): string {
     const expireTs = Math.floor(Date.now() / 1000) + 86400;
@@ -13,4 +15,21 @@ export function generateAgoraToken(channelName: string, uid: number): string {
 export function generateRtmToken(userId: string): string {
     const expireTs = Math.floor(Date.now() / 1000) + 86400;
     return RtmTokenBuilder.buildToken(APP_ID(), APP_CERT(), userId, expireTs);
+}
+
+export function generateChatToken(userId: string): string {
+    const expireTs = Math.floor(Date.now() / 1000) + 86400;
+    return ChatTokenBuilder.buildUserToken(APP_ID(), APP_CERT(), userId, expireTs);
+}
+
+export async function sendAdminSignalEvent(channelName: string, event: Record<string, unknown>): Promise<void> {
+    const credentials = Buffer.from(`${CUSTOMER_KEY()}:${CUSTOMER_SECRET()}`).toString('base64');
+    await fetch(`https://api.agora.io/v1/apps/${APP_ID()}/channels/${channelName}/messages`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Basic ${credentials}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ payload: JSON.stringify(event) }),
+    });
 }

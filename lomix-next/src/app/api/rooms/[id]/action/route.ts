@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { sendAdminSignalEvent } from '@/lib/agora';
 
 // Admin actions: kick, mute, close, rename
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -9,7 +10,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         const body = await req.json();
         const { action, targetUserId, slotIndex, adminId, details } = body;
 
-        const room = await prisma.room.findUnique({ where: { id: roomDbId } });
+        const room = await prisma.room.findUnique({ where: { id: roomDbId }, select: { id: true, roomId: true } });
         if (!room) return NextResponse.json({ message: 'Oda bulunamadı' }, { status: 404 });
 
         let result: any = {};
@@ -24,6 +25,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
                     where: { roomId: roomDbId, userId: targetUserId },
                     data: { userId: null },
                 });
+                await sendAdminSignalEvent(room.roomId, { type: 'KICKED', targetUserId: String(targetUserId) });
                 result = { message: 'Kullanıcı odadan atıldı' };
                 break;
 
@@ -33,6 +35,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
                     where: { roomId: roomDbId, slotIndex },
                     data: { isMuted: true },
                 });
+                await sendAdminSignalEvent(room.roomId, { type: 'MIC_MUTED', slotIndex, isMuted: true });
                 result = { message: 'Mikrofon kapatıldı' };
                 break;
 
@@ -42,6 +45,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
                     where: { roomId: roomDbId, slotIndex },
                     data: { isMuted: false },
                 });
+                await sendAdminSignalEvent(room.roomId, { type: 'MIC_MUTED', slotIndex, isMuted: false });
                 result = { message: 'Mikrofon açıldı' };
                 break;
 
@@ -50,6 +54,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
                     where: { id: roomDbId },
                     data: { isLive: false, isClosed: true },
                 });
+                await sendAdminSignalEvent(room.roomId, { type: 'ROOM_CLOSED' });
                 result = { message: 'Oda kapatıldı' };
                 break;
 

@@ -466,6 +466,66 @@
         }
       }
     },
+    "/api/mobile/room/chat-token": {
+      "post": {
+        "summary": "Agora Chat token al",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chat token döndürüldü"
+          }
+        }
+      }
+    },
+    "/api/mobile/room/close": {
+      "post": {
+        "summary": "Odayı kapat (Sadece Owner)",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomId"
+                ],
+                "properties": {
+                  "roomId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Oda kapatıldı"
+          },
+          "403": {
+            "description": "Sadece oda sahibi kapatabilir"
+          },
+          "404": {
+            "description": "Oda bulunamadı"
+          }
+        }
+      }
+    },
     "/api/mobile/room/create": {
       "post": {
         "summary": "Yeni Oda Oluştur",
@@ -653,6 +713,53 @@
         }
       }
     },
+    "/api/mobile/room/kick": {
+      "post": {
+        "summary": "Kullanıcıyı odadan at (Sahip veya Admin)",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomId",
+                  "userId"
+                ],
+                "properties": {
+                  "roomId": {
+                    "type": "string"
+                  },
+                  "userId": {
+                    "type": "integer",
+                    "description": "Odadan atılacak kullanıcının ID'si"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Kullanıcı odadan atıldı"
+          },
+          "403": {
+            "description": "Yetkisiz"
+          },
+          "404": {
+            "description": "Oda bulunamadı"
+          }
+        }
+      }
+    },
     "/api/mobile/room/leave": {
       "post": {
         "summary": "Odadan Ayrıl",
@@ -688,6 +795,237 @@
           },
           "404": {
             "description": "Oda bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/room/member/invite-respond": {
+      "post": {
+        "summary": "Üyelik davetine yanıt ver",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "inviteId",
+                  "action"
+                ],
+                "properties": {
+                  "inviteId": {
+                    "type": "integer"
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "accept",
+                      "reject"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Davet yanıtlandı"
+          },
+          "403": {
+            "description": "Bu davet size ait değil"
+          },
+          "404": {
+            "description": "Davet bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/room/member/invite": {
+      "post": {
+        "summary": "Odaya üye davet et (Sahip veya Admin)",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomId",
+                  "userId"
+                ],
+                "properties": {
+                  "roomId": {
+                    "type": "string"
+                  },
+                  "userId": {
+                    "type": "integer",
+                    "description": "Davet edilecek kullanıcının ID'si"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Davet gönderildi"
+          },
+          "403": {
+            "description": "Yetkisiz"
+          },
+          "404": {
+            "description": "Oda bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/room/member/list": {
+      "post": {
+        "summary": "Oda üyelerini ve adminlerini listele",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomId"
+                ],
+                "properties": {
+                  "roomId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Üye listesi"
+          },
+          "404": {
+            "description": "Oda bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/room/member/remove": {
+      "post": {
+        "summary": "Oda üyesini çıkar (Sahip veya Admin)",
+        "description": "Sahip: admin ve üyeleri çıkarabilir.\nAdmin: sadece üyeleri (member) çıkarabilir.\n",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomId",
+                  "userId"
+                ],
+                "properties": {
+                  "roomId": {
+                    "type": "string"
+                  },
+                  "userId": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Üye çıkarıldı"
+          },
+          "403": {
+            "description": "Yetkisiz"
+          }
+        }
+      }
+    },
+    "/api/mobile/room/member/set-admin": {
+      "post": {
+        "summary": "Üyeyi admin yap veya admin'i üyeliğe düşür (Sadece Sahip)",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomId",
+                  "userId",
+                  "action"
+                ],
+                "properties": {
+                  "roomId": {
+                    "type": "string"
+                  },
+                  "userId": {
+                    "type": "integer"
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "promote",
+                      "demote"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rol güncellendi"
+          },
+          "403": {
+            "description": "Sadece oda sahibi yapabilir"
           }
         }
       }
@@ -759,9 +1097,10 @@
         ]
       }
     },
-    "/api/mobile/room/mic-request": {
+    "/api/mobile/room/mic/leave": {
       "post": {
-        "summary": "Mikrofon talebi gönder",
+        "summary": "Mic slotundan ayrıl (odadan çıkmadan)",
+        "description": "Kullanıcı, odada kalmaya devam ederken mikrofon slotunu bırakır.",
         "tags": [
           "Mobile Rooms"
         ],
@@ -790,13 +1129,7 @@
         },
         "responses": {
           "200": {
-            "description": "Talep gönderildi"
-          },
-          "400": {
-            "description": "Zaten bekleyen talep var"
-          },
-          "403": {
-            "description": "Odada değilsiniz"
+            "description": "Mic bırakıldı"
           },
           "404": {
             "description": "Oda bulunamadı"
@@ -804,9 +1137,9 @@
         }
       }
     },
-    "/api/mobile/room/request": {
+    "/api/mobile/room/mic/lock": {
       "post": {
-        "summary": "Mikrofon talebini kabul et veya reddet (sadece oda sahibi)",
+        "summary": "Mikrofon slotunu kilitle veya kilidi aç (Sahip veya Admin)",
         "tags": [
           "Mobile Rooms"
         ],
@@ -823,22 +1156,21 @@
                 "type": "object",
                 "required": [
                   "roomId",
-                  "userId",
-                  "requestType"
+                  "slotIndex",
+                  "action"
                 ],
                 "properties": {
                   "roomId": {
                     "type": "string"
                   },
-                  "userId": {
-                    "type": "integer",
-                    "description": "Talebi yapan kullanıcının ID'si"
+                  "slotIndex": {
+                    "type": "integer"
                   },
-                  "requestType": {
+                  "action": {
                     "type": "string",
                     "enum": [
-                      "accept",
-                      "reject"
+                      "lock",
+                      "unlock"
                     ]
                   }
                 }
@@ -848,20 +1180,17 @@
         },
         "responses": {
           "200": {
-            "description": "Talep güncellendi"
+            "description": "Slot durumu güncellendi"
           },
           "403": {
             "description": "Yetkisiz"
-          },
-          "404": {
-            "description": "Oda veya talep bulunamadı"
           }
         }
       }
     },
-    "/api/mobile/room/requests": {
+    "/api/mobile/room/mic/mute": {
       "post": {
-        "summary": "Bekleyen mikrofon taleplerini listele (sadece oda sahibi)",
+        "summary": "Mikrofonu sessize al veya aç (Sahip veya Admin)",
         "tags": [
           "Mobile Rooms"
         ],
@@ -877,11 +1206,24 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "roomId"
+                  "roomId",
+                  "slotIndex",
+                  "action"
                 ],
                 "properties": {
                   "roomId": {
                     "type": "string"
+                  },
+                  "slotIndex": {
+                    "type": "integer",
+                    "description": "Mic slot numarası (0'dan başlar)"
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "mute",
+                      "unmute"
+                    ]
                   }
                 }
               }
@@ -890,10 +1232,112 @@
         },
         "responses": {
           "200": {
-            "description": "Talepler listelendi"
+            "description": "Mic durumu güncellendi"
           },
           "403": {
             "description": "Yetkisiz"
+          }
+        }
+      }
+    },
+    "/api/mobile/room/mic/take": {
+      "post": {
+        "summary": "Mic slotu al (Direkt — Üye veya memberOnlyMic kapalıysa herkes)",
+        "description": "memberOnlyMic=false: Tüm katılımcılar boş slot alabilir.\nmemberOnlyMic=true: Sadece oda üyeleri, adminler ve sahip alabilir. Ziyaretçiler 403 alır.\n",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomId",
+                  "slotIndex"
+                ],
+                "properties": {
+                  "roomId": {
+                    "type": "string"
+                  },
+                  "slotIndex": {
+                    "type": "integer",
+                    "description": "Alınmak istenen slot numarası"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mic alındı"
+          },
+          "403": {
+            "description": "Yetersiz yetki veya slot dolu/kilitli"
+          },
+          "404": {
+            "description": "Oda veya slot bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/room/report": {
+      "post": {
+        "summary": "Odayı raporla",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomId",
+                  "reason"
+                ],
+                "properties": {
+                  "roomId": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "enum": [
+                      "spam",
+                      "inappropriate",
+                      "harassment",
+                      "fake",
+                      "other"
+                    ]
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Ek açıklama (isteğe bağlı)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rapor gönderildi"
+          },
+          "400": {
+            "description": "Geçersiz istek veya daha önce raporlanmış"
           },
           "404": {
             "description": "Oda bulunamadı"
@@ -901,9 +1345,62 @@
         }
       }
     },
-    "/api/mobile/room/rtm-token": {
+    "/api/mobile/room/settings": {
       "post": {
-        "summary": "Agora RTM token al (mesajlaşma için)",
+        "summary": "Oda ayarlarını güncelle (Sadece Oda Sahibi)",
+        "description": "Oda sahibi; oda adını, fotoğrafını ve mikrofon üyelik kısıtlamasını güncelleyebilir.\n",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomId"
+                ],
+                "properties": {
+                  "roomId": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "memberOnlyMic": {
+                    "type": "boolean"
+                  },
+                  "image": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ayarlar güncellendi"
+          },
+          "403": {
+            "description": "Sadece oda sahibi güncelleyebilir"
+          },
+          "404": {
+            "description": "Oda bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/room/signalling-token": {
+      "post": {
+        "summary": "Agora Signalling token al (oda event'leri için)",
         "tags": [
           "Mobile Rooms"
         ],
@@ -932,7 +1429,7 @@
         },
         "responses": {
           "200": {
-            "description": "RTM token döndürüldü"
+            "description": "Signalling token döndürüldü"
           },
           "404": {
             "description": "Oda bulunamadı"

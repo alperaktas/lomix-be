@@ -1,13 +1,14 @@
 import { ApiResponseHelper } from '@/lib/api-response';
-import { generateRtmToken } from '@/lib/agora';
-import { getCurrentUserId } from '@/lib/current-user';
 import prisma from '@/lib/prisma';
+import { getCurrentUserId } from '@/lib/current-user';
+import { sendAdminSignalEvent } from '@/lib/agora';
+import { logRoomEvent } from '@/lib/room-log';
 
 /**
  * @swagger
- * /api/mobile/room/rtm-token:
+ * /api/mobile/room/close:
  *   post:
- *     summary: Agora RTM token al (mesajlaşma için)
+ *     summary: Odayı kapat (Sadece Owner)
  *     tags: [Mobile Rooms]
  *     security:
  *       - bearerAuth: []
@@ -23,7 +24,9 @@ import prisma from '@/lib/prisma';
  *                 type: string
  *     responses:
  *       200:
- *         description: RTM token döndürüldü
+ *         description: Oda kapatıldı
+ *       403:
+ *         description: Sadece oda sahibi kapatabilir
  *       404:
  *         description: Oda bulunamadı
  */
@@ -39,19 +42,23 @@ export async function POST(request: Request) {
             ? { roomId: String(roomId) }
             : { id: Number(roomId) };
 
-        const room = await prisma.room.findFirst({ where, select: { id: true, roomId: true } });
+        const room = await prisma.room.findFirst({ where, select: { id: true, roomId: true, ownerId: true, isLive: true } });
         if (!room) return ApiResponseHelper.error("Oda bulunamadı.", 404);
 
-        // RTM userId string olmalı
-        const rtmUserId = String(userId);
-        const rtmToken = generateRtmToken(rtmUserId);
+        if (room.ownerId !== userId) return ApiResponseHelper.error("Sadece oda sahibi odayı kapatabilir.", 403);
 
-        return ApiResponseHelper.success({
-            rtm_token: rtmToken,
-            rtm_uid: rtmUserId,
-            channel_name: room.roomId,
-            app_id: process.env.NEXT_PUBLIC_AGORA_APP_ID,
-        }, "RTM token oluşturuldu.");
+        if (!room.isLive) return ApiResponseHelper.error("Oda zaten kapalı.", 400);
+
+        await prisma.room.update({
+            where: { id: room.id },
+            data: { isLive: false, isClosed: true },
+        });
+
+        await sendAdminSignalEvent(room.roomId, { type: 'ROOM_CLOSED' });
+
+        logRoomEvent(room.id, userId, 'ROOM_CLOSED');
+
+        return ApiResponseHelper.success(null, "Oda kapatıldı.");
     } catch (error: any) {
         return ApiResponseHelper.error(error.message, 500);
     }

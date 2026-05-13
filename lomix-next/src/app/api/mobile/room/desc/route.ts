@@ -1,6 +1,8 @@
 import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
+import { getRoomRole, canUpdateTopic } from '@/lib/room-permissions';
+import { logRoomEvent } from '@/lib/room-log';
 
 /**
  * @swagger
@@ -51,8 +53,9 @@ export async function POST(request: Request) {
         const room = await prisma.room.findFirst({ where });
         if (!room) return ApiResponseHelper.error("Oda bulunamadı.", 404);
 
-        if (room.ownerId !== userId) {
-            return ApiResponseHelper.error("Bu odanın açıklamasını değiştirme yetkiniz yok.", 403);
+        const role = await getRoomRole(room.id, userId, room.ownerId);
+        if (!canUpdateTopic(role)) {
+            return ApiResponseHelper.error("Oda konusunu sadece oda sahibi veya adminler güncelleyebilir.", 403);
         }
 
         const updated = await prisma.room.update({
@@ -61,10 +64,13 @@ export async function POST(request: Request) {
             select: { roomId: true, name: true, description: true },
         });
 
+        logRoomEvent(room.id, userId, 'DESC_UPDATED');
+
         return ApiResponseHelper.success({
             room_id: updated.roomId,
             name: updated.name,
             description: updated.description,
+            rtm_event: { type: 'SETTINGS_UPDATED', description: updated.description },
         }, "Oda açıklaması güncellendi.");
     } catch (error: any) {
         return ApiResponseHelper.error(error.message, 500);

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
+import { logRoomEvent } from '@/lib/room-log';
 
 /**
  * @swagger
@@ -67,9 +68,14 @@ export async function POST(request: Request) {
             });
         }
 
+        logRoomEvent(room.id, userId, 'ROOM_LEFT');
+
         return NextResponse.json({
             status: true,
             message: "Odadan ayrıldınız",
+            data: {
+                rtm_event: { type: 'USER_LEFT', userId: String(userId) },
+            },
         });
     } catch (error: any) {
         console.error("Room leave error:", error);

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { sendAdminSignalEvent } from '@/lib/agora';
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
@@ -64,6 +65,16 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             data,
         });
 
+        if (data.isClosed || data.isLive === false) {
+            await sendAdminSignalEvent(room.roomId, { type: 'ROOM_CLOSED' });
+        } else {
+            const eventPayload: Record<string, unknown> = { type: 'SETTINGS_UPDATED' };
+            if (data.name) eventPayload.name = data.name;
+            if (data.isLocked !== undefined) eventPayload.isLocked = data.isLocked;
+            if (data.micCount !== undefined) eventPayload.micCount = data.micCount;
+            await sendAdminSignalEvent(room.roomId, eventPayload);
+        }
+
         return NextResponse.json(room);
     } catch (error: any) {
         return NextResponse.json({ message: error.message }, { status: 500 });
@@ -73,6 +84,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id } = await params;
+        const room = await prisma.room.findUnique({ where: { id: parseInt(id) }, select: { roomId: true } });
+        if (room) await sendAdminSignalEvent(room.roomId, { type: 'ROOM_CLOSED' });
         await prisma.room.delete({ where: { id: parseInt(id) } });
         return NextResponse.json({ message: 'Oda silindi' });
     } catch (error: any) {

@@ -1,12 +1,13 @@
 import { ApiResponseHelper } from '@/lib/api-response';
-import prisma from '@/lib/prisma';
+import { generateRtmToken } from '@/lib/agora';
 import { getCurrentUserId } from '@/lib/current-user';
+import prisma from '@/lib/prisma';
 
 /**
  * @swagger
- * /api/mobile/room/requests:
+ * /api/mobile/room/signalling-token:
  *   post:
- *     summary: Bekleyen mikrofon taleplerini listele (sadece oda sahibi)
+ *     summary: Agora Signalling token al (oda event'leri için)
  *     tags: [Mobile Rooms]
  *     security:
  *       - bearerAuth: []
@@ -22,9 +23,7 @@ import { getCurrentUserId } from '@/lib/current-user';
  *                 type: string
  *     responses:
  *       200:
- *         description: Talepler listelendi
- *       403:
- *         description: Yetkisiz
+ *         description: Signalling token döndürüldü
  *       404:
  *         description: Oda bulunamadı
  */
@@ -40,34 +39,18 @@ export async function POST(request: Request) {
             ? { roomId: String(roomId) }
             : { id: Number(roomId) };
 
-        const room = await prisma.room.findFirst({ where });
+        const room = await prisma.room.findFirst({ where, select: { id: true, roomId: true } });
         if (!room) return ApiResponseHelper.error("Oda bulunamadı.", 404);
 
-        if (room.ownerId !== userId) {
-            return ApiResponseHelper.error("Bu işlem için yetkiniz yok.", 403);
-        }
-
-        const requests = await prisma.roomMicRequest.findMany({
-            where: { roomId: room.id, status: "pending" },
-            include: {
-                user: {
-                    select: { id: true, fullName: true, username: true, avatar: true, level: true },
-                },
-            },
-            orderBy: { createdAt: 'asc' },
-        });
+        const rtmUserId = String(userId);
+        const signallingToken = generateRtmToken(rtmUserId);
 
         return ApiResponseHelper.success({
-            roomId: String(roomId),
-            requests: requests.map(r => ({
-                id: String(r.id),
-                userId: String(r.userId),
-                name: r.user.fullName || r.user.username,
-                level: `Lvl ${r.user.level}`,
-                avatarUrl: r.user.avatar || "https://i.pravatar.cc/50",
-                createdAt: r.createdAt,
-            })),
-        }, "Üyelik istekleri getirildi.");
+            signalling_token: signallingToken,
+            uid: rtmUserId,
+            channel_name: room.roomId,
+            app_id: process.env.NEXT_PUBLIC_AGORA_APP_ID,
+        }, "Signalling token oluşturuldu.");
     } catch (error: any) {
         return ApiResponseHelper.error(error.message, 500);
     }

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { generateAgoraToken } from '@/lib/agora';
+import { getRoomRole } from '@/lib/room-permissions';
+import { logRoomEvent } from '@/lib/room-log';
 
 /**
  * @swagger
@@ -44,7 +46,7 @@ export async function POST(request: Request) {
 
         const room = await prisma.room.findUnique({
             where: { roomId: String(roomId) },
-            select: { id: true, roomId: true, name: true, isLive: true, isClosed: true, minLevel: true },
+            select: { id: true, roomId: true, name: true, isLive: true, isClosed: true, minLevel: true, ownerId: true, memberOnlyMic: true },
         });
 
         if (!room) {
@@ -57,7 +59,7 @@ export async function POST(request: Request) {
 
         const user = await prisma.user.findUnique({
             where: { id: userId },
-            select: { level: true },
+            select: { level: true, username: true, fullName: true, avatar: true },
         });
 
         if (user && user.level < room.minLevel) {
@@ -78,6 +80,9 @@ export async function POST(request: Request) {
         });
 
         const agoraToken = generateAgoraToken(room.roomId, userId);
+        const myRole = await getRoomRole(room.id, userId, room.ownerId);
+
+        logRoomEvent(room.id, userId, 'ROOM_JOINED');
 
         return NextResponse.json({
             status: true,
@@ -87,6 +92,15 @@ export async function POST(request: Request) {
                 channel_name: room.roomId,
                 agora_token: agoraToken,
                 uid: userId,
+                my_role: myRole,
+                member_only_mic: room.memberOnlyMic,
+                can_use_mic: myRole !== 'visitor' || !room.memberOnlyMic,
+                rtm_event: {
+                    type: 'USER_JOINED',
+                    userId: String(userId),
+                    username: user?.fullName || user?.username || '',
+                    avatarUrl: user?.avatar || '',
+                },
             },
         });
     } catch (error: any) {
