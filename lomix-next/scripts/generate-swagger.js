@@ -12,13 +12,13 @@ const options = {
         },
         servers: [
             {
+                url: process.env.NEXT_PUBLIC_API_URL || 'https://lomix-be-i2rg.vercel.app',
+                description: 'Production server',
+            },
+            {
                 url: 'http://localhost:3000',
                 description: 'Local server (Development)',
             },
-            {
-                url: process.env.NEXT_PUBLIC_API_URL || 'https://lomix.vercel.app',
-                description: 'Production server',
-            }
         ],
         components: {
             securitySchemes: {
