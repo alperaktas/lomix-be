@@ -26,6 +26,7 @@ export async function POST(request: Request) {
             chat_token: chatToken,
             chat_uid: chatUserId,
             app_id: process.env.NEXT_PUBLIC_AGORA_APP_ID,
+            app_key: process.env.AGORA_CHAT_APP_KEY,
         }, "Chat token oluşturuldu.");
     } catch (error: any) {
         return ApiResponseHelper.error(error.message, 500);
