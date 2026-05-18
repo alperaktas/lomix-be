@@ -22,6 +22,34 @@ export function generateChatToken(userId: string): string {
     return ChatTokenBuilder.buildUserToken(APP_ID(), APP_CERT(), userId, expireTs);
 }
 
+function generateChatAppToken(): string {
+    const expireTs = Math.floor(Date.now() / 1000) + 3600;
+    return ChatTokenBuilder.buildAppToken(APP_ID(), APP_CERT(), expireTs);
+}
+
+export async function registerAgoraChatUser(userId: string): Promise<void> {
+    const appKey = process.env.AGORA_CHAT_APP_KEY!;
+    const [orgName, appName] = appKey.split('#');
+    const appToken = generateChatAppToken();
+
+    const res = await fetch(`https://a71.chat.agora.io/${orgName}/${appName}/users`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${appToken}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username: userId, password: `lomix_${userId}` }),
+    });
+
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        const desc: string = err?.error_description || '';
+        // Zaten kayıtlı → sessizce geç
+        if (res.status === 409 || desc.includes('unique') || desc.includes('exists')) return;
+        throw new Error(`Agora Chat kayıt hatası: ${desc || res.status}`);
+    }
+}
+
 export async function sendAdminSignalEvent(channelName: string, event: Record<string, unknown>): Promise<void> {
     const credentials = Buffer.from(`${CUSTOMER_KEY()}:${CUSTOMER_SECRET()}`).toString('base64');
     await fetch(`https://api.agora.io/v1/apps/${APP_ID()}/channels/${channelName}/messages`, {

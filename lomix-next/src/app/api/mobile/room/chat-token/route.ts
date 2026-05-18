@@ -1,5 +1,5 @@
 import { ApiResponseHelper } from '@/lib/api-response';
-import { generateChatToken } from '@/lib/agora';
+import { generateChatToken, registerAgoraChatUser } from '@/lib/agora';
 import { getCurrentUserId } from '@/lib/current-user';
 
 /**
@@ -20,6 +20,7 @@ export async function POST(request: Request) {
         if (!userId) return ApiResponseHelper.error("Yetkisiz erişim.", 401);
 
         const chatUserId = String(userId);
+        await registerAgoraChatUser(chatUserId);
         const chatToken = generateChatToken(chatUserId);
 
         return ApiResponseHelper.success({
