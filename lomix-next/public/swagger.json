@@ -25,6 +25,529 @@
     }
   },
   "paths": {
+    "/api/mobile/anlar/add-comment": {
+      "post": {
+        "summary": "Yorum Ekle",
+        "tags": [
+          "Mobile Anlar"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "an_id",
+                  "text"
+                ],
+                "properties": {
+                  "an_id": {
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "parent_comment_id": {
+                    "type": "string",
+                    "description": "Yanıt için üst yorum ID"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Yorum eklendi"
+          }
+        }
+      }
+    },
+    "/api/mobile/anlar/anlar": {
+      "post": {
+        "summary": "Anları Listele",
+        "tags": [
+          "Mobile Anlar"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "category": {
+                    "type": "string",
+                    "enum": [
+                      "all",
+                      "hi",
+                      "sohbet"
+                    ],
+                    "default": "all"
+                  },
+                  "topic_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Anlar getirildi"
+          }
+        }
+      }
+    },
+    "/api/mobile/anlar/available-tags": {
+      "post": {
+        "summary": "Kullanılabilir Etiketleri Getir",
+        "tags": [
+          "Mobile Anlar"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Etiketler getirildi"
+          }
+        }
+      }
+    },
+    "/api/mobile/anlar/comments": {
+      "post": {
+        "summary": "An Yorumlarını Getir",
+        "tags": [
+          "Mobile Anlar"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "an_id"
+                ],
+                "properties": {
+                  "an_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Yorumlar getirildi"
+          }
+        }
+      }
+    },
+    "/api/mobile/anlar/duzenle": {
+      "post": {
+        "summary": "Anı Düzenle",
+        "tags": [
+          "Mobile Anlar"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "type": "string",
+                    "description": "JSON array string. Örn: [\"Spor\",\"Yemek\"]"
+                  },
+                  "image_path": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "An güncellendi"
+          },
+          "403": {
+            "description": "Yetkisiz"
+          },
+          "404": {
+            "description": "An bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/anlar/ekle": {
+      "post": {
+        "summary": "Yeni An Ekle",
+        "tags": [
+          "Mobile Anlar"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "description"
+                ],
+                "properties": {
+                  "description": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "type": "string",
+                    "description": "JSON array string. Örn: [\"Spor\",\"Yemek\"]"
+                  },
+                  "action_type": {
+                    "type": "string",
+                    "enum": [
+                      "hi",
+                      "sohbet"
+                    ],
+                    "default": "hi"
+                  },
+                  "image_path": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "An eklendi"
+          },
+          "403": {
+            "description": "An paylaşma yasağı"
+          }
+        }
+      }
+    },
+    "/api/mobile/anlar/hot-topics": {
+      "post": {
+        "summary": "Sıcak Konuları Getir",
+        "tags": [
+          "Mobile Anlar"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sıcak konular getirildi"
+          }
+        }
+      }
+    },
+    "/api/mobile/anlar/like-comment": {
+      "post": {
+        "summary": "Yorumu Beğen",
+        "tags": [
+          "Mobile Anlar"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "comment_id"
+                ],
+                "properties": {
+                  "comment_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Yorum beğenildi"
+          }
+        }
+      }
+    },
+    "/api/mobile/anlar/like-hi": {
+      "post": {
+        "summary": "Anı Hi Beğen",
+        "tags": [
+          "Mobile Anlar"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "an_id"
+                ],
+                "properties": {
+                  "an_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Hi beğenildi"
+          }
+        }
+      }
+    },
+    "/api/mobile/anlar/like": {
+      "post": {
+        "summary": "Anı Beğen",
+        "tags": [
+          "Mobile Anlar"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "an_id"
+                ],
+                "properties": {
+                  "an_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "An beğenildi"
+          }
+        }
+      }
+    },
+    "/api/mobile/anlar/sil": {
+      "post": {
+        "summary": "Anı Sil",
+        "tags": [
+          "Mobile Anlar"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "An silindi"
+          },
+          "403": {
+            "description": "Yetkisiz"
+          },
+          "404": {
+            "description": "An bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/anlar/unlike-comment": {
+      "post": {
+        "summary": "Yorum Beğenisini Kaldır",
+        "tags": [
+          "Mobile Anlar"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "comment_id"
+                ],
+                "properties": {
+                  "comment_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Beğeni kaldırıldı"
+          }
+        }
+      }
+    },
+    "/api/mobile/anlar/unlike-hi": {
+      "post": {
+        "summary": "Hi Beğenisini Kaldır",
+        "tags": [
+          "Mobile Anlar"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "an_id"
+                ],
+                "properties": {
+                  "an_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Hi beğenisi kaldırıldı"
+          }
+        }
+      }
+    },
+    "/api/mobile/anlar/unlike": {
+      "post": {
+        "summary": "An Beğenisini Kaldır",
+        "tags": [
+          "Mobile Anlar"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "an_id"
+                ],
+                "properties": {
+                  "an_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Beğeni kaldırıldı"
+          }
+        }
+      }
+    },
     "/api/mobile/auth/apple": {
       "post": {
         "summary": "Apple ile giriş/kayıt"

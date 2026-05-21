@@ -82,6 +82,11 @@ const data = {
       ],
     },
     {
+      title: "Anlar",
+      url: "/dashboard/anlar",
+      icon: Radio,
+    },
+    {
       title: "Ayarlar",
       url: "/dashboard/settings",
       icon: Settings,
