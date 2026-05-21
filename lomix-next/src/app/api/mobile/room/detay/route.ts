@@ -170,6 +170,7 @@ export async function POST(request: Request) {
                 myRole,
                 canManageMic: myRole === 'owner' || myRole === 'admin',
                 canUseMic: myRole !== 'visitor' || !room.memberOnlyMic,
+                agoraChatRoomId: room.agoraChatRoomId,
                 participants,
                 micSlots,
                 messages,

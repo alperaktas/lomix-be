@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
-import { generateAgoraToken } from '@/lib/agora';
+import { generateAgoraToken, registerAgoraChatUser, createAgoraChatRoom } from '@/lib/agora';
 import { getRoomRole } from '@/lib/room-permissions';
 import { logRoomEvent } from '@/lib/room-log';
 
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
 
         const room = await prisma.room.findUnique({
             where: { roomId: String(roomId) },
-            select: { id: true, roomId: true, name: true, isLive: true, isClosed: true, minLevel: true, ownerId: true, memberOnlyMic: true },
+            select: { id: true, roomId: true, name: true, isLive: true, isClosed: true, minLevel: true, ownerId: true, memberOnlyMic: true, agoraChatRoomId: true },
         });
 
         if (!room) {
@@ -79,6 +79,16 @@ export async function POST(request: Request) {
             data: { viewerCount: { increment: 1 } },
         });
 
+        // Kullanıcıyı Agora Chat'e kaydet
+        await registerAgoraChatUser(String(userId));
+
+        // Eski odaların chatroom'u yoksa lazy yarat
+        let agoraChatRoomId: string | null = room.agoraChatRoomId;
+        if (!agoraChatRoomId) {
+            agoraChatRoomId = await createAgoraChatRoom(room.name, String(room.ownerId));
+            await prisma.room.update({ where: { id: room.id }, data: { agoraChatRoomId } });
+        }
+
         const agoraToken = generateAgoraToken(room.roomId, userId);
         const myRole = await getRoomRole(room.id, userId, room.ownerId);
 
@@ -95,6 +105,7 @@ export async function POST(request: Request) {
                 my_role: myRole,
                 member_only_mic: room.memberOnlyMic,
                 can_use_mic: myRole !== 'visitor' || !room.memberOnlyMic,
+                agora_chat_room_id: room.agoraChatRoomId,
                 rtm_event: {
                     type: 'USER_JOINED',
                     userId: String(userId),

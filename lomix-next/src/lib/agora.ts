@@ -27,6 +27,29 @@ function generateChatAppToken(): string {
     return ChatTokenBuilder.buildAppToken(APP_ID(), APP_CERT(), expireTs);
 }
 
+export async function createAgoraChatRoom(name: string, ownerUserId: string): Promise<string> {
+    const appKey = process.env.AGORA_CHAT_APP_KEY!;
+    const [orgName, appName] = appKey.split('#');
+    const appToken = generateChatAppToken();
+
+    const res = await fetch(`https://a71.chat.agora.io/${orgName}/${appName}/chatrooms`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${appToken}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, description: name, owner: ownerUserId, maxusers: 1000 }),
+    });
+
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(`Agora chatroom oluşturulamadı: ${err?.error_description || res.status}`);
+    }
+
+    const data = await res.json();
+    return String(data.data.id);
+}
+
 export async function registerAgoraChatUser(userId: string): Promise<void> {
     const appKey = process.env.AGORA_CHAT_APP_KEY!;
     const [orgName, appName] = appKey.split('#');

@@ -195,8 +195,9 @@ model Room {
   description  String?
   thumbnailUrl String?           @map("thumbnail_url")
   viewerCount    Int               @default(0) @map("viewer_count")
-  memberOnlyMic  Boolean           @default(false) @map("member_only_mic")
-  createdAt      DateTime          @default(now()) @map("created_at")
+  memberOnlyMic    Boolean           @default(false) @map("member_only_mic")
+  agoraChatRoomId  String?           @map("agora_chat_room_id")
+  createdAt        DateTime          @default(now()) @map("created_at")
   updatedAt      DateTime          @updatedAt @map("updated_at")
   tags           RoomTag[]
   participants   RoomParticipant[]

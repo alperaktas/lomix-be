@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { put } from '@vercel/blob';
 import { logRoomEvent } from '@/lib/room-log';
+import { createAgoraChatRoom, registerAgoraChatUser } from '@/lib/agora';
 
 /**
  * @swagger
@@ -61,10 +62,14 @@ export async function POST(request: Request) {
             thumbnailUrl = blob.url;
         }
 
-        const roomId = "room_" + Math.floor(100000 + Math.random() * 900000);
-        const channelName = roomId; // Agora channel adı = roomId
+        const roomId = "r" + Math.floor(100000 + Math.random() * 900000);
+        const channelName = roomId;
 
         const DEFAULT_MIC_COUNT = 8;
+
+        // Owner'ı Agora Chat'e kaydet ve chatroom oluştur
+        await registerAgoraChatUser(String(userId));
+        const agoraChatRoomId = await createAgoraChatRoom(title, String(userId));
 
         const newRoom = await prisma.room.create({
             data: {
@@ -78,6 +83,7 @@ export async function POST(request: Request) {
                 roomId,
                 thumbnailUrl,
                 micCount: DEFAULT_MIC_COUNT,
+                agoraChatRoomId,
                 members: {
                     create: { userId, role: 'owner' },
                 },
@@ -98,8 +104,9 @@ export async function POST(request: Request) {
             data: {
                 room_id: newRoom.roomId,
                 channel_name: channelName,
+                agora_chat_room_id: agoraChatRoomId,
                 mic_count: DEFAULT_MIC_COUNT,
-                share_url: `https://lomix.com/room/${newRoom.roomId.replace('room_', '')}`,
+                share_url: `https://lomix.com/room/${newRoom.roomId}`,
             }
         });
     } catch (error: any) {
