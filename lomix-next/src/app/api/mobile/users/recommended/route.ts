@@ -77,7 +77,9 @@ export async function GET(request: Request) {
             name: r.fullName || r.username,
             image_url: r.avatar || "https://i.pravatar.cc/150",
             is_vip: r.isVip || false,
-            action_type: "hi" // Varsayılan aksiyon tipi
+            action_type: "hi",
+            level: r.level,
+            score: r.prestigePoints,
         })) : fallback;
 
         return ApiResponseHelper.success(responseData, "Önerilen kullanıcılar listelendi.");

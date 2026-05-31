@@ -89,14 +89,14 @@
                   "category": {
                     "type": "string",
                     "enum": [
-                      "all",
-                      "hi",
-                      "sohbet"
-                    ],
-                    "default": "all"
+                      "Takip Edilen",
+                      "Keşfet",
+                      "Benim"
+                    ]
                   },
                   "topic_id": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Hot topic ID - kategori ile OR olarak birleştirilir"
                   }
                 }
               }
@@ -106,6 +106,9 @@
         "responses": {
           "200": {
             "description": "Anlar getirildi"
+          },
+          "400": {
+            "description": "Geçersiz kategori"
           }
         }
       }

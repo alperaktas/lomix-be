@@ -31,10 +31,13 @@ export async function GET() {
 
         const formattedUsers = users.map(user => {
             return {
+                id: user.id,
                 name: user.fullName || user.username || 'Bilinmeyen Kullanıcı',
-                image_url: user.avatar || 'https://i.pravatar.cc/150?img=' + (user.id % 70), // Fallback image if avatar is missing
+                image_url: user.avatar || 'https://i.pravatar.cc/150?img=' + (user.id % 70),
                 is_vip: user.isVip || false,
-                action_type: (user.rooms && user.rooms.length > 0) ? 'chatRoom' : 'hi'
+                action_type: (user.rooms && user.rooms.length > 0) ? 'chatRoom' : 'hi',
+                level: user.level,
+                score: user.prestigePoints,
             };
         });
 

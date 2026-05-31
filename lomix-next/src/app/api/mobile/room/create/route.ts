@@ -79,13 +79,16 @@ export async function POST(request: Request) {
                 isLive: true,
                 type,
                 mode: "public",
-                viewerCount: 0,
+                viewerCount: 1,
                 roomId,
                 thumbnailUrl,
                 micCount: DEFAULT_MIC_COUNT,
                 agoraChatRoomId,
                 members: {
                     create: { userId, role: 'owner' },
+                },
+                participants: {
+                    create: { userId },
                 },
                 micSlots: {
                     create: Array.from({ length: DEFAULT_MIC_COUNT }, (_, i) => ({

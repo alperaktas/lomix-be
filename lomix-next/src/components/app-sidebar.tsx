@@ -83,8 +83,12 @@ const data = {
     },
     {
       title: "Anlar",
-      url: "/dashboard/anlar",
+      url: "#",
       icon: Radio,
+      children: [
+        { title: "Anlar", url: "/dashboard/anlar" },
+        { title: "Sıcak Konular", url: "/dashboard/anlar/topics" },
+      ],
     },
     {
       title: "Ayarlar",

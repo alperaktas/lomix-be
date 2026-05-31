@@ -3,6 +3,8 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { getAnTime } from '@/lib/an-time';
 
+const VALID_CATEGORIES = ['Takip Edilen', 'Keşfet', 'Benim'] as const;
+
 /**
  * @swagger
  * /api/mobile/anlar/anlar:
@@ -19,13 +21,15 @@ import { getAnTime } from '@/lib/an-time';
  *             properties:
  *               category:
  *                 type: string
- *                 enum: [all, hi, sohbet]
- *                 default: all
+ *                 enum: [Takip Edilen, Keşfet, Benim]
  *               topic_id:
  *                 type: string
+ *                 description: Hot topic ID - kategori ile OR olarak birleştirilir
  *     responses:
  *       200:
  *         description: Anlar getirildi
+ *       400:
+ *         description: Geçersiz kategori
  */
 export async function POST(request: Request) {
     try {
@@ -34,9 +38,39 @@ export async function POST(request: Request) {
 
         const { category, topic_id } = await request.json();
 
-        const where: any = {};
-        if (category && category !== 'all') where.actionType = category;
-        if (topic_id) where.topicId = Number(topic_id);
+        if (category && !VALID_CATEGORIES.includes(category)) {
+            return ApiResponseHelper.error(
+                `Geçersiz kategori. Geçerli değerler: ${VALID_CATEGORIES.join(', ')}`,
+                400
+            );
+        }
+
+        // Build category filter
+        let categoryWhere: any = null;
+        if (category === 'Takip Edilen') {
+            const follows = await prisma.userFollow.findMany({
+                where: { followerId: userId },
+                select: { followingId: true },
+            });
+            const followingIds = follows.map(f => f.followingId);
+            categoryWhere = { userId: { in: followingIds } };
+        } else if (category === 'Benim') {
+            categoryWhere = { userId };
+        }
+        // 'Keşfet' or no category = no filter
+
+        // Build topic filter
+        const topicWhere: any = topic_id ? { topicId: Number(topic_id) } : null;
+
+        // Combine with OR when both are present, otherwise use whichever exists
+        let where: any = {};
+        if (categoryWhere && topicWhere) {
+            where = { OR: [categoryWhere, topicWhere] };
+        } else if (categoryWhere) {
+            where = categoryWhere;
+        } else if (topicWhere) {
+            where = topicWhere;
+        }
 
         const anlar = await prisma.an.findMany({
             where,
