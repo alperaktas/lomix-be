@@ -72,12 +72,19 @@ export async function GET(request: Request) {
             }
         ];
 
+        // Fetch interactions for the current user to determine action_type
+        const interactions = currentUserId ? await prisma.userInteraction.findMany({
+            where: { userId: currentUserId, targetId: { in: users.map(u => u.id) } },
+            select: { targetId: true, actionType: true },
+        }) : [];
+        const interactionMap = new Map(interactions.map(i => [i.targetId, i.actionType]));
+
         const responseData = users.length > 0 ? users.map(r => ({
             id: r.id,
             name: r.fullName || r.username,
             image_url: r.avatar || "https://i.pravatar.cc/150",
             is_vip: r.isVip || false,
-            action_type: "hi",
+            action_type: interactionMap.get(r.id) || "hi",
             level: r.level,
             score: r.prestigePoints,
         })) : fallback;

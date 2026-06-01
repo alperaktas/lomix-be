@@ -867,6 +867,220 @@
         }
       }
     },
+    "/api/mobile/ben": {
+      "get": {
+        "summary": "Kendi Profil Bilgilerim",
+        "tags": [
+          "Mobile Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bilgiler başarıyla getirildi"
+          }
+        }
+      }
+    },
+    "/api/mobile/chat/messages": {
+      "get": {
+        "summary": "İki Kullanıcı Arasındaki Mesajlar",
+        "tags": [
+          "Mobile Chat"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mesajlar başarıyla getirildi"
+          }
+        }
+      }
+    },
+    "/api/mobile/chat/send": {
+      "post": {
+        "summary": "Direkt Mesaj Gönder",
+        "tags": [
+          "Mobile Chat"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "integer"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "image_url": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mesaj gönderildi"
+          }
+        }
+      }
+    },
+    "/api/mobile/messages/clear": {
+      "post": {
+        "summary": "Mesaj Kutusunu Temizle",
+        "tags": [
+          "Mobile Chat"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mesaj kutusu başarıyla temizlendi"
+          }
+        }
+      }
+    },
+    "/api/mobile/messages/delete": {
+      "post": {
+        "summary": "Mesaj Kutusunu Sil",
+        "tags": [
+          "Mobile Chat"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mesaj kutusu başarıyla silindi"
+          }
+        }
+      }
+    },
+    "/api/mobile/messages/pin": {
+      "post": {
+        "summary": "Mesaj Kutusunu Sabitle / Sabitlemeden Kaldır",
+        "tags": [
+          "Mobile Chat"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mesaj kutusu en üste sabitlendi"
+          }
+        }
+      }
+    },
+    "/api/mobile/messages": {
+      "get": {
+        "summary": "DM Gelen Kutusu",
+        "tags": [
+          "Mobile Chat"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Mesajlar başarıyla getirildi"
+          }
+        }
+      }
+    },
     "/api/mobile/profile/me": {
       "get": {
         "summary": "Giriş yapmış kullanıcının profil bilgilerini getirir",
@@ -2257,6 +2471,42 @@
         }
       }
     },
+    "/api/mobile/users/block": {
+      "post": {
+        "summary": "Kullanıcıyı Engelle / Engeli Kaldır",
+        "tags": [
+          "Mobile Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Kullanıcı başarıyla engellendi"
+          }
+        }
+      }
+    },
     "/api/mobile/users/recommended": {
       "get": {
         "summary": "Takip / arkadaş önerileri",
@@ -2271,6 +2521,82 @@
         "responses": {
           "200": {
             "description": "Önerilen kullanıcılar listelendi."
+          }
+        }
+      }
+    },
+    "/api/mobile/users/report": {
+      "post": {
+        "summary": "Kullanıcıyı Şikayet Et",
+        "tags": [
+          "Mobile Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "integer"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Kullanıcı başarıyla şikayet edildi"
+          }
+        }
+      }
+    },
+    "/api/mobile/users/update-action": {
+      "post": {
+        "summary": "Kullanıcı Aksiyonunu Güncelle",
+        "description": "Hi butonuna basılınca hedef kullanıcıyla action_type'ı chatRoom yapar",
+        "tags": [
+          "Mobile Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Aksiyon güncellendi"
           }
         }
       }
