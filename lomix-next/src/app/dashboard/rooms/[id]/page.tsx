@@ -49,6 +49,10 @@ export default function RoomDetailPage() {
     const [micCountSaving, setMicCountSaving] = useState(false);
     const [editDialog, setEditDialog] = useState(false);
     const [editForm, setEditForm] = useState({ name: '', description: '', thumbnailUrl: '' });
+    const [editThumbnailFile, setEditThumbnailFile] = useState<File | null>(null);
+    const [editThumbnailPreview, setEditThumbnailPreview] = useState('');
+    const [editThumbnailUploading, setEditThumbnailUploading] = useState(false);
+    const [editTempThumbnailUrl, setEditTempThumbnailUrl] = useState('');
     const [editSaving, setEditSaving] = useState(false);
 
     const [isListening, setIsListening] = useState(false);
@@ -131,6 +135,36 @@ export default function RoomDetailPage() {
         }
     };
 
+    const uploadRoomThumbnail = async (file: File) => {
+        setEditThumbnailUploading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const fd = new FormData();
+            fd.append('file', file);
+            const res = await fetch('/api/admin/upload', { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd });
+            const data = await res.json();
+            if (data.url) {
+                if (editTempThumbnailUrl) {
+                    await fetch('/api/admin/upload', { method: 'DELETE', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ url: editTempThumbnailUrl }) });
+                }
+                setEditTempThumbnailUrl(data.url);
+                setEditThumbnailPreview(data.url);
+                setEditForm(f => ({ ...f, thumbnailUrl: data.url }));
+            }
+        } finally { setEditThumbnailUploading(false); }
+    };
+
+    const cancelRoomEdit = async () => {
+        if (editTempThumbnailUrl) {
+            const token = localStorage.getItem('token');
+            await fetch('/api/admin/upload', { method: 'DELETE', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ url: editTempThumbnailUrl }) });
+        }
+        setEditDialog(false);
+        setEditTempThumbnailUrl('');
+        setEditThumbnailPreview('');
+        setEditThumbnailFile(null);
+    };
+
     const handleRoomEdit = async () => {
         setEditSaving(true);
         try {
@@ -145,6 +179,7 @@ export default function RoomDetailPage() {
                 }),
             });
             setEditDialog(false);
+            setEditTempThumbnailUrl('');
             await fetchRoom();
         } finally {
             setEditSaving(false);
@@ -645,7 +680,7 @@ export default function RoomDetailPage() {
             </Dialog>
 
             {/* Oda Düzenle Dialog */}
-            <Dialog open={editDialog} onOpenChange={setEditDialog}>
+            <Dialog open={editDialog} onOpenChange={open => { if (!open) cancelRoomEdit(); }}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle className="text-lg font-semibold">Odayı Düzenle</DialogTitle>
@@ -672,20 +707,23 @@ export default function RoomDetailPage() {
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-zinc-700">Kapak Resmi URL</label>
-                            <input
-                                className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-950"
-                                value={editForm.thumbnailUrl}
-                                onChange={e => setEditForm(f => ({ ...f, thumbnailUrl: e.target.value }))}
-                                placeholder="https://..."
-                            />
-                            {editForm.thumbnailUrl && (
-                                <img src={editForm.thumbnailUrl} alt="" className="h-20 w-full object-cover rounded-md border border-zinc-200 mt-1" />
+                            <label className="text-xs font-semibold text-zinc-700">Kapak Resmi</label>
+                            {(editThumbnailPreview || editForm.thumbnailUrl) && (
+                                <img src={editThumbnailPreview || editForm.thumbnailUrl} alt="" className="h-24 w-full object-cover rounded-lg border border-zinc-200" />
                             )}
+                            <label className="cursor-pointer block">
+                                <div className="flex h-9 w-full items-center rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-500 hover:bg-zinc-50 cursor-pointer">
+                                    {editThumbnailUploading
+                                        ? <><Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> Yükleniyor...</>
+                                        : editThumbnailFile ? editThumbnailFile.name : 'Fotoğraf seç...'}
+                                </div>
+                                <input type="file" accept="image/*" className="hidden" disabled={editThumbnailUploading}
+                                    onChange={e => { const f = e.target.files?.[0]; if (f) { setEditThumbnailFile(f); uploadRoomThumbnail(f); } }} />
+                            </label>
                         </div>
                         <div className="flex justify-end gap-2 pt-2 border-t border-zinc-100">
-                            <Button variant="ghost" size="sm" onClick={() => setEditDialog(false)}>İptal</Button>
-                            <Button size="sm" className="bg-zinc-900 text-white hover:bg-zinc-800 font-semibold" onClick={handleRoomEdit} disabled={editSaving}>
+                            <Button variant="ghost" size="sm" onClick={cancelRoomEdit}>İptal</Button>
+                            <Button size="sm" className="bg-zinc-900 text-white hover:bg-zinc-800 font-semibold" onClick={handleRoomEdit} disabled={editSaving || editThumbnailUploading}>
                                 {editSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Kaydet
                             </Button>
                         </div>

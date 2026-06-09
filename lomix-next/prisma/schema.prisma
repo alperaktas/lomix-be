@@ -81,6 +81,8 @@ model User {
   blockedBy            UserBlock[]         @relation("BlockedUser")
   reports              UserReport[]        @relation("ReportingUser")
   reportedBy           UserReport[]        @relation("ReportedUser")
+  sentTransactions     WalletTransaction[] @relation("TransactionSender")
+  receivedTransactions WalletTransaction[] @relation("TransactionReceiver")
 
   @@map("users")
 }
@@ -641,4 +643,18 @@ model UserReport {
   reported   User     @relation("ReportedUser", fields: [reportedId], references: [id], onDelete: Cascade)
 
   @@map("user_reports")
+}
+
+model WalletTransaction {
+  id          Int      @id @default(autoincrement())
+  fromUserId  Int      @map("from_user_id")
+  toUserId    Int?     @map("to_user_id")
+  amount      Int
+  type        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  fromUser    User     @relation("TransactionSender", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser      User?    @relation("TransactionReceiver", fields: [toUserId], references: [id], onDelete: SetNull)
+
+  @@map("wallet_transactions")
 }

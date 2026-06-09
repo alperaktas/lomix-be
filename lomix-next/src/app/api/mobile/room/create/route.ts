@@ -62,15 +62,13 @@ export async function POST(request: Request) {
             thumbnailUrl = blob.url;
         }
 
-        const roomId = "r" + Math.floor(100000 + Math.random() * 900000);
-        const channelName = roomId;
-
         const DEFAULT_MIC_COUNT = 8;
 
         // Owner'ı Agora Chat'e kaydet ve chatroom oluştur
         await registerAgoraChatUser(String(userId));
         const agoraChatRoomId = await createAgoraChatRoom(title, String(userId));
 
+        // roomId olarak DB'nin auto-increment id'si kullanılacak — önce geçici bir değerle oluştur
         const newRoom = await prisma.room.create({
             data: {
                 name: title,
@@ -80,7 +78,7 @@ export async function POST(request: Request) {
                 type,
                 mode: "public",
                 viewerCount: 1,
-                roomId,
+                roomId: "tmp",
                 thumbnailUrl,
                 micCount: DEFAULT_MIC_COUNT,
                 agoraChatRoomId,
@@ -98,6 +96,11 @@ export async function POST(request: Request) {
                 },
             }
         });
+
+        // roomId = offset tabanlı, minimum 6 hane
+        const roomId = String(100000 + newRoom.id);
+        await prisma.room.update({ where: { id: newRoom.id }, data: { roomId } });
+        const channelName = roomId;
 
         logRoomEvent(newRoom.id, userId, 'ROOM_CREATED');
 

@@ -1,3 +1,8 @@
+// Kullanıcı ID'sini minimum 4 haneli gösterir (1 → "1000", 42 → "1042", 5000 → "5000")
+export function formatUserId(id: number): string {
+    return String(id + 1000);
+}
+
 export function formatDmTime(date: Date): string {
     const now = new Date();
     const diffDays = Math.floor((now.getTime() - date.getTime()) / 86400000);

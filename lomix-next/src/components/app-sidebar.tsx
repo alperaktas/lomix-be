@@ -11,6 +11,8 @@ import {
   Settings,
   ChevronRight,
   Radio,
+  BarChart2,
+  MessageSquare,
 } from "lucide-react"
 
 import {
@@ -89,6 +91,16 @@ const data = {
         { title: "Anlar", url: "/dashboard/anlar" },
         { title: "Sıcak Konular", url: "/dashboard/anlar/topics" },
       ],
+    },
+    {
+      title: "Harcama Raporları",
+      url: "/dashboard/reports",
+      icon: BarChart2,
+    },
+    {
+      title: "Özel Mesajlar",
+      url: "/dashboard/messages",
+      icon: MessageSquare,
     },
     {
       title: "Ayarlar",
