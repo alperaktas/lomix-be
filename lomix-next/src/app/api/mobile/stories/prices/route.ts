@@ -26,7 +26,7 @@ export async function GET(request: Request) {
         const defaults = [
             { id: 0, duration_hours: 6,  cost: 50,   label: "6 Saat" },
             { id: 0, duration_hours: 12, cost: 100,  label: "12 Saat" },
-            { id: 0, duration_hours: 24, cost: 2000, label: "24 Saat" },
+            { id: 0, duration_hours: 24, cost: 200, label: "24 Saat" },
         ];
 
         const data = prices.length > 0

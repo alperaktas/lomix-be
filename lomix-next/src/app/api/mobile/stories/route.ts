@@ -83,7 +83,7 @@ export async function POST(request: Request) {
 
         // Coin kontrolü
         const prices = await prisma.storyPrice.findMany({ orderBy: { durationHours: 'asc' } });
-        const defaultPrices: Record<number, number> = { 6: 50, 12: 100, 24: 2000 };
+        const defaultPrices: Record<number, number> = { 6: 50, 12: 100, 24: 200 };
 
         let cost: number;
         if (prices.length > 0) {
