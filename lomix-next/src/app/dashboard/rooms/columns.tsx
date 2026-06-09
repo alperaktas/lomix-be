@@ -3,7 +3,6 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import {
-    MoreHorizontal,
     Pencil,
     Trash2,
     ExternalLink,
@@ -13,14 +12,6 @@ import {
     XCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 
 export type Room = {
     id: number
@@ -148,31 +139,22 @@ export const getColumns = ({ onEdit, onDelete, onDetail, onClose }: ColumnsProps
         cell: ({ row }) => {
             const room = row.original
             return (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-zinc-100 rounded-full">
-                            <MoreHorizontal className="h-4 w-4 text-zinc-400" />
+                <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" className="h-8 px-2 text-zinc-600 hover:text-zinc-900" onClick={() => onDetail(room.id)}>
+                        <ExternalLink className="h-3.5 w-3.5 mr-1" /> Detay
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-8 px-2 text-zinc-600 hover:text-zinc-900" onClick={() => onEdit(room)}>
+                        <Pencil className="h-3.5 w-3.5 mr-1" /> Düzenle
+                    </Button>
+                    {room.isLive && (
+                        <Button variant="ghost" size="sm" className="h-8 px-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50" onClick={() => onClose(room.id)}>
+                            <XCircle className="h-3.5 w-3.5 mr-1" /> Kapat
                         </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-[160px]">
-                        <DropdownMenuLabel className="text-xs text-zinc-400 font-normal">İşlemler</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => onDetail(room.id)} className="cursor-pointer gap-2 text-sm">
-                            <ExternalLink className="h-3.5 w-3.5" /> Detay
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onEdit(room)} className="cursor-pointer gap-2 text-sm">
-                            <Pencil className="h-3.5 w-3.5" /> Düzenle
-                        </DropdownMenuItem>
-                        {room.isLive && (
-                            <DropdownMenuItem onClick={() => onClose(room.id)} className="cursor-pointer gap-2 text-sm text-amber-600 focus:text-amber-600 focus:bg-amber-50">
-                                <XCircle className="h-3.5 w-3.5" /> Odayı Kapat
-                            </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem onClick={() => onDelete(room.id)} className="cursor-pointer gap-2 text-sm text-rose-600 focus:text-rose-600 focus:bg-rose-50">
-                            <Trash2 className="h-3.5 w-3.5" /> Sil
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                    )}
+                    <Button variant="ghost" size="sm" className="h-8 px-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50" onClick={() => onDelete(room.id)}>
+                        <Trash2 className="h-3.5 w-3.5 mr-1" /> Sil
+                    </Button>
+                </div>
             )
         },
     },

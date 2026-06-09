@@ -2,24 +2,15 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
-import { 
-  MoreHorizontal, 
-  Pencil, 
-  Trash2, 
-  ShieldCheck, 
+import {
+  Pencil,
+  Trash2,
+  ShieldCheck,
   User as UserIcon,
   ShieldAlert,
   ExternalLink
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 
 export type User = {
   id: number
@@ -43,7 +34,7 @@ export const getColumns = ({ onEdit, onDelete, onDetail }: ColumnsProps): Column
     cell: ({ row }) => {
       const user = row.original
       const role = user.role.toLowerCase()
-      
+
       return (
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-full bg-zinc-100 flex items-center justify-center border border-zinc-200 shadow-sm shrink-0">
@@ -69,13 +60,13 @@ export const getColumns = ({ onEdit, onDelete, onDetail }: ColumnsProps): Column
     cell: ({ row }) => {
       const role = row.getValue("role") as string
       const roleLower = role.toLowerCase()
-      
+
       return (
-        <Badge 
-          variant="outline" 
+        <Badge
+          variant="outline"
           className={
-            roleLower === 'admin' 
-              ? "bg-rose-50 text-rose-700 border-rose-200 font-bold" 
+            roleLower === 'admin'
+              ? "bg-rose-50 text-rose-700 border-rose-200 font-bold"
               : roleLower === 'moderator'
               ? "bg-amber-50 text-amber-700 border-amber-200 font-bold"
               : "bg-blue-50 text-blue-700 border-blue-200 font-bold"
@@ -92,12 +83,12 @@ export const getColumns = ({ onEdit, onDelete, onDetail }: ColumnsProps): Column
     cell: ({ row }) => {
       const status = (row.getValue("status") || 'active') as string
       const statusLower = status.toLowerCase()
-      
+
       return (
         <div className="flex items-center gap-2">
           <div className={`h-1.5 w-1.5 rounded-full ${
-            statusLower === 'active' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 
-            statusLower === 'pending' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 
+            statusLower === 'active' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' :
+            statusLower === 'pending' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' :
             'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]'
           }`} />
           <span className="text-xs font-semibold text-zinc-600 capitalize">
@@ -129,36 +120,17 @@ export const getColumns = ({ onEdit, onDelete, onDetail }: ColumnsProps): Column
       const user = row.original
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-zinc-100 rounded-full">
-              <span className="sr-only">Menüyü aç</span>
-              <MoreHorizontal className="h-4 w-4 text-zinc-400" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[160px]">
-            <DropdownMenuLabel className="text-xs text-zinc-400 font-normal">İşlemler</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              onClick={() => onDetail(user.id)}
-              className="cursor-pointer gap-2 text-sm"
-            >
-              <ExternalLink className="h-3.5 w-3.5" /> Detay
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => onEdit(user)}
-              className="cursor-pointer gap-2 text-sm"
-            >
-              <Pencil className="h-3.5 w-3.5" /> Düzenle
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => onDelete(user.id)}
-              className="cursor-pointer gap-2 text-sm text-rose-600 focus:text-rose-600 focus:bg-rose-50"
-            >
-              <Trash2 className="h-3.5 w-3.5" /> Sil
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="sm" className="h-8 px-2 text-zinc-600 hover:text-zinc-900" onClick={() => onDetail(user.id)}>
+            <ExternalLink className="h-3.5 w-3.5 mr-1" /> Detay
+          </Button>
+          <Button variant="ghost" size="sm" className="h-8 px-2 text-zinc-600 hover:text-zinc-900" onClick={() => onEdit(user)}>
+            <Pencil className="h-3.5 w-3.5 mr-1" /> Düzenle
+          </Button>
+          <Button variant="ghost" size="sm" className="h-8 px-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50" onClick={() => onDelete(user.id)}>
+            <Trash2 className="h-3.5 w-3.5 mr-1" /> Sil
+          </Button>
+        </div>
       )
     },
   },

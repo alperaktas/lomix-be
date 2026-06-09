@@ -92,8 +92,12 @@ const data = {
     },
     {
       title: "Ayarlar",
-      url: "/dashboard/settings",
+      url: "#",
       icon: Settings,
+      children: [
+        { title: "Genel", url: "/dashboard/settings" },
+        { title: "Hikaye Fiyatları", url: "/dashboard/settings/story-prices" },
+      ],
     },
   ],
 }

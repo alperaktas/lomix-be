@@ -7,7 +7,7 @@ import {
     Shield, ShieldAlert, ShieldCheck,
     Crown, Coins, Users, Heart, Building2,
     Ban, UserX, Smartphone, Gift, TrendingUp, Eye,
-    Venus, Mars,
+    Venus, Mars, Pencil, Trash2, Image as ImageIcon, FileText,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -81,7 +81,26 @@ export default function UserDetailPage() {
     const [storyCount, setStoryCount] = useState('1');
     const [visitorDialog, setVisitorDialog] = useState(false);
     const [visitorLimit, setVisitorLimit] = useState('');
+    const [profileDialog, setProfileDialog] = useState(false);
+    const [profileForm, setProfileForm] = useState({ username: '', fullName: '', description: '' });
+    const [profileAvatarFile, setProfileAvatarFile] = useState<File | null>(null);
+    const [profileAvatarPreview, setProfileAvatarPreview] = useState<string>('');
     const [actionLoading, setActionLoading] = useState(false);
+
+    // Anlar tab
+    const [userAnlar, setUserAnlar] = useState<any[]>([]);
+    const [anlarLoading, setAnlarLoading] = useState(false);
+    const [anlarLoaded, setAnlarLoaded] = useState(false);
+
+    // Hikayeler tab
+    const [userStories, setUserStories] = useState<any[]>([]);
+    const [storiesLoading, setStoriesLoading] = useState(false);
+    const [storiesLoaded, setStoriesLoaded] = useState(false);
+
+    // Raporlar tab
+    const [userReports, setUserReports] = useState<any[]>([]);
+    const [reportsLoading, setReportsLoading] = useState(false);
+    const [reportsLoaded, setReportsLoaded] = useState(false);
 
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
@@ -94,6 +113,46 @@ export default function UserDetailPage() {
             if (res.ok) setUser(await res.json());
         } catch (err) { console.error(err); }
         finally { setLoading(false); }
+    };
+
+    const fetchUserAnlar = async () => {
+        setAnlarLoading(true);
+        try {
+            const res = await fetch(`/api/anlar?user_id=${userId}`, { headers: { Authorization: 'Bearer ' + token } });
+            const data = await res.json();
+            setUserAnlar(data.anlar || []);
+            setAnlarLoaded(true);
+        } finally { setAnlarLoading(false); }
+    };
+
+    const fetchUserStories = async () => {
+        setStoriesLoading(true);
+        try {
+            const res = await fetch(`/api/users/${userId}/stories`, { headers: { Authorization: 'Bearer ' + token } });
+            const data = await res.json();
+            setUserStories(data.stories || []);
+            setStoriesLoaded(true);
+        } finally { setStoriesLoading(false); }
+    };
+
+    const fetchUserReports = async () => {
+        setReportsLoading(true);
+        try {
+            const res = await fetch(`/api/users/${userId}/reports`, { headers: { Authorization: 'Bearer ' + token } });
+            const data = await res.json();
+            setUserReports(data.reports || []);
+            setReportsLoaded(true);
+        } finally { setReportsLoading(false); }
+    };
+
+    const deleteAn = async (anId: number) => {
+        await fetch(`/api/anlar?id=${anId}`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
+        setUserAnlar(prev => prev.filter(a => a.id !== anId));
+    };
+
+    const deleteStory = async (storyId: number) => {
+        await fetch(`/api/users/${userId}/stories?id=${storyId}`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
+        setUserStories(prev => prev.filter(s => s.id !== storyId));
     };
 
     useEffect(() => { fetchUser(); }, [userId]);
@@ -202,10 +261,13 @@ export default function UserDetailPage() {
 
             {/* ═══════ TABS ═══════ */}
             <Tabs defaultValue="general" className="w-full">
-                <TabsList className="w-full justify-start border-b border-zinc-200 bg-transparent h-auto p-0 rounded-none gap-0">
+                <TabsList className="w-full justify-start border-b border-zinc-200 bg-transparent h-auto p-0 rounded-none gap-0 flex-wrap">
                     <TabsTrigger value="general">Genel Bilgiler</TabsTrigger>
                     <TabsTrigger value="financial">Finansal</TabsTrigger>
                     <TabsTrigger value="social">Sosyal</TabsTrigger>
+                    <TabsTrigger value="anlar" onClick={() => { if (!anlarLoaded) fetchUserAnlar(); }}>Anlar</TabsTrigger>
+                    <TabsTrigger value="hikayeler" onClick={() => { if (!storiesLoaded) fetchUserStories(); }}>Hikayeler</TabsTrigger>
+                    <TabsTrigger value="raporlar" onClick={() => { if (!reportsLoaded) fetchUserReports(); }}>Raporlar</TabsTrigger>
                     <TabsTrigger value="management">Yönetim</TabsTrigger>
                 </TabsList>
 
@@ -256,10 +318,101 @@ export default function UserDetailPage() {
                     </div>
                 </TabsContent>
 
+                {/* ─── ANLAR ─── */}
+                <TabsContent value="anlar" className="pt-6">
+                    {anlarLoading ? (
+                        <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-zinc-400" /></div>
+                    ) : userAnlar.length === 0 ? (
+                        <p className="text-sm text-zinc-400 text-center py-12">Bu kullanıcının anı yok.</p>
+                    ) : (
+                        <div className="space-y-3">
+                            {userAnlar.map(an => (
+                                <div key={an.id} className="flex items-start gap-4 p-4 rounded-xl border bg-white">
+                                    {an.imageUrl && <img src={an.imageUrl} alt="" className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />}
+                                    <div className="flex-1 min-w-0">
+                                        <button onClick={() => router.push(`/dashboard/anlar/${an.id}`)} className="text-sm font-medium hover:underline cursor-pointer text-left line-clamp-2">{an.description || `An #${an.id}`}</button>
+                                        <div className="flex gap-3 mt-1 text-xs text-zinc-400">
+                                            <span>❤️ {an.likeCount}</span>
+                                            <span>👋 {an.hiLikeCount}</span>
+                                            <span>💬 {an.commentCount}</span>
+                                            <span>{new Date(an.createdAt).toLocaleDateString('tr-TR')}</span>
+                                        </div>
+                                        <div className="flex gap-1 mt-1 flex-wrap">
+                                            {an.tags?.map((t: string) => (
+                                                <span key={t} className="text-[11px] bg-zinc-100 text-zinc-500 px-1.5 py-0.5 rounded">{t}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <button onClick={() => deleteAn(an.id)} className="text-rose-400 hover:text-rose-600 transition-colors flex-shrink-0">
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </TabsContent>
+
+                {/* ─── HİKAYELER ─── */}
+                <TabsContent value="hikayeler" className="pt-6">
+                    {storiesLoading ? (
+                        <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-zinc-400" /></div>
+                    ) : userStories.length === 0 ? (
+                        <p className="text-sm text-zinc-400 text-center py-12">Bu kullanıcının hikayesi yok.</p>
+                    ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                            {userStories.map((story: any) => (
+                                <div key={story.id} className="relative group rounded-xl overflow-hidden border bg-zinc-100 aspect-[9/16]">
+                                    <img src={story.mediaUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                                        <p className="text-[11px] text-white">{new Date(story.createdAt).toLocaleDateString('tr-TR')}</p>
+                                        {story.expiresAt && new Date(story.expiresAt) < new Date() && (
+                                            <span className="text-[10px] text-zinc-300">Süresi doldu</span>
+                                        )}
+                                    </div>
+                                    <button onClick={() => deleteStory(story.id)} className="absolute top-2 right-2 bg-rose-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Trash2 className="h-3 w-3" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </TabsContent>
+
+                {/* ─── RAPORLAR ─── */}
+                <TabsContent value="raporlar" className="pt-6">
+                    {reportsLoading ? (
+                        <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-zinc-400" /></div>
+                    ) : userReports.length === 0 ? (
+                        <p className="text-sm text-zinc-400 text-center py-12">Bu kullanıcıya ait rapor yok.</p>
+                    ) : (
+                        <div className="rounded-lg border border-zinc-200 overflow-hidden">
+                            <table className="w-full text-sm">
+                                <thead className="bg-zinc-50/50">
+                                    <tr className="border-b border-zinc-100">
+                                        <th className="text-left px-4 py-2.5 text-xs font-bold text-zinc-900 uppercase">Şikayet Eden</th>
+                                        <th className="text-left px-4 py-2.5 text-xs font-bold text-zinc-900 uppercase">Sebep</th>
+                                        <th className="text-left px-4 py-2.5 text-xs font-bold text-zinc-900 uppercase">Tarih</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {userReports.map((r: any) => (
+                                        <tr key={r.id} className="border-b border-zinc-50 hover:bg-zinc-50/50">
+                                            <td className="px-4 py-2.5 font-medium">{r.reporterName || `#${r.userId}`}</td>
+                                            <td className="px-4 py-2.5 text-zinc-600">{r.reason || '—'}</td>
+                                            <td className="px-4 py-2.5 text-zinc-400 text-xs">{new Date(r.createdAt).toLocaleDateString('tr-TR')}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </TabsContent>
+
                 {/* ─── YÖNETİM ─── */}
                 <TabsContent value="management" className="pt-6 space-y-6">
                     {/* Action Buttons */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                        <ActionButton icon={<Pencil className="h-4 w-4" />} label="Profil Düzenle" onClick={() => { setProfileForm({ username: user.username, fullName: user.nickname || '', description: '' }); setProfileAvatarFile(null); setProfileAvatarPreview(user.avatar || ''); setProfileDialog(true); }} />
                         <ActionButton icon={<Venus className="h-4 w-4" />} label="Cinsiyet Değiştir" onClick={() => { setGenderValue(user.gender || ''); setGenderDialog(true); }} />
                         <ActionButton icon={<Ban className="h-4 w-4" />} label="Süreli Ban" onClick={() => setBanDialog('temporary')} variant="warning" />
                         <ActionButton icon={<UserX className="h-4 w-4" />} label="Kalıcı Ban" onClick={() => setBanDialog('permanent')} variant="danger" />
@@ -524,6 +677,77 @@ export default function UserDetailPage() {
                             <Button size="sm" className="bg-zinc-900 text-white hover:bg-zinc-800 font-semibold" disabled={actionLoading}
                                 onClick={() => handleAction(`/api/users/${userId}/visitor-limit`, 'PUT', { limit: Number(visitorLimit) }, () => setVisitorDialog(false))}>
                                 Kaydet
+                            </Button>
+                        </DialogFooter>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Profil Düzenle Dialog */}
+            <Dialog open={profileDialog} onOpenChange={setProfileDialog}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="text-lg font-semibold">Profil Düzenle</DialogTitle>
+                        <DialogDescription>Kullanıcının profil bilgilerini güncelle.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3 pt-2">
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-700">Kullanıcı Adı</label>
+                            <Input className="h-9" value={profileForm.username} onChange={e => setProfileForm(f => ({ ...f, username: e.target.value }))} placeholder="username" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-700">Ad Soyad</label>
+                            <Input className="h-9" value={profileForm.fullName} onChange={e => setProfileForm(f => ({ ...f, fullName: e.target.value }))} placeholder="Ad Soyad" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-700">Biyografi</label>
+                            <textarea
+                                className="flex w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-950 resize-none"
+                                rows={3}
+                                value={profileForm.description}
+                                onChange={e => setProfileForm(f => ({ ...f, description: e.target.value }))}
+                                placeholder="Kullanıcı hakkında..."
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-700">Avatar</label>
+                            <div className="flex items-center gap-3">
+                                {profileAvatarPreview && (
+                                    <img src={profileAvatarPreview} alt="" className="h-12 w-12 rounded-full object-cover border border-zinc-200 flex-shrink-0" />
+                                )}
+                                <label className="flex-1 cursor-pointer">
+                                    <div className="flex h-9 w-full items-center rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-500 hover:bg-zinc-50 cursor-pointer">
+                                        {profileAvatarFile ? profileAvatarFile.name : 'Fotoğraf seç...'}
+                                    </div>
+                                    <input type="file" accept="image/*" className="hidden" onChange={e => {
+                                        const file = e.target.files?.[0];
+                                        if (file) { setProfileAvatarFile(file); setProfileAvatarPreview(URL.createObjectURL(file)); }
+                                    }} />
+                                </label>
+                            </div>
+                        </div>
+                        <DialogFooter className="pt-2 border-t border-zinc-100">
+                            <Button variant="ghost" size="sm" onClick={() => setProfileDialog(false)}>İptal</Button>
+                            <Button size="sm" className="bg-zinc-900 text-white hover:bg-zinc-800 font-semibold" disabled={actionLoading}
+                                onClick={async () => {
+                                    setActionLoading(true);
+                                    try {
+                                        const fd = new FormData();
+                                        fd.append('username', profileForm.username);
+                                        fd.append('fullName', profileForm.fullName);
+                                        fd.append('description', profileForm.description);
+                                        if (profileAvatarFile) fd.append('avatar', profileAvatarFile);
+                                        const res = await fetch(`/api/users/${userId}/profile`, {
+                                            method: 'PUT',
+                                            headers: { Authorization: 'Bearer ' + token },
+                                            body: fd,
+                                        });
+                                        const data = await res.json();
+                                        if (res.ok) { setProfileDialog(false); fetchUser(); }
+                                        else alert('Hata: ' + data.message);
+                                    } finally { setActionLoading(false); }
+                                }}>
+                                {actionLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Kaydet
                             </Button>
                         </DialogFooter>
                     </div>

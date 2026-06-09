@@ -18,20 +18,26 @@ export async function GET(request: Request) {
     try {
         const currentUserId = await getCurrentUserId(request);
 
-        // Veritabanından önerilen kullanıcıları al
+        // Mevcut kullanıcının cinsiyetini al
+        const currentUser = currentUserId ? await prisma.user.findUnique({
+            where: { id: currentUserId },
+            select: { gender: true },
+        }) : null;
+
+        // Karşı cinsiyeti belirle: erkek → kadın, kadın → erkek, bilinmiyorsa filtre yok
+        const oppositeGender =
+            currentUser?.gender === 'male' ? 'female' :
+            currentUser?.gender === 'female' ? 'male' : null;
+
         const users = await prisma.user.findMany({
-            where: currentUserId ? {
-                id: { not: currentUserId },
+            where: {
+                ...(currentUserId ? { id: { not: currentUserId } } : {}),
                 role: "user",
-                status: "active"
-            } : {
-                role: "user",
-                status: "active"
+                status: "active",
+                ...(oppositeGender ? { gender: oppositeGender } : {}),
             },
             take: 10,
-            orderBy: {
-                createdAt: 'desc'
-            }
+            orderBy: { createdAt: 'desc' },
         });
 
         const fallback = [

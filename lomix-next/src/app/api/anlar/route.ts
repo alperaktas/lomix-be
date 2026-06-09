@@ -46,6 +46,33 @@ export async function GET(request: Request) {
     });
 }
 
+// PUT /api/anlar - an düzenle (admin)
+export async function PUT(request: Request) {
+    try {
+        const { id, description, tags, imageUrl } = await request.json();
+        if (!id) return NextResponse.json({ error: 'id zorunludur' }, { status: 400 });
+
+        const data: any = {};
+        if (description !== undefined) data.description = description?.trim() || null;
+        if (imageUrl !== undefined) data.imageUrl = imageUrl?.trim() || null;
+
+        if (Object.keys(data).length > 0) {
+            await prisma.an.update({ where: { id: Number(id) }, data });
+        }
+
+        if (Array.isArray(tags)) {
+            await prisma.anTag.deleteMany({ where: { anId: Number(id) } });
+            if (tags.length > 0) {
+                await prisma.anTag.createMany({ data: tags.map((tag: string) => ({ anId: Number(id), tag })) });
+            }
+        }
+
+        return NextResponse.json({ success: true, message: 'An güncellendi.' });
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
 // DELETE /api/anlar?id=X - an sil (admin)
 export async function DELETE(request: Request) {
     const { searchParams } = new URL(request.url);

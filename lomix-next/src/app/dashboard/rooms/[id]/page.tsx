@@ -47,6 +47,9 @@ export default function RoomDetailPage() {
     const [actionLoading, setActionLoading] = useState(false);
     const [micCountEdit, setMicCountEdit] = useState<number | null>(null);
     const [micCountSaving, setMicCountSaving] = useState(false);
+    const [editDialog, setEditDialog] = useState(false);
+    const [editForm, setEditForm] = useState({ name: '', description: '', thumbnailUrl: '' });
+    const [editSaving, setEditSaving] = useState(false);
 
     const [isListening, setIsListening] = useState(false);
     const [listenLoading, setListenLoading] = useState(false);
@@ -125,6 +128,26 @@ export default function RoomDetailPage() {
             setMicCountEdit(null);
         } finally {
             setMicCountSaving(false);
+        }
+    };
+
+    const handleRoomEdit = async () => {
+        setEditSaving(true);
+        try {
+            const token = localStorage.getItem('token');
+            await fetch(`/api/rooms/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                body: JSON.stringify({
+                    name: editForm.name || undefined,
+                    description: editForm.description || undefined,
+                    thumbnailUrl: editForm.thumbnailUrl || undefined,
+                }),
+            });
+            setEditDialog(false);
+            await fetchRoom();
+        } finally {
+            setEditSaving(false);
         }
     };
 
@@ -384,6 +407,9 @@ export default function RoomDetailPage() {
                     <Button variant="outline" size="sm" className="h-9 px-3" onClick={() => fetchRoom()} disabled={loading}>
                         <RefreshCcw className="h-4 w-4" />
                     </Button>
+                    <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={() => { setEditForm({ name: room.name, description: (room as any).description || '', thumbnailUrl: (room as any).thumbnailUrl || '' }); setEditDialog(true); }}>
+                        <Pencil className="h-4 w-4" /> Düzenle
+                    </Button>
                     {room.isLive && !room.isClosed && (
                         isListening ? (
                             <Button size="sm" className="h-9 gap-1.5 bg-violet-600 hover:bg-violet-700 text-white font-semibold" onClick={handleAdminLeave}>
@@ -613,6 +639,55 @@ export default function RoomDetailPage() {
                         <div className="flex gap-2 w-full pt-2 border-t border-zinc-100">
                             <Button variant="outline" size="sm" className="flex-1" onClick={() => setClosingRoom(false)}>İptal</Button>
                             <Button size="sm" className="flex-1 font-semibold bg-amber-600 hover:bg-amber-700 text-white" onClick={handleCloseRoom} disabled={actionLoading}>Kapat</Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Oda Düzenle Dialog */}
+            <Dialog open={editDialog} onOpenChange={setEditDialog}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="text-lg font-semibold">Odayı Düzenle</DialogTitle>
+                        <DialogDescription>Oda adı, açıklaması ve kapak resmini güncelle.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3 pt-2">
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-700">Oda Adı</label>
+                            <input
+                                className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-950"
+                                value={editForm.name}
+                                onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+                                placeholder="Oda adı"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-700">Açıklama</label>
+                            <textarea
+                                className="flex w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-950 resize-none"
+                                rows={3}
+                                value={editForm.description}
+                                onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))}
+                                placeholder="Oda açıklaması..."
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-700">Kapak Resmi URL</label>
+                            <input
+                                className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-950"
+                                value={editForm.thumbnailUrl}
+                                onChange={e => setEditForm(f => ({ ...f, thumbnailUrl: e.target.value }))}
+                                placeholder="https://..."
+                            />
+                            {editForm.thumbnailUrl && (
+                                <img src={editForm.thumbnailUrl} alt="" className="h-20 w-full object-cover rounded-md border border-zinc-200 mt-1" />
+                            )}
+                        </div>
+                        <div className="flex justify-end gap-2 pt-2 border-t border-zinc-100">
+                            <Button variant="ghost" size="sm" onClick={() => setEditDialog(false)}>İptal</Button>
+                            <Button size="sm" className="bg-zinc-900 text-white hover:bg-zinc-800 font-semibold" onClick={handleRoomEdit} disabled={editSaving}>
+                                {editSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Kaydet
+                            </Button>
                         </div>
                     </div>
                 </DialogContent>

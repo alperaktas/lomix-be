@@ -2365,6 +2365,24 @@
         }
       }
     },
+    "/api/mobile/stories/prices": {
+      "get": {
+        "summary": "Hikaye fiyat listesi",
+        "tags": [
+          "Mobile Stories"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fiyat listesi alındı."
+          }
+        }
+      }
+    },
     "/api/mobile/stories": {
       "post": {
         "summary": "Yeni hikaye oluşturur",
@@ -2381,13 +2399,17 @@
             "multipart/form-data": {
               "schema": {
                 "type": "object",
+                "required": [
+                  "media_file"
+                ],
                 "properties": {
                   "media_file": {
                     "type": "string",
                     "format": "binary"
                   },
                   "duration_hours": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Hikaye süresi (saat). Varsayılan: 24"
                   }
                 }
               }
@@ -2397,6 +2419,12 @@
         "responses": {
           "201": {
             "description": "Hikaye başarıyla eklendi."
+          },
+          "400": {
+            "description": "Dosya bulunamadı veya desteklenmeyen tür."
+          },
+          "401": {
+            "description": "Yetkisiz erişim."
           }
         }
       }
