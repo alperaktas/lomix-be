@@ -93,6 +93,7 @@ export async function GET(request: Request) {
             action_type: interactionMap.get(r.id) || "hi",
             level: r.level,
             score: r.prestigePoints,
+            hakkimda: r.description || null,
         })) : fallback;
 
         return ApiResponseHelper.success(responseData, "Önerilen kullanıcılar listelendi.");

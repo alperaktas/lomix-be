@@ -20,23 +20,30 @@ export async function GET(request: Request) {
         const userId = await getCurrentUserId(request);
         if (!userId) return ApiResponseHelper.error("Yetkisiz erişim.", 401);
 
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            include: {
-                wallet: { select: { balance: true } },
-                avatarHistory: { orderBy: { createdAt: 'desc' } },
-                rooms: {
-                    where: { isLive: true },
-                    take: 1,
-                    include: { _count: { select: { members: true } } },
+        const [user, photos] = await Promise.all([
+            prisma.user.findUnique({
+                where: { id: userId },
+                include: {
+                    wallet: { select: { balance: true } },
+                    avatarHistory: { orderBy: { createdAt: 'desc' } },
+                    rooms: {
+                        where: { isLive: true },
+                        take: 1,
+                        include: { _count: { select: { members: true } } },
+                    },
+                    anlar: {
+                        orderBy: { createdAt: 'desc' },
+                        take: 6,
+                        select: { id: true, description: true, imageUrl: true },
+                    },
                 },
-                anlar: {
-                    orderBy: { createdAt: 'desc' },
-                    take: 6,
-                    select: { id: true, description: true, imageUrl: true },
-                },
-            },
-        });
+            }),
+            prisma.userPhoto.findMany({
+                where: { userId },
+                orderBy: { order: 'asc' },
+                select: { id: true, url: true, order: true },
+            }),
+        ]);
 
         if (!user) return ApiResponseHelper.error("Kullanıcı bulunamadı.", 404);
 
@@ -75,6 +82,11 @@ export async function GET(request: Request) {
                 id: String(a.id),
                 content: a.description || '',
                 image_url: a.imageUrl || '',
+            })),
+            photos: photos.map(p => ({
+                id: p.id,
+                url: p.url,
+                order: p.order,
             })),
         }, "Bilgiler başarıyla getirildi");
     } catch (error: any) {

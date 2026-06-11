@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
     ArrowLeft, Loader2, RefreshCcw,
-    Shield, ShieldAlert, ShieldCheck,
-    Crown, Coins, Users, Heart, Building2,
+    Shield,
+    Crown, Coins, Users, Heart,
     Ban, UserX, Smartphone, Gift, TrendingUp, Eye,
-    Venus, Mars, Pencil, Trash2, Image as ImageIcon, FileText,
+    Venus, Pencil, Trash2, Image as ImageIcon,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -87,6 +87,11 @@ export default function UserDetailPage() {
     const [profileAvatarPreview, setProfileAvatarPreview] = useState<string>('');
     const [actionLoading, setActionLoading] = useState(false);
 
+    // Profil fotoğrafları
+    const [userPhotos, setUserPhotos] = useState<Array<{ id: number; url: string; order: number }>>([]);
+    const [photosLoading, setPhotosLoading] = useState(false);
+    const [photoUploading, setPhotoUploading] = useState(false);
+
     // Anlar tab
     const [userAnlar, setUserAnlar] = useState<any[]>([]);
     const [anlarLoading, setAnlarLoading] = useState(false);
@@ -143,6 +148,40 @@ export default function UserDetailPage() {
             setUserReports(data.reports || []);
             setReportsLoaded(true);
         } finally { setReportsLoading(false); }
+    };
+
+    const fetchUserPhotos = async () => {
+        setPhotosLoading(true);
+        try {
+            const res = await fetch(`/api/users/${userId}/photos`, { headers: { Authorization: 'Bearer ' + token } });
+            const data = await res.json();
+            setUserPhotos(data.photos || []);
+        } finally { setPhotosLoading(false); }
+    };
+
+    const uploadUserPhoto = async (file: File) => {
+        if (userPhotos.length >= 4) return;
+        setPhotoUploading(true);
+        try {
+            const fd = new FormData();
+            fd.append('photo', file);
+            const res = await fetch(`/api/users/${userId}/photos`, {
+                method: 'POST',
+                headers: { Authorization: 'Bearer ' + token },
+                body: fd,
+            });
+            const data = await res.json();
+            if (res.ok) setUserPhotos(prev => [...prev, data.photo]);
+            else alert('Hata: ' + data.message);
+        } finally { setPhotoUploading(false); }
+    };
+
+    const deleteUserPhoto = async (photoId: number) => {
+        const res = await fetch(`/api/users/${userId}/photos?photoId=${photoId}`, {
+            method: 'DELETE',
+            headers: { Authorization: 'Bearer ' + token },
+        });
+        if (res.ok) setUserPhotos(prev => prev.filter(p => p.id !== photoId));
     };
 
     const deleteAn = async (anId: number) => {
@@ -412,7 +451,7 @@ export default function UserDetailPage() {
                 <TabsContent value="management" className="pt-6 space-y-6">
                     {/* Action Buttons */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                        <ActionButton icon={<Pencil className="h-4 w-4" />} label="Profil Düzenle" onClick={() => { setProfileForm({ username: user.username, fullName: user.nickname || '', description: '' }); setProfileAvatarFile(null); setProfileAvatarPreview(user.avatar || ''); setProfileDialog(true); }} />
+                        <ActionButton icon={<Pencil className="h-4 w-4" />} label="Profil Düzenle" onClick={() => { setProfileForm({ username: user.username, fullName: user.nickname || '', description: '' }); setProfileAvatarFile(null); setProfileAvatarPreview(user.avatar || ''); fetchUserPhotos(); setProfileDialog(true); }} />
                         <ActionButton icon={<Venus className="h-4 w-4" />} label="Cinsiyet Değiştir" onClick={() => { setGenderValue(user.gender || ''); setGenderDialog(true); }} />
                         <ActionButton icon={<Ban className="h-4 w-4" />} label="Süreli Ban" onClick={() => setBanDialog('temporary')} variant="warning" />
                         <ActionButton icon={<UserX className="h-4 w-4" />} label="Kalıcı Ban" onClick={() => setBanDialog('permanent')} variant="danger" />
@@ -685,12 +724,12 @@ export default function UserDetailPage() {
 
             {/* Profil Düzenle Dialog */}
             <Dialog open={profileDialog} onOpenChange={setProfileDialog}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
                         <DialogTitle className="text-lg font-semibold">Profil Düzenle</DialogTitle>
                         <DialogDescription>Kullanıcının profil bilgilerini güncelle.</DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-3 pt-2">
+                    <div className="space-y-4 pt-2 max-h-[70vh] overflow-y-auto pr-1">
                         <div className="space-y-1.5">
                             <label className="text-xs font-semibold text-zinc-700">Kullanıcı Adı</label>
                             <Input className="h-9" value={profileForm.username} onChange={e => setProfileForm(f => ({ ...f, username: e.target.value }))} placeholder="username" />
@@ -709,48 +748,105 @@ export default function UserDetailPage() {
                                 placeholder="Kullanıcı hakkında..."
                             />
                         </div>
+
+                        {/* Avatar */}
                         <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-zinc-700">Avatar</label>
+                            <label className="text-xs font-semibold text-zinc-700">Ana Profil Fotoğrafı (Avatar)</label>
                             <div className="flex items-center gap-3">
-                                {profileAvatarPreview && (
-                                    <img src={profileAvatarPreview} alt="" className="h-12 w-12 rounded-full object-cover border border-zinc-200 flex-shrink-0" />
-                                )}
+                                <div className="relative flex-shrink-0">
+                                    {profileAvatarPreview ? (
+                                        <>
+                                            <img src={profileAvatarPreview} alt="" className="h-14 w-14 rounded-full object-cover border border-zinc-200" />
+                                            <button
+                                                type="button"
+                                                onClick={() => { setProfileAvatarFile(null); setProfileAvatarPreview(''); }}
+                                                className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-rose-600 transition-colors"
+                                            >×</button>
+                                        </>
+                                    ) : (
+                                        <div className="h-14 w-14 rounded-full bg-zinc-100 border border-zinc-200 flex items-center justify-center text-zinc-400 text-xs">
+                                            <ImageIcon className="h-5 w-5" />
+                                        </div>
+                                    )}
+                                </div>
                                 <label className="flex-1 cursor-pointer">
                                     <div className="flex h-9 w-full items-center rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-500 hover:bg-zinc-50 cursor-pointer">
-                                        {profileAvatarFile ? profileAvatarFile.name : 'Fotoğraf seç...'}
+                                        {profileAvatarFile ? profileAvatarFile.name : 'Yeni fotoğraf seç...'}
                                     </div>
                                     <input type="file" accept="image/*" className="hidden" onChange={e => {
                                         const file = e.target.files?.[0];
                                         if (file) { setProfileAvatarFile(file); setProfileAvatarPreview(URL.createObjectURL(file)); }
+                                        e.target.value = '';
                                     }} />
                                 </label>
                             </div>
                         </div>
-                        <DialogFooter className="pt-2 border-t border-zinc-100">
-                            <Button variant="ghost" size="sm" onClick={() => setProfileDialog(false)}>İptal</Button>
-                            <Button size="sm" className="bg-zinc-900 text-white hover:bg-zinc-800 font-semibold" disabled={actionLoading}
-                                onClick={async () => {
-                                    setActionLoading(true);
-                                    try {
-                                        const fd = new FormData();
-                                        fd.append('username', profileForm.username);
-                                        fd.append('fullName', profileForm.fullName);
-                                        fd.append('description', profileForm.description);
-                                        if (profileAvatarFile) fd.append('avatar', profileAvatarFile);
-                                        const res = await fetch(`/api/users/${userId}/profile`, {
-                                            method: 'PUT',
-                                            headers: { Authorization: 'Bearer ' + token },
-                                            body: fd,
-                                        });
-                                        const data = await res.json();
-                                        if (res.ok) { setProfileDialog(false); fetchUser(); }
-                                        else alert('Hata: ' + data.message);
-                                    } finally { setActionLoading(false); }
-                                }}>
-                                {actionLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Kaydet
-                            </Button>
-                        </DialogFooter>
+
+                        {/* Profil Fotoğrafları */}
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <label className="text-xs font-semibold text-zinc-700">Profil Fotoğrafları ({userPhotos.length}/4)</label>
+                                {photosLoading && <Loader2 className="h-3.5 w-3.5 animate-spin text-zinc-400" />}
+                            </div>
+                            <div className="grid grid-cols-4 gap-2">
+                                {/* Mevcut fotoğraflar */}
+                                {userPhotos.map(photo => (
+                                    <div key={photo.id} className="relative group aspect-square rounded-lg overflow-hidden border border-zinc-200 bg-zinc-100">
+                                        <img src={photo.url} alt="" className="w-full h-full object-cover" />
+                                        <button
+                                            type="button"
+                                            onClick={() => deleteUserPhoto(photo.id)}
+                                            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                                        >
+                                            <Trash2 className="h-5 w-5 text-white" />
+                                        </button>
+                                    </div>
+                                ))}
+                                {/* Boş slotlar */}
+                                {userPhotos.length < 4 && Array.from({ length: 4 - userPhotos.length }).map((_, i) => (
+                                    <label key={`slot-${i}`} className="aspect-square rounded-lg border-2 border-dashed border-zinc-200 bg-zinc-50 hover:bg-zinc-100 flex items-center justify-center cursor-pointer transition-colors">
+                                        {photoUploading && i === 0 ? (
+                                            <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
+                                        ) : (
+                                            <span className="text-2xl text-zinc-300 select-none">+</span>
+                                        )}
+                                        <input type="file" accept="image/*" className="hidden" disabled={photoUploading}
+                                            onChange={e => {
+                                                const file = e.target.files?.[0];
+                                                if (file) uploadUserPhoto(file);
+                                                e.target.value = '';
+                                            }} />
+                                    </label>
+                                ))}
+                            </div>
+                            <p className="text-[11px] text-zinc-400">Fotoğraf üzerine gelip çöp kutusuna tıklayarak silebilirsiniz.</p>
+                        </div>
                     </div>
+                    <DialogFooter className="pt-2 border-t border-zinc-100">
+                        <Button variant="ghost" size="sm" onClick={() => setProfileDialog(false)}>İptal</Button>
+                        <Button size="sm" className="bg-zinc-900 text-white hover:bg-zinc-800 font-semibold" disabled={actionLoading}
+                            onClick={async () => {
+                                setActionLoading(true);
+                                try {
+                                    const fd = new FormData();
+                                    fd.append('username', profileForm.username);
+                                    fd.append('fullName', profileForm.fullName);
+                                    fd.append('description', profileForm.description);
+                                    if (profileAvatarFile) fd.append('avatar', profileAvatarFile);
+                                    else if (!profileAvatarPreview) fd.append('avatarUrl', '');
+                                    const res = await fetch(`/api/users/${userId}/profile`, {
+                                        method: 'PUT',
+                                        headers: { Authorization: 'Bearer ' + token },
+                                        body: fd,
+                                    });
+                                    const data = await res.json();
+                                    if (res.ok) { setProfileDialog(false); fetchUser(); }
+                                    else alert('Hata: ' + data.message);
+                                } finally { setActionLoading(false); }
+                            }}>
+                            {actionLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Kaydet
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>

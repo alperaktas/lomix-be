@@ -83,6 +83,7 @@ model User {
   reportedBy           UserReport[]        @relation("ReportedUser")
   sentTransactions     WalletTransaction[] @relation("TransactionSender")
   receivedTransactions WalletTransaction[] @relation("TransactionReceiver")
+  photos               UserPhoto[]
 
   @@map("users")
 }
@@ -577,6 +578,17 @@ model UserAvatarHistory {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_avatar_history")
+}
+
+model UserPhoto {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  url       String
+  order     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_photos")
 }
 
 model UserInteraction {
