@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   Users,
@@ -13,6 +13,7 @@ import {
   Radio,
   BarChart2,
   MessageSquare,
+  LogOut,
 } from "lucide-react"
 
 import {
@@ -116,7 +117,14 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
+  const router = useRouter()
   const { state, setOpen, open } = useSidebar()
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    router.push('/')
+  }
   const [isHovered, setIsHovered] = React.useState(false)
   const wasExpandedRef = React.useRef(open)
 
@@ -252,10 +260,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <Users className="h-4 w-4 text-primary" />
           </div>
           {open && (
-            <div className="flex flex-col text-sm truncate animate-in fade-in duration-300 ml-3 whitespace-nowrap">
+            <div className="flex flex-col text-sm truncate animate-in fade-in duration-300 ml-3 whitespace-nowrap flex-1">
               <span className="font-semibold text-black leading-none">Admin</span>
               <span className="text-muted-foreground text-[10px] mt-1 uppercase tracking-tighter">Lomix Panel</span>
             </div>
+          )}
+          {open && (
+            <button
+              onClick={handleLogout}
+              className="ml-auto flex-shrink-0 h-8 w-8 flex items-center justify-center rounded-md text-zinc-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+              title="Çıkış Yap"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
           )}
         </div>
       </SidebarFooter>
