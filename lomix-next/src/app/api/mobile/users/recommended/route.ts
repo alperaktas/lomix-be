@@ -88,7 +88,7 @@ export async function GET(request: Request) {
         const responseData = users.length > 0 ? users.map(r => ({
             id: r.id,
             name: r.fullName || r.username,
-            image_url: r.avatar || "https://i.pravatar.cc/150",
+            image_url: r.avatar?.trim() || `${new URL(request.url).origin}/img/default-avatar.svg`,
             is_vip: r.isVip || false,
             action_type: interactionMap.get(r.id) || "hi",
             level: r.level,

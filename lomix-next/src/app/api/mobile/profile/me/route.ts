@@ -46,7 +46,7 @@ export async function GET(request: Request) {
                 id: String(user.id),
                 username: user.username,
                 full_name: user.fullName || user.username,
-                avatar_url: user.avatar || "https://api.domain.com/images/default.jpg",
+                avatar_url: user.avatar?.trim() || `${new URL(request.url).origin}/img/default-avatar.svg`,
                 is_verified: user.isVerified || false,
                 gender: user.gender || "unknown",
                 level: user.level || 1,

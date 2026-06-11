@@ -54,7 +54,7 @@ export async function GET(request: Request) {
                 id: String(user.id),
                 username: user.username,
                 full_name: user.fullName || '',
-                avatar_url: user.avatar || '',
+                avatar_url: user.avatar?.trim() || `${new URL(request.url).origin}/img/default-avatar.svg`,
                 description: user.description || '',
                 country: user.country || '',
                 birth_date: user.birthDate ? user.birthDate.toISOString().split('T')[0] : null,

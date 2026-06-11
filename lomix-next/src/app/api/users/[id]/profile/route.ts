@@ -26,7 +26,8 @@ export async function PUT(req: Request, { params }: any) {
                 avatar = blob.url;
             } else {
                 const avatarUrl = formData.get('avatarUrl') as string | null;
-                if (avatarUrl) avatar = avatarUrl;
+                // avatarUrl null ise dokunma, boş string ise sil (null yap)
+                if (avatarUrl !== null) avatar = avatarUrl || '';
             }
         } else {
             const body = await req.json();

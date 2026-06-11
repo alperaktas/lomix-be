@@ -32,7 +32,7 @@ export async function GET(request: Request) {
             "user_info": {
                 "id": String(user.id).padStart(8, '0'),
                 "username": user.fullName || user.username,
-                "avatar_url": user.avatar || "/img/avatars/default.png",
+                "avatar_url": user.avatar?.trim() || `${new URL(request.url).origin}/img/default-avatar.svg`,
                 "is_verified": user.isVerified,
                 "gender": user.gender || "unspecified",
                 "level": user.level,

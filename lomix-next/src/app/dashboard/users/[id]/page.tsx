@@ -7,7 +7,7 @@ import {
     Shield,
     Crown, Coins, Users, Heart,
     Ban, UserX, Smartphone, Gift, TrendingUp, Eye,
-    Venus, Pencil, Trash2, Image as ImageIcon,
+    Venus, Pencil, Trash2,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -249,12 +249,12 @@ export default function UserDetailPage() {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
                     {/* Avatar */}
                     <div className="relative">
-                        <div className="h-20 w-20 rounded-full bg-gradient-to-br from-zinc-100 to-zinc-200 flex items-center justify-center border-2 border-zinc-200 shadow-sm text-2xl font-bold text-zinc-400">
-                            {user.avatar ? (
-                                <img src={user.avatar} className="h-full w-full rounded-full object-cover" alt="" />
-                            ) : (
-                                user.username.charAt(0).toUpperCase()
-                            )}
+                        <div className="h-20 w-20 rounded-full bg-zinc-100 flex items-center justify-center border-2 border-zinc-200 shadow-sm overflow-hidden">
+                            <img
+                                src={user.avatar || '/img/default-avatar.svg'}
+                                className="h-full w-full rounded-full object-cover"
+                                alt=""
+                            />
                         </div>
                         {user.isVip && (
                             <div className="absolute -top-1 -right-1 bg-amber-400 rounded-full p-1 border-2 border-white shadow">
@@ -754,19 +754,17 @@ export default function UserDetailPage() {
                             <label className="text-xs font-semibold text-zinc-700">Ana Profil Fotoğrafı (Avatar)</label>
                             <div className="flex items-center gap-3">
                                 <div className="relative flex-shrink-0">
-                                    {profileAvatarPreview ? (
-                                        <>
-                                            <img src={profileAvatarPreview} alt="" className="h-14 w-14 rounded-full object-cover border border-zinc-200" />
-                                            <button
-                                                type="button"
-                                                onClick={() => { setProfileAvatarFile(null); setProfileAvatarPreview(''); }}
-                                                className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-rose-600 transition-colors"
-                                            >×</button>
-                                        </>
-                                    ) : (
-                                        <div className="h-14 w-14 rounded-full bg-zinc-100 border border-zinc-200 flex items-center justify-center text-zinc-400 text-xs">
-                                            <ImageIcon className="h-5 w-5" />
-                                        </div>
+                                    <img
+                                        src={profileAvatarPreview || '/img/default-avatar.svg'}
+                                        alt=""
+                                        className="h-14 w-14 rounded-full object-cover border border-zinc-200"
+                                    />
+                                    {profileAvatarPreview && (
+                                        <button
+                                            type="button"
+                                            onClick={() => { setProfileAvatarFile(null); setProfileAvatarPreview(''); }}
+                                            className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-rose-600 transition-colors"
+                                        >×</button>
                                     )}
                                 </div>
                                 <label className="flex-1 cursor-pointer">

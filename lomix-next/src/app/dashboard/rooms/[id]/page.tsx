@@ -165,6 +165,17 @@ export default function RoomDetailPage() {
         setEditThumbnailFile(null);
     };
 
+    const clearRoomThumbnail = async () => {
+        if (editTempThumbnailUrl) {
+            const token = localStorage.getItem('token');
+            await fetch('/api/admin/upload', { method: 'DELETE', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify({ url: editTempThumbnailUrl }) });
+            setEditTempThumbnailUrl('');
+        }
+        setEditThumbnailPreview('');
+        setEditThumbnailFile(null);
+        setEditForm(f => ({ ...f, thumbnailUrl: '' }));
+    };
+
     const handleRoomEdit = async () => {
         setEditSaving(true);
         try {
@@ -175,7 +186,7 @@ export default function RoomDetailPage() {
                 body: JSON.stringify({
                     name: editForm.name || undefined,
                     description: editForm.description || undefined,
-                    thumbnailUrl: editForm.thumbnailUrl || undefined,
+                    thumbnailUrl: editForm.thumbnailUrl || null,
                 }),
             });
             setEditDialog(false);
@@ -708,17 +719,35 @@ export default function RoomDetailPage() {
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-xs font-semibold text-zinc-700">Kapak Resmi</label>
-                            {(editThumbnailPreview || editForm.thumbnailUrl) && (
-                                <img src={editThumbnailPreview || editForm.thumbnailUrl} alt="" className="h-24 w-full object-cover rounded-lg border border-zinc-200" />
+                            {(editThumbnailPreview || editForm.thumbnailUrl) ? (
+                                <div className="relative group">
+                                    <img
+                                        src={editThumbnailPreview || editForm.thumbnailUrl}
+                                        alt=""
+                                        className="h-24 w-full object-cover rounded-lg border border-zinc-200"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={clearRoomThumbnail}
+                                        className="absolute top-1.5 right-1.5 bg-black/60 hover:bg-rose-600 text-white rounded-full w-6 h-6 flex items-center justify-center transition-colors"
+                                        title="Fotoğrafı kaldır"
+                                    >
+                                        <X className="h-3.5 w-3.5" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="h-24 w-full rounded-lg border-2 border-dashed border-zinc-200 bg-zinc-50 flex items-center justify-center">
+                                    <span className="text-xs text-zinc-400">Varsayılan kapak görseli kullanılacak</span>
+                                </div>
                             )}
                             <label className="cursor-pointer block">
                                 <div className="flex h-9 w-full items-center rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-500 hover:bg-zinc-50 cursor-pointer">
                                     {editThumbnailUploading
                                         ? <><Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> Yükleniyor...</>
-                                        : editThumbnailFile ? editThumbnailFile.name : 'Fotoğraf seç...'}
+                                        : editThumbnailFile ? editThumbnailFile.name : 'Yeni fotoğraf seç...'}
                                 </div>
                                 <input type="file" accept="image/*" className="hidden" disabled={editThumbnailUploading}
-                                    onChange={e => { const f = e.target.files?.[0]; if (f) { setEditThumbnailFile(f); uploadRoomThumbnail(f); } }} />
+                                    onChange={e => { const f = e.target.files?.[0]; if (f) { setEditThumbnailFile(f); uploadRoomThumbnail(f); } e.target.value = ''; }} />
                             </label>
                         </div>
                         <div className="flex justify-end gap-2 pt-2 border-t border-zinc-100">
