@@ -110,7 +110,7 @@ export async function POST(request: Request) {
                     type: 'USER_JOINED',
                     userId: String(userId),
                     username: user?.fullName || user?.username || '',
-                    avatarUrl: user?.avatar || '',
+                    avatarUrl: user?.avatar?.trim() || `${new URL(request.url).origin}/img/default-avatar.svg`,
                 },
             },
         });

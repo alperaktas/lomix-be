@@ -40,6 +40,7 @@ export async function GET(request: Request) {
                     ...(conv.clearedAt ? { createdAt: { gt: conv.clearedAt } } : {}),
                 },
                 orderBy: { createdAt: 'desc' },
+                include: { gift: { select: { name: true } } },
             });
 
             const unreadCount = await prisma.directMessage.count({
@@ -62,8 +63,8 @@ export async function GET(request: Request) {
                 user_name: conv.otherUser.fullName || conv.otherUser.username,
                 user_avatar: conv.otherUser.avatar || '',
                 user_level: conv.otherUser.level,
-                last_message: lastMessage?.text || (lastMessage?.imageUrl ? '📷 Fotoğraf' : ''),
-                message: lastMessage?.text || (lastMessage?.imageUrl ? '📷 Fotoğraf' : ''),
+                last_message: lastMessage?.text || (lastMessage?.gift ? `🎁 ${lastMessage.gift.name}` : lastMessage?.imageUrl ? '📷 Fotoğraf' : ''),
+                message: lastMessage?.text || (lastMessage?.gift ? `🎁 ${lastMessage.gift.name}` : lastMessage?.imageUrl ? '📷 Fotoğraf' : ''),
                 time: lastMessage ? formatDmTime(lastMessage.createdAt) : '',
                 new_message_count: unreadCount,
                 last_message_tik_no: tikNo,

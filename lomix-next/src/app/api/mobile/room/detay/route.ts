@@ -120,14 +120,16 @@ export async function POST(request: Request) {
         }
 
         const hostName = room.owner.fullName || room.owner.username;
-        const hostAvatar = room.owner.avatar || "";
+        const origin = new URL(request.url).origin;
+        const defaultAvatar = `${origin}/img/default-avatar.svg`;
+        const hostAvatar = room.owner.avatar?.trim() || defaultAvatar;
         const goldAmount = formatGoldAmount(room.owner.wallet?.balance ?? 0);
         const myRole = await getRoomRole(room.id, userId, room.ownerId);
 
         const participants = room.participants.map((p) => ({
             id: String(p.user.id),
             username: p.user.fullName || p.user.username,
-            avatarUrl: p.user.avatar || "",
+            avatarUrl: p.user.avatar?.trim() || defaultAvatar,
             gender: p.user.gender || "unknown",
             level: p.user.level,
             isVip: p.user.isVip,
@@ -142,7 +144,7 @@ export async function POST(request: Request) {
             isMuted: slot.isMuted,
             userId: slot.userId ? String(slot.userId) : null,
             username: slot.user?.username || null,
-            avatarUrl: slot.user?.avatar || null,
+            avatarUrl: slot.user ? (slot.user.avatar?.trim() || defaultAvatar) : null,
         }));
 
         const messages = room.messages.reverse().map((msg) => ({

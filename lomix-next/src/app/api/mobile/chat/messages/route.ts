@@ -45,6 +45,11 @@ export async function GET(request: Request) {
                 ...(conv?.clearedAt ? { createdAt: { gt: conv.clearedAt } } : {}),
             },
             orderBy: { createdAt: 'asc' },
+            include: {
+                gift: {
+                    select: { id: true, name: true, imageUrl: true, svgaUrl: true, price: true },
+                },
+            },
         });
 
         // Mark messages from other user as read
@@ -56,8 +61,16 @@ export async function GET(request: Request) {
         return ApiResponseHelper.success(
             messages.map(m => ({
                 id: String(m.id),
+                type: m.giftId ? 'gift' : m.imageUrl ? 'image' : 'text',
                 text: m.text,
                 imageUrl: m.imageUrl,
+                gift: m.gift ? {
+                    id: m.gift.id,
+                    name: m.gift.name,
+                    image_url: m.gift.imageUrl,
+                    svga_url: m.gift.svgaUrl || null,
+                    price: m.gift.price,
+                } : null,
                 time: formatDmTime(m.createdAt),
                 isMe: m.fromId === userId,
             })),

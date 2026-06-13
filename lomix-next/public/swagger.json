@@ -955,6 +955,112 @@
         }
       }
     },
+    "/api/mobile/gift/send-room": {
+      "post": {
+        "summary": "Odaya hediye gönder",
+        "tags": [
+          "Mobile Gifts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "giftId",
+                  "roomId"
+                ],
+                "properties": {
+                  "giftId": {
+                    "type": "integer"
+                  },
+                  "roomId": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "integer",
+                    "default": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Hediye başarıyla gönderildi"
+          }
+        }
+      }
+    },
+    "/api/mobile/gift/send-user": {
+      "post": {
+        "summary": "Kullanıcıya hediye gönder (özel mesaj geçmişine kaydeder)",
+        "tags": [
+          "Mobile Gifts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "giftId",
+                  "toUserId"
+                ],
+                "properties": {
+                  "giftId": {
+                    "type": "integer"
+                  },
+                  "toUserId": {
+                    "type": "integer"
+                  },
+                  "amount": {
+                    "type": "integer",
+                    "default": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Hediye başarıyla gönderildi"
+          }
+        }
+      }
+    },
+    "/api/mobile/gifts": {
+      "get": {
+        "summary": "Hediye listesi (kategoriye göre gruplu)",
+        "tags": [
+          "Mobile Gifts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hediyeler başarıyla getirildi"
+          }
+        }
+      }
+    },
     "/api/mobile/messages/clear": {
       "post": {
         "summary": "Mesaj Kutusunu Temizle",
@@ -1171,37 +1277,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "/api/mobile/recommended_users": {
-      "get": {
-        "summary": "Anasayfa Önerilen Kullanıcılar",
-        "tags": [
-          "Mobile Profile"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Kullanıcı Listesi"
-          }
-        }
-      }
-    },
-    "/api/mobile/recommended-users": {
-      "get": {
-        "summary": "Önerilen kullanıcıları listele",
-        "tags": [
-          "Mobile Social"
-        ],
-        "responses": {
-          "200": {
-            "description": "Kullanıcı listesi"
           }
         }
       }
@@ -1535,6 +1610,130 @@
           },
           "404": {
             "description": "Oda bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/room/member-request": {
+      "post": {
+        "summary": "Odaya üyelik isteği gönder",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomId"
+                ],
+                "properties": {
+                  "roomId": {
+                    "type": "string",
+                    "description": "Oda ID (roomId alanı)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "İstek gönderildi"
+          },
+          "409": {
+            "description": "Zaten istek gönderilmiş veya zaten üye"
+          }
+        }
+      },
+      "put": {
+        "summary": "Üyelik isteğini kabul et / reddet (oda sahibi/admin)",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "requestId",
+                  "action"
+                ],
+                "properties": {
+                  "requestId": {
+                    "type": "integer"
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "accept",
+                      "reject"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "İşlem tamamlandı"
+          }
+        }
+      }
+    },
+    "/api/mobile/room/member-requests": {
+      "get": {
+        "summary": "Odaya gelen üyelik isteklerini listele (oda sahibi/admin)",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "roomId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Oda ID (roomId alanı)"
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "accepted",
+                "rejected"
+              ]
+            },
+            "description": "Filtre (varsayılan pending)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "İstekler listelendi"
           }
         }
       }

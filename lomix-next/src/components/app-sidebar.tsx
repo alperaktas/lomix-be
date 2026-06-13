@@ -14,6 +14,7 @@ import {
   BarChart2,
   MessageSquare,
   LogOut,
+  Gift,
 } from "lucide-react"
 
 import {
@@ -92,6 +93,11 @@ const data = {
         { title: "Anlar", url: "/dashboard/anlar" },
         { title: "Sıcak Konular", url: "/dashboard/anlar/topics" },
       ],
+    },
+    {
+      title: "Hediyeler",
+      url: "/dashboard/gifts",
+      icon: Gift,
     },
     {
       title: "Harcama Raporları",

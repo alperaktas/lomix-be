@@ -72,7 +72,7 @@ export async function GET(request: Request) {
                 owner: {
                     id: String(room.ownerId),
                     name: room.owner?.fullName || room.owner?.username,
-                    avatar_url: room.owner?.avatar || "https://i.pravatar.cc/150"
+                    avatar_url: room.owner?.avatar?.trim() || `${new URL(request.url).origin}/img/default-avatar.svg`
                 },
                 viewer_count: room.viewerCount,
                 is_live: room.isLive,
