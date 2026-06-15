@@ -2,9 +2,10 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { del } from '@vercel/blob';
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const id = parseInt(params.id, 10);
+        const { id: idStr } = await params;
+        const id = parseInt(idStr, 10);
         const { categoryId, name, imageUrl, svgaUrl, price, isVisible, order } = await req.json();
         if (!name?.trim() || !categoryId || !imageUrl || price == null) {
             return NextResponse.json({ success: false, message: 'categoryId, name, imageUrl ve price zorunludur.' }, { status: 400 });
@@ -28,9 +29,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     }
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const id = parseInt(params.id, 10);
+        const { id: idStr } = await params;
+        const id = parseInt(idStr, 10);
         const gift = await prisma.gift.findUnique({ where: { id } });
         if (gift) {
             await prisma.gift.delete({ where: { id } });

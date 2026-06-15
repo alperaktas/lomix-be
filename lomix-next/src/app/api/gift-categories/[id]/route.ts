@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const id = parseInt(params.id, 10);
+        const { id: idStr } = await params;
+        const id = parseInt(idStr, 10);
         const { name, order, isActive } = await req.json();
         if (!name?.trim()) {
             return NextResponse.json({ success: false, message: 'İsim zorunludur.' }, { status: 400 });
@@ -18,9 +19,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     }
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const id = parseInt(params.id, 10);
+        const { id: idStr } = await params;
+        const id = parseInt(idStr, 10);
         await prisma.giftCategory.delete({ where: { id } });
         return NextResponse.json({ success: true });
     } catch (error: any) {
