@@ -10,6 +10,9 @@
     "swagger": "node scripts/generate-swagger.js"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@phosphor-icons/react": "^2.1.10",
     "@tabler/core": "^1.4.0",
     "@tabler/icons-react": "^3.36.1",
@@ -40,6 +43,7 @@
     "react-dom": "19.2.3",
     "sequelize": "^6.37.7",
     "shadcn": "^4.2.0",
+    "svgaplayerweb": "^2.3.2",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-react": "^5.31.0",
     "tailwind-merge": "^3.5.0",
