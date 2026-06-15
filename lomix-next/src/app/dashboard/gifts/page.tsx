@@ -271,7 +271,7 @@ export default function GiftsPage() {
                                                         )}
                                                         {/* Hover actions */}
                                                         <div className="absolute inset-0 rounded-xl bg-black/0 group-hover:bg-black/5 transition-colors pointer-events-none" />
-                                                        <div className="absolute top-1 right-1 hidden group-hover:flex gap-0.5 z-10">
+                                                        <div className="absolute top-1 right-1 flex gap-0.5 z-10">
                                                             <button
                                                                 onClick={() => openGiftEdit(g)}
                                                                 className="h-5 w-5 flex items-center justify-center bg-background border rounded shadow text-muted-foreground hover:text-foreground"
