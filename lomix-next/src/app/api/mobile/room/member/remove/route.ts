@@ -1,4 +1,4 @@
-import { ApiResponseHelper } from '@/lib/api-response';
+﻿import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { getRoomRole, canRemoveMember } from '@/lib/room-permissions';
@@ -42,7 +42,8 @@ export async function POST(request: Request) {
         if (!roomId || !userId) return ApiResponseHelper.error("roomId ve userId zorunludur.", 400);
 
         const targetId = Number(userId);
-        const where = isNaN(Number(roomId)) ? { roomId: String(roomId) } : { id: Number(roomId) };
+        const numericId = Number(roomId);
+        const where = { OR: [{ roomId: String(roomId) }, ...(!isNaN(numericId) ? [{ id: numericId }] : [])] };
         const room = await prisma.room.findFirst({ where });
         if (!room) return ApiResponseHelper.error("Oda bulunamadı.", 404);
 

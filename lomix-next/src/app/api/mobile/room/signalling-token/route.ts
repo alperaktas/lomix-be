@@ -35,9 +35,8 @@ export async function POST(request: Request) {
         const { roomId } = await request.json();
         if (!roomId) return ApiResponseHelper.error("roomId zorunludur.", 400);
 
-        const where = isNaN(Number(roomId))
-            ? { roomId: String(roomId) }
-            : { id: Number(roomId) };
+        const numericId = Number(roomId);
+        const where = { OR: [{ roomId: String(roomId) }, ...(!isNaN(numericId) ? [{ id: numericId }] : [])] };
 
         const room = await prisma.room.findFirst({ where, select: { id: true, roomId: true } });
         if (!room) return ApiResponseHelper.error("Oda bulunamadı.", 404);

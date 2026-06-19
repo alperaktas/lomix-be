@@ -1,4 +1,4 @@
-import { ApiResponseHelper } from '@/lib/api-response';
+﻿import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { logRoomEvent } from '@/lib/room-log';
@@ -36,7 +36,8 @@ export async function POST(request: Request) {
         const { roomId } = await request.json();
         if (!roomId) return ApiResponseHelper.error("roomId zorunludur.", 400);
 
-        const where = isNaN(Number(roomId)) ? { roomId: String(roomId) } : { id: Number(roomId) };
+        const numericId = Number(roomId);
+        const where = { OR: [{ roomId: String(roomId) }, ...(!isNaN(numericId) ? [{ id: numericId }] : [])] };
         const room = await prisma.room.findFirst({ where, select: { id: true } });
         if (!room) return ApiResponseHelper.error("Oda bulunamadı.", 404);
 

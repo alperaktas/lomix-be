@@ -1,4 +1,4 @@
-import { ApiResponseHelper } from '@/lib/api-response';
+﻿import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { getRoomRole, canManageMic } from '@/lib/room-permissions';
@@ -47,7 +47,8 @@ export async function POST(request: Request) {
             return ApiResponseHelper.error("action 'lock' veya 'unlock' olmalıdır.", 400);
         }
 
-        const where = isNaN(Number(roomId)) ? { roomId: String(roomId) } : { id: Number(roomId) };
+        const numericId = Number(roomId);
+        const where = { OR: [{ roomId: String(roomId) }, ...(!isNaN(numericId) ? [{ id: numericId }] : [])] };
         const room = await prisma.room.findFirst({ where });
         if (!room) return ApiResponseHelper.error("Oda bulunamadı.", 404);
 
