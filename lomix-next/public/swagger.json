@@ -955,6 +955,55 @@
         }
       }
     },
+    "/api/mobile/emojis/detail": {
+      "get": {
+        "summary": "Emoji detayı",
+        "tags": [
+          "Mobile Emojis"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Emoji detayı döndürüldü"
+          },
+          "404": {
+            "description": "Emoji bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/emojis/list": {
+      "get": {
+        "summary": "Emoji listesi",
+        "tags": [
+          "Mobile Emojis"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Emoji listesi döndürüldü"
+          }
+        }
+      }
+    },
     "/api/mobile/gift/send-room": {
       "post": {
         "summary": "Odaya hediye gönder",

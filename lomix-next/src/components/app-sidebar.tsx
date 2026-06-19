@@ -15,6 +15,7 @@ import {
   MessageSquare,
   LogOut,
   Gift,
+  Smile,
 } from "lucide-react"
 
 import {
@@ -98,6 +99,11 @@ const data = {
       title: "Hediyeler",
       url: "/dashboard/gifts",
       icon: Gift,
+    },
+    {
+      title: "Emojiler",
+      url: "/dashboard/emojis",
+      icon: Smile,
     },
     {
       title: "Harcama Raporları",
