@@ -2783,6 +2783,46 @@
         }
       }
     },
+    "/api/mobile/users/detail": {
+      "post": {
+        "summary": "Kullanıcı Detayı",
+        "description": "Verilen userId'ye ait kullanıcının profil bilgilerini döner.",
+        "tags": [
+          "Mobile Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "userId"
+                ],
+                "properties": {
+                  "userId": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Kullanıcı bilgileri döndürüldü"
+          },
+          "404": {
+            "description": "Kullanıcı bulunamadı"
+          }
+        }
+      }
+    },
     "/api/mobile/users/recommended": {
       "get": {
         "summary": "Takip / arkadaş önerileri",
