@@ -39,14 +39,17 @@ import jwt from 'jsonwebtoken';
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { email, password, deviceInfo } = body;
+        const { email, username, password, deviceInfo } = body;
+        const identifier = email || username;
         const ipAddress = req.headers.get('x-forwarded-for') || 'unknown';
 
-        if (!email || !password) {
-            return ApiResponseHelper.error('Lütfen email ve şifre giriniz.', 400);
+        if (!identifier || !password) {
+            return ApiResponseHelper.error('Lütfen email/kullanıcı adı ve şifre giriniz.', 400);
         }
 
-        const user = await prisma.user.findFirst({ where: { email } });
+        const user = await prisma.user.findFirst({
+            where: { OR: [{ email: identifier }, { username: identifier }] }
+        });
 
         if (!user || !(await bcrypt.compare(password, user.password))) {
             return ApiResponseHelper.error('Email adresi veya şifre hatalı.', 401);
