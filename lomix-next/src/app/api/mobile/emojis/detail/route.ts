@@ -31,7 +31,10 @@ export async function GET(request: Request) {
         const id = Number(searchParams.get('id'));
         if (!id) return ApiResponseHelper.error("id zorunludur.", 400);
 
-        const emoji = await prisma.emoji.findUnique({ where: { id } });
+        const emoji = await prisma.emoji.findUnique({
+            where: { id },
+            include: { category: { select: { id: true, name: true } } },
+        });
         if (!emoji) return ApiResponseHelper.error("Emoji bulunamadı.", 404);
 
         return ApiResponseHelper.success({
@@ -39,7 +42,8 @@ export async function GET(request: Request) {
             name: emoji.name,
             image_url: emoji.imageUrl,
             svga_url: emoji.svgaUrl || null,
-            order: emoji.order,
+            price: emoji.price,
+            category: { id: emoji.category.id, name: emoji.category.name },
         }, "Emoji detayı getirildi.");
     } catch (error: any) {
         return ApiResponseHelper.error(error.message, 500);

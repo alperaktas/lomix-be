@@ -6,13 +6,22 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     try {
         const { id: idStr } = await params;
         const id = parseInt(idStr, 10);
-        const { name, imageUrl, svgaUrl, order, isVisible } = await req.json();
-        if (!name?.trim() || !imageUrl) {
-            return NextResponse.json({ success: false, message: 'name ve imageUrl zorunludur.' }, { status: 400 });
+        const { categoryId, name, imageUrl, svgaUrl, price, isVisible, order } = await req.json();
+        if (!name?.trim() || !categoryId || !imageUrl || price == null) {
+            return NextResponse.json({ success: false, message: 'categoryId, name, imageUrl ve price zorunludur.' }, { status: 400 });
         }
         const emoji = await prisma.emoji.update({
             where: { id },
-            data: { name: name.trim(), imageUrl, svgaUrl: svgaUrl || null, order: order ?? 0, isVisible: isVisible ?? true },
+            data: {
+                categoryId: parseInt(categoryId, 10),
+                name: name.trim(),
+                imageUrl,
+                svgaUrl: svgaUrl || null,
+                price: parseInt(price, 10),
+                isVisible: isVisible ?? true,
+                order: order ?? 0,
+            },
+            include: { category: { select: { id: true, name: true } } },
         });
         return NextResponse.json({ success: true, emoji });
     } catch (error: any) {
