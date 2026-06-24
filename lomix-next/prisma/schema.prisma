@@ -181,6 +181,7 @@ model Wallet {
   id               Int      @id @default(autoincrement())
   userId           Int      @unique @map("user_id")
   balance          Int      @default(0)
+  diamonds         Int      @default(0)
   currency         String   @default("USD")
   currencySymbol   String   @default("$") @map("currency_symbol")
   hasDepositReward Boolean  @default(false) @map("has_deposit_reward")
@@ -720,20 +721,49 @@ model Gift {
 }
 
 model GiftLog {
-  id         Int      @id @default(autoincrement())
-  giftId     Int      @map("gift_id")
-  senderId   Int      @map("sender_id")
-  receiverId Int?     @map("receiver_id")
-  roomId     Int?     @map("room_id")
-  amount     Int      @default(1)
-  totalPrice Int      @map("total_price")
-  createdAt  DateTime @default(now()) @map("created_at")
-  gift       Gift     @relation(fields: [giftId], references: [id])
-  sender     User     @relation("GiftSender", fields: [senderId], references: [id], onDelete: Cascade)
-  receiver   User?    @relation("GiftReceiver", fields: [receiverId], references: [id], onDelete: SetNull)
-  room       Room?    @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  id            Int      @id @default(autoincrement())
+  giftId        Int      @map("gift_id")
+  senderId      Int      @map("sender_id")
+  receiverId    Int?     @map("receiver_id")
+  roomId        Int?     @map("room_id")
+  amount        Int      @default(1)
+  totalPrice    Int      @map("total_price")
+  commission    Int      @default(0)
+  diamondAmount Int      @default(0) @map("diamond_amount")
+  createdAt     DateTime @default(now()) @map("created_at")
+  gift          Gift     @relation(fields: [giftId], references: [id])
+  sender        User     @relation("GiftSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver      User?    @relation("GiftReceiver", fields: [receiverId], references: [id], onDelete: SetNull)
+  room          Room?    @relation(fields: [roomId], references: [id], onDelete: SetNull)
 
   @@map("gift_logs")
+}
+
+model CoinPackage {
+  id          Int      @id @default(autoincrement())
+  name        String
+  coinAmount  Int      @map("coin_amount")
+  bonusAmount Int      @default(0) @map("bonus_amount")
+  price       Float
+  currency    String   @default("TRY")
+  badgeText   String?  @map("badge_text")
+  isActive    Boolean  @default(true) @map("is_active")
+  isFeatured  Boolean  @default(false) @map("is_featured")
+  order       Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("coin_packages")
+}
+
+model AppSetting {
+  key       String   @id
+  value     String
+  label     String   @default("")
+  group     String   @default("general")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("app_settings")
 }
 
 model EmojiCategory {

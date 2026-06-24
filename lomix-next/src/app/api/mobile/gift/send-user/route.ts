@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
+import { getSetting } from '@/lib/app-settings';
 
 /**
  * @swagger
@@ -72,14 +73,23 @@ export async function POST(request: Request) {
             return NextResponse.json({ status: false, message: 'Yetersiz coin bakiyesi' }, { status: 400 });
         }
 
+        const commissionRate = await getSetting('gift_commission_rate');
+        const diamondAmount = Math.floor(totalCost * (1 - commissionRate / 100));
+        const commission = totalCost - diamondAmount;
+
         const origin = new URL(request.url).origin;
         const defaultAvatar = `${origin}/img/default-avatar.svg`;
 
-        // Deduct coins, create gift log, and save to DM history in one transaction
-        const [, , directMessage] = await prisma.$transaction([
+        // Deduct coins, credit diamonds to receiver, create gift log, save to DM history
+        const [, , , directMessage] = await prisma.$transaction([
             prisma.wallet.update({
                 where: { userId },
                 data: { balance: { decrement: totalCost } },
+            }),
+            prisma.wallet.upsert({
+                where: { userId: toId },
+                update: { diamonds: { increment: diamondAmount } },
+                create: { userId: toId, balance: 0, diamonds: diamondAmount },
             }),
             prisma.giftLog.create({
                 data: {
@@ -88,6 +98,8 @@ export async function POST(request: Request) {
                     receiverId: toId,
                     amount: qty,
                     totalPrice: totalCost,
+                    commission,
+                    diamondAmount,
                 },
             }),
             prisma.directMessage.create({
@@ -128,6 +140,8 @@ export async function POST(request: Request) {
                     gift_svga_url: gift.svgaUrl || null,
                     amount: qty,
                     total_price: totalCost,
+                    diamond_amount: diamondAmount,
+                    commission,
                     sender_id: String(userId),
                     sender_name: sender?.fullName || sender?.username || '',
                     sender_avatar_url: sender?.avatar?.trim() || defaultAvatar,

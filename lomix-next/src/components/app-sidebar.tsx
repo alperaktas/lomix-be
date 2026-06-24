@@ -16,6 +16,7 @@ import {
   LogOut,
   Gift,
   Smile,
+  FlaskConical,
 } from "lucide-react"
 
 import {
@@ -106,6 +107,11 @@ const data = {
       icon: Smile,
     },
     {
+      title: "Auth Test",
+      url: "/dashboard/auth-test",
+      icon: FlaskConical,
+    },
+    {
       title: "Harcama Raporları",
       url: "/dashboard/reports",
       icon: BarChart2,
@@ -122,6 +128,8 @@ const data = {
       children: [
         { title: "Genel", url: "/dashboard/settings" },
         { title: "Hikaye Fiyatları", url: "/dashboard/settings/story-prices" },
+        { title: "Komisyon & Fiyatlar", url: "/dashboard/settings/commissions" },
+        { title: "Coin Paketleri", url: "/dashboard/settings/coin-packages" },
       ],
     },
   ],

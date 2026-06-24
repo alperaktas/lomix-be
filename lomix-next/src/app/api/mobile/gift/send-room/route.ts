@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
+import { getSetting } from '@/lib/app-settings';
 
 /**
  * @swagger
@@ -67,6 +68,10 @@ export async function POST(request: Request) {
             return NextResponse.json({ status: false, message: 'Yetersiz coin bakiyesi' }, { status: 400 });
         }
 
+        const commissionRate = await getSetting('gift_commission_rate');
+        const diamondAmount = Math.floor(totalCost * (1 - commissionRate / 100));
+        const commission = totalCost - diamondAmount;
+
         const origin = new URL(request.url).origin;
         const defaultAvatar = `${origin}/img/default-avatar.svg`;
 
@@ -75,6 +80,11 @@ export async function POST(request: Request) {
                 where: { userId },
                 data: { balance: { decrement: totalCost } },
             }),
+            prisma.wallet.upsert({
+                where: { userId: room.ownerId },
+                update: { diamonds: { increment: diamondAmount } },
+                create: { userId: room.ownerId, balance: 0, diamonds: diamondAmount },
+            }),
             prisma.giftLog.create({
                 data: {
                     giftId: gift.id,
@@ -82,6 +92,8 @@ export async function POST(request: Request) {
                     roomId: room.id,
                     amount: qty,
                     totalPrice: totalCost,
+                    commission,
+                    diamondAmount,
                 },
             }),
         ]);
@@ -105,6 +117,8 @@ export async function POST(request: Request) {
                     sender_level: sender?.level ?? 1,
                     sender_is_vip: sender?.isVip ?? false,
                     room_id: room.roomId,
+                    diamond_amount: diamondAmount,
+                    commission,
                 },
             },
         });

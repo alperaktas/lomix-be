@@ -7,7 +7,7 @@ import {
     Shield,
     Crown, Coins, Users, Heart,
     Ban, UserX, Smartphone, Gift, TrendingUp, Eye,
-    Venus, Pencil, Trash2,
+    Venus, Pencil, Trash2, UserCog,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -81,6 +81,8 @@ export default function UserDetailPage() {
     const [storyCount, setStoryCount] = useState('1');
     const [visitorDialog, setVisitorDialog] = useState(false);
     const [visitorLimit, setVisitorLimit] = useState('');
+    const [roleDialog, setRoleDialog] = useState(false);
+    const [roleValue, setRoleValue] = useState('');
     const [profileDialog, setProfileDialog] = useState(false);
     const [profileForm, setProfileForm] = useState({ username: '', fullName: '', description: '' });
     const [profileAvatarFile, setProfileAvatarFile] = useState<File | null>(null);
@@ -462,6 +464,7 @@ export default function UserDetailPage() {
                         <ActionButton icon={<TrendingUp className="h-4 w-4" />} label="Level Değiştir" onClick={() => { setLevelValue(String(user.level)); setLevelDialog(true); }} />
                         <ActionButton icon={<Crown className="h-4 w-4" />} label="VIP Tanımla" onClick={() => setVipDialog(true)} />
                         <ActionButton icon={<Eye className="h-4 w-4" />} label="Ziyaretçi Limiti" onClick={() => { setVisitorLimit(String(user.visitorViewLimit)); setVisitorDialog(true); }} />
+                        <ActionButton icon={<UserCog className="h-4 w-4" />} label="Rol Değiştir" onClick={() => { setRoleValue(user.role); setRoleDialog(true); }} />
                     </div>
 
                     {/* Ban History */}
@@ -696,6 +699,34 @@ export default function UserDetailPage() {
                             <Button size="sm" className="bg-zinc-900 text-white hover:bg-zinc-800 font-semibold" disabled={actionLoading}
                                 onClick={() => handleAction(`/api/users/${userId}/story-reward`, 'POST', { count: Number(storyCount) }, () => setStoryDialog(false))}>
                                 Gönder
+                            </Button>
+                        </DialogFooter>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Role Dialog */}
+            <Dialog open={roleDialog} onOpenChange={setRoleDialog}>
+                <DialogContent className="sm:max-w-xs">
+                    <DialogHeader>
+                        <DialogTitle className="text-lg font-semibold">Rol Değiştir</DialogTitle>
+                        <DialogDescription>Mevcut rol: <strong>{user.role.toUpperCase()}</strong></DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3 pt-2">
+                        <select
+                            className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-950"
+                            value={roleValue}
+                            onChange={e => setRoleValue(e.target.value)}
+                        >
+                            <option value="user">user</option>
+                            <option value="moderator">moderator</option>
+                            <option value="admin">admin</option>
+                        </select>
+                        <DialogFooter>
+                            <Button variant="ghost" size="sm" onClick={() => setRoleDialog(false)}>İptal</Button>
+                            <Button size="sm" className="bg-zinc-900 text-white hover:bg-zinc-800 font-semibold" disabled={actionLoading}
+                                onClick={() => handleAction(`/api/users/${userId}`, 'PUT', { role: roleValue }, () => setRoleDialog(false))}>
+                                Kaydet
                             </Button>
                         </DialogFooter>
                     </div>

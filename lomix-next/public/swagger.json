@@ -2613,6 +2613,32 @@
         }
       }
     },
+    "/api/mobile/settings/prices": {
+      "get": {
+        "summary": "Uygulama fiyat ayarları",
+        "tags": [
+          "Mobile Settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "Fiyatlar döndürüldü"
+          }
+        }
+      }
+    },
+    "/api/mobile/store/coin-packages": {
+      "get": {
+        "summary": "Aktif coin paketleri listesi",
+        "tags": [
+          "Mobile Store"
+        ],
+        "responses": {
+          "200": {
+            "description": "Coin paketleri döndürüldü"
+          }
+        }
+      }
+    },
     "/api/mobile/stories/prices": {
       "get": {
         "summary": "Hikaye fiyat listesi",
