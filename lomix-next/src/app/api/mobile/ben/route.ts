@@ -73,7 +73,7 @@ export async function GET(request: Request) {
                 is_vip: user.isVip,
             },
             oda: room ? {
-                id: String(room.id),
+                id: room.roomId,
                 name: room.name,
                 cover_url: room.thumbnailUrl || '',
                 member_count: room._count.members,
