@@ -1274,7 +1274,20 @@
                   "username": {
                     "type": "string"
                   },
-                  "bio": {
+                  "full_name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "birth_date": {
+                    "type": "string",
+                    "example": "2000-01-21"
+                  },
+                  "gender": {
+                    "type": "string"
+                  },
+                  "country": {
                     "type": "string"
                   },
                   "profileImage": {
