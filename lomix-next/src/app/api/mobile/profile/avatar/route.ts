@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
-import fs from 'fs';
-import path from 'path';
+import { put, del } from '@vercel/blob';
 
 const MAX_PHOTOS = 4;
 
@@ -112,18 +111,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ status: false, message: "Dosya boyutu 5MB'dan büyük olamaz." }, { status: 400 });
         }
 
-        // Dosyayı public/uploads/avatars/ klasörüne kaydet
-        const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'avatars');
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-
-        const fileName = `user_${userId}_${Date.now()}.${ext}`;
-        const filePath = path.join(uploadDir, fileName);
-        const buffer = Buffer.from(await file.arrayBuffer());
-        fs.writeFileSync(filePath, buffer);
-
-        const fileUrl = `/uploads/avatars/${fileName}`;
+        const blob = await put(`user-photos/user_${userId}_${Date.now()}.${ext}`, file, { access: 'public' });
+        const fileUrl = blob.url;
 
         const photo = await prisma.userPhoto.create({
             data: { userId, url: fileUrl, order: count },
@@ -191,13 +180,7 @@ export async function DELETE(request: Request) {
 
         await prisma.userPhoto.delete({ where: { id: photoId } });
 
-        // Yerel dosyayı sil
-        try {
-            const localPath = path.join(process.cwd(), 'public', photo.url);
-            if (fs.existsSync(localPath)) {
-                fs.unlinkSync(localPath);
-            }
-        } catch { }
+        try { await del(photo.url); } catch { }
 
         return NextResponse.json({ status: true, message: "Fotoğraf silindi." });
     } catch (error: any) {

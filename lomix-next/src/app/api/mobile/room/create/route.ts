@@ -3,8 +3,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { logRoomEvent } from '@/lib/room-log';
 import { createAgoraChatRoom, registerAgoraChatUser } from '@/lib/agora';
-import fs from 'fs';
-import path from 'path';
+import { put } from '@vercel/blob';
 
 /**
  * @swagger
@@ -71,17 +70,8 @@ export async function POST(request: Request) {
                 return NextResponse.json({ status: false, message: "Dosya boyutu 5MB'dan büyük olamaz." }, { status: 400 });
             }
 
-            const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'rooms');
-            if (!fs.existsSync(uploadDir)) {
-                fs.mkdirSync(uploadDir, { recursive: true });
-            }
-
-            const fileName = `room_${Date.now()}_${image.name}`;
-            const filePath = path.join(uploadDir, fileName);
-            const buffer = Buffer.from(await image.arrayBuffer());
-            fs.writeFileSync(filePath, buffer);
-
-            thumbnailUrl = `/uploads/rooms/${fileName}`;
+            const blob = await put(`room-thumbnails/room_${Date.now()}.${ext}`, image, { access: 'public' });
+            thumbnailUrl = blob.url;
         }
 
         const DEFAULT_MIC_COUNT = 8;
