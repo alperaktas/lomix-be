@@ -20,78 +20,94 @@ import { getCurrentUserId } from '@/lib/current-user';
  *                 type: string
  *               full_name:
  *                 type: string
- *               description:
- *                 type: string
- *               birth_date:
- *                 type: string
- *                 example: "2000-01-21"
- *               gender:
- *                 type: string
- *               country:
+ *               bio:
  *                 type: string
  *               profileImage:
  *                 type: string
  *                 format: binary
+ *               gender:
+ *                 type: string
+ *               country:
+ *                 type: string
+ *               birthday:
+ *                 type: string
+ *                 format: date
  *     responses:
  *       200:
  *         description: Profil Güncellendi
  */
 export async function POST(request: Request) {
+    const { default: logger } = await import('@/lib/logger');
+    const ipAddress = request.headers.get('x-forwarded-for') || 'unknown';
+    const userAgent = request.headers.get('user-agent') || 'unknown';
+
     try {
         const userId = await getCurrentUserId(request);
         if (!userId) {
-            return NextResponse.json({ status: false, message: 'Yetkisiz erişim.' }, { status: 401 });
+            return NextResponse.json({ status: false, message: "Yetkisiz erişim." }, { status: 401 });
         }
 
-        const formData = await request.formData();
+        let body: Record<string, any> = {};
+        const contentType = request.headers.get('content-type') || '';
 
-        const username   = formData.get('username') as string | null;
-        const full_name  = formData.get('full_name') as string | null;
-        const description = formData.get('description') as string | null;
-        const birth_date = formData.get('birth_date') as string | null;
-        const gender     = formData.get('gender') as string | null;
-        const country    = formData.get('country') as string | null;
-
-        if (username) {
-            const existing = await prisma.user.findFirst({
-                where: { username, NOT: { id: userId } },
-            });
-            if (existing) {
-                return NextResponse.json({ status: false, message: 'Bu kullanıcı adı zaten kullanımda.' }, { status: 409 });
-            }
+        if (contentType.includes('application/json')) {
+            body = await request.json();
+        } else {
+            const formData = await request.formData();
+            formData.forEach((value, key) => { body[key] = value; });
         }
 
-        const updated = await prisma.user.update({
+        logger.debug('Profil güncelleme isteği', { ip: ipAddress, userAgent, body });
+
+        // Güncellenebilir alanlar
+        const updateData: Record<string, any> = {};
+
+        if (body.username !== undefined) updateData.username = body.username;
+        if (body.full_name !== undefined) updateData.fullName = body.full_name;
+        if (body.description !== undefined) updateData.description = body.description;
+        if (body.bio !== undefined) updateData.description = body.bio;
+        if (body.gender !== undefined) updateData.gender = body.gender;
+        if (body.country !== undefined) updateData.country = body.country;
+        if (body.avatar !== undefined) updateData.avatar = body.avatar;
+        if (body.profileImage !== undefined) updateData.avatar = body.profileImage;
+        if (body.phone !== undefined) updateData.phone = body.phone;
+
+        // Doğum tarihi: birthday, birth_date veya birthDate olarak gelebilir
+        const birthValue = body.birthday ?? body.birth_date ?? body.birthDate;
+        if (birthValue !== undefined && birthValue !== null && birthValue !== '') {
+            updateData.birthDate = new Date(birthValue);
+        } else if (birthValue === '' || birthValue === null) {
+            updateData.birthDate = null;
+        }
+
+        if (Object.keys(updateData).length === 0) {
+            return NextResponse.json({ status: false, message: "Güncellenecek alan bulunamadı." }, { status: 400 });
+        }
+
+        const updatedUser = await prisma.user.update({
             where: { id: userId },
-            data: {
-                ...(username    && { username }),
-                ...(full_name   !== null && { fullName: full_name }),
-                ...(description !== null && { description }),
-                ...(birth_date  !== null && { birthDate: birth_date ? new Date(birth_date) : null }),
-                ...(gender      && { gender }),
-                ...(country     !== null && { country }),
-            },
-            select: {
-                id: true, username: true, fullName: true, description: true,
-                birthDate: true, gender: true, country: true, avatar: true,
-            },
+            data: updateData,
         });
+
+        logger.info(`Profil güncellendi: ${updatedUser.username}`, { userId, fields: Object.keys(updateData) });
 
         return NextResponse.json({
             status: true,
-            message: 'Profil başarıyla güncellendi.',
+            message: "Profil başarıyla güncellendi.",
             data: {
-                id: String(updated.id),
-                username: updated.username,
-                full_name: updated.fullName || '',
-                description: updated.description || '',
-                birth_date: updated.birthDate ? updated.birthDate.toISOString().split('T')[0] : null,
-                gender: updated.gender || 'unknown',
-                country: updated.country || '',
-                avatar_url: updated.avatar || '',
-            },
+                username: updatedUser.username,
+                full_name: updatedUser.fullName || '',
+                description: updatedUser.description || '',
+                gender: updatedUser.gender || '',
+                country: updatedUser.country || '',
+                avatar: updatedUser.avatar || '',
+                phone: updatedUser.phone || '',
+                birth_date: updatedUser.birthDate ? updatedUser.birthDate.toISOString().split('T')[0] : null,
+            }
         });
     } catch (error: any) {
-        return NextResponse.json({ status: false, message: error.message || 'Profil güncellenemedi.' }, { status: 500 });
+        logger.error(`Profil güncelleme hatası: ${error.message}`, { ip: ipAddress, error });
+
+        return NextResponse.json({ status: false, message: "Profil güncellenemedi." }, { status: 400 });
     }
 }

@@ -50,7 +50,7 @@ export async function POST(request: Request) {
         });
 
         if (!room) {
-            return NextResponse.json({ status: false, message: "Oda bulunamadı" }, { status: 404 });
+            return NextResponse.json({ status: false, message: "Oda bulunamadı" }, { status: 200 });
         }
 
         if (room.isClosed || !room.isLive) {

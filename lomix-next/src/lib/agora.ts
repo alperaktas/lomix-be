@@ -1,15 +1,26 @@
-import { RtcTokenBuilder, RtcRole, RtmTokenBuilder, ChatTokenBuilder } from 'agora-token';
+import { RtcTokenBuilder, RtcRole } from 'agora-access-token';
+import { RtmTokenBuilder, ChatTokenBuilder } from 'agora-token';
 
-const APP_ID = () => process.env.AGORA_APP_ID!;
-const APP_CERT = () => process.env.AGORA_APP_CERTIFICATE!;
-const CUSTOMER_KEY = () => process.env.AGORA_CUSTOMER_KEY!;
-const CUSTOMER_SECRET = () => process.env.AGORA_CUSTOMER_SECRET!;
+function requireEnv(name: string): string {
+    const val = process.env[name];
+    if (!val) {
+        throw new Error(`Agora: ${name} ortam değişkeni tanımlanmamış. Lütfen .env dosyasına ekleyin.`);
+    }
+    return val;
+}
+
+const APP_ID = () => requireEnv('AGORA_APP_ID');
+const APP_CERT = () => requireEnv('AGORA_APP_CERTIFICATE');
+const CUSTOMER_KEY = () => requireEnv('AGORA_CUSTOMER_KEY');
+const CUSTOMER_SECRET = () => requireEnv('AGORA_CUSTOMER_SECRET');
 
 export function generateAgoraToken(channelName: string, uid: number): string {
     const expireTs = Math.floor(Date.now() / 1000) + 86400;
-    return RtcTokenBuilder.buildTokenWithUid(
-        APP_ID(), APP_CERT(), channelName, uid, RtcRole.PUBLISHER, expireTs, expireTs
+    const token = RtcTokenBuilder.buildTokenWithUid(
+        APP_ID(), APP_CERT(), channelName, uid, RtcRole.PUBLISHER, expireTs
     );
+    console.log(`[Agora-RTC] Token prefix kontrol: ${token.substring(0, 3)} — ${token.startsWith('006') ? 'RTC tokenı (doğru)' : 'UYARI: beklenen 006 prefixi değil'}`);
+    return token;
 }
 
 export function generateRtmToken(userId: string): string {

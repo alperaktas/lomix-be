@@ -955,6 +955,34 @@
         }
       }
     },
+    "/api/mobile/diamond/shop": {
+      "post": {
+        "summary": "Elmas shop verilerini döndürür",
+        "tags": [
+          "Mobile Diamond"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Elmas verisi gönderildi"
+          }
+        }
+      }
+    },
     "/api/mobile/emojis/detail": {
       "get": {
         "summary": "Emoji detayı",
@@ -1236,6 +1264,137 @@
         }
       }
     },
+    "/api/mobile/profile/avatar": {
+      "post": {
+        "summary": "Profil fotoğrafı yükle (en fazla 4)",
+        "tags": [
+          "Mobile Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "avatar"
+                ],
+                "properties": {
+                  "avatar": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Fotoğraf yüklendi"
+          },
+          "400": {
+            "description": "Limit aşıldı veya dosya yok"
+          },
+          "401": {
+            "description": "Yetkisiz erişim"
+          }
+        }
+      },
+      "get": {
+        "summary": "Kullanıcının profil fotoğraflarını listele",
+        "tags": [
+          "Mobile Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fotoğraf listesi"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Profil fotoğrafı sil",
+        "tags": [
+          "Mobile Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "photoId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fotoğraf silindi"
+          }
+        }
+      }
+    },
+    "/api/mobile/profile/avatar/set-active": {
+      "post": {
+        "summary": "Kullanıcının aktif avatarını belirler",
+        "tags": [
+          "Mobile Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "photo_id"
+                ],
+                "properties": {
+                  "photo_id": {
+                    "type": "integer",
+                    "description": "Aktif yapılacak fotoğrafın ID'si (UserPhoto)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Aktif avatar başarıyla güncellendi"
+          },
+          "400": {
+            "description": "Geçersiz istek"
+          },
+          "401": {
+            "description": "Yetkisiz erişim"
+          },
+          "404": {
+            "description": "Fotoğraf bulunamadı"
+          }
+        }
+      }
+    },
     "/api/mobile/profile/me": {
       "get": {
         "summary": "Giriş yapmış kullanıcının profil bilgilerini getirir",
@@ -1277,12 +1436,12 @@
                   "full_name": {
                     "type": "string"
                   },
-                  "description": {
+                  "bio": {
                     "type": "string"
                   },
-                  "birth_date": {
+                  "profileImage": {
                     "type": "string",
-                    "example": "2000-01-21"
+                    "format": "binary"
                   },
                   "gender": {
                     "type": "string"
@@ -1290,9 +1449,9 @@
                   "country": {
                     "type": "string"
                   },
-                  "profileImage": {
+                  "birthday": {
                     "type": "string",
-                    "format": "binary"
+                    "format": "date"
                   }
                 }
               }

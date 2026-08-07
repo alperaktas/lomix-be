@@ -177,6 +177,25 @@ async function main() {
     }
   });
 
+  // 10. Diamond Shop Items
+  await prisma.diamondShopItem.createMany({
+    data: [
+      { type: 'exchange', coins: 1650, diamonds: 5000, order: 1 },
+      { type: 'exchange', coins: 8250, diamonds: 25000, order: 2 },
+      { type: 'exchange', coins: 16500, diamonds: 50000, order: 3 },
+      { type: 'exchange', coins: 33000, diamonds: 100000, order: 4 },
+      { type: 'exchange', coins: 82500, diamonds: 250000, order: 5 },
+      { type: 'exchange', coins: 165000, diamonds: 500000, order: 6 },
+      { type: 'withdraw', coins: 1650, diamonds: 5000, order: 1 },
+      { type: 'withdraw', coins: 8250, diamonds: 25000, order: 2 },
+      { type: 'withdraw', coins: 16500, diamonds: 50000, order: 3 },
+      { type: 'withdraw', coins: 33000, diamonds: 100000, order: 4 },
+      { type: 'withdraw', coins: 82500, diamonds: 250000, order: 5 },
+      { type: 'withdraw', coins: 165000, diamonds: 500000, order: 6 },
+    ],
+    skipDuplicates: true,
+  });
+
   console.log('Seeding completed successfully!');
 }
 

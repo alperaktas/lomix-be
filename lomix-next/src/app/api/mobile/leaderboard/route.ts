@@ -14,37 +14,47 @@ export async function GET(request: Request) {
         const type = searchParams.get('type') || 'anchor';
         const period = searchParams.get('period') || 'weekly';
 
-        // En yüksek prestij puanına sahip kullanıcıları getir
-        const topUsers = await prisma.user.findMany({
-            orderBy: {
-                prestigePoints: 'desc'
-            },
+        // En yüksek izleyici sayısına sahip canlı odaları getir
+        const topRooms = await prisma.room.findMany({
+            where: { isLive: true, isClosed: false },
+            orderBy: { viewerCount: 'desc' },
             take: 18,
             select: {
-                id: true,
-                fullName: true,
-                username: true,
-                avatar: true,
-                prestigePoints: true
+                roomId: true,
+                name: true,
+                viewerCount: true,
+                type: true,
+                thumbnailUrl: true,
+                owner: {
+                    select: {
+                        fullName: true,
+                        username: true,
+                        avatar: true,
+                    }
+                }
             }
         });
 
-        const formattedUsers = topUsers.map((user, index) => ({
+        const formattedRooms = topRooms.map((room, index) => ({
             rank: index + 1,
-            name: user.fullName || user.username,
-            avatar: user.avatar || `https://i.pravatar.cc/150?u=${user.id}`,
-            score: formatScore(user.prestigePoints),
-            id: String(user.id)
+            room_id: room.roomId,
+            room_name: room.name,
+            owner_name: room.owner.fullName || room.owner.username,
+            owner_avatar: room.owner.avatar || `https://i.pravatar.cc/150?u=${room.roomId}`,
+            score: formatScore(room.viewerCount),
+            viewer_count: room.viewerCount,
+            type: room.type,
+            thumbnail_url: room.thumbnailUrl || null,
         }));
 
         return NextResponse.json({
             status: true,
             message: "Leaderboard fetched successfully",
             data: {
-                type: type, // Parametreden gelen tip
-                period: period, // Parametreden gelen periyot
-                top_three: formattedUsers.slice(0, 3),
-                others: formattedUsers.slice(3)
+                type: type,
+                period: period,
+                top_three: formattedRooms.slice(0, 3),
+                others: formattedRooms.slice(3)
             }
         });
     } catch (error: any) {

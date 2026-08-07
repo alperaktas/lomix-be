@@ -4,17 +4,27 @@ import Transport from 'winston-transport';
 import path from 'path';
 import prisma from './prisma';
 
+// Log seviyesi: .env'den LOG_LEVEL, yoksa 'debug' (en alt seviye 'silly')
+const logLevel = process.env.LOG_LEVEL || 'debug';
+
 // Log kanallarını .env'den alıyoruz
 const logChannels = (process.env.LOG_CHANNELS || 'console,database').split(',');
 
 const transports: winston.transport[] = [];
 
-// 1. Konsol Loglama
+// 1. Konsol Loglama (detaylı format ile)
 if (logChannels.includes('console')) {
     transports.push(new winston.transports.Console({
+        level: logLevel,
         format: winston.format.combine(
             winston.format.colorize(),
-            winston.format.simple()
+            winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
+            winston.format.printf(({ timestamp, level, message, ...meta }) => {
+                const metaStr = Object.keys(meta).length > 0
+                    ? ' ' + JSON.stringify(meta, null, 0)
+                    : '';
+                return `${timestamp} [${level}]: ${message}${metaStr}`;
+            })
         )
     }));
 }
@@ -33,7 +43,7 @@ if (logChannels.includes('file')) {
         zippedArchive: true,
         maxSize: '20m',
         maxFiles: '14d',
-        level: 'info'
+        level: 'debug'
     }));
 }
 
@@ -66,7 +76,7 @@ if (logChannels.includes('database')) {
 }
 
 const logger = winston.createLogger({
-    level: 'info',
+    level: logLevel,
     format: winston.format.combine(
         winston.format.timestamp(),
         winston.format.json()

@@ -756,6 +756,19 @@ model CoinPackage {
   @@map("coin_packages")
 }
 
+model DiamondShopItem {
+  id        Int      @id @default(autoincrement())
+  type      String
+  coins     Int
+  diamonds  Int
+  order     Int      @default(0)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("diamond_shop_items")
+}
+
 model AppSetting {
   key       String   @id
   value     String

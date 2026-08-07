@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #1a1a1a; margin: 40px 60px; }
+  h1 { font-size: 22pt; color: #1a56db; border-bottom: 3px solid #1a56db; padding-bottom: 8px; }
+  h2 { font-size: 15pt; color: #1a56db; margin-top: 36px; border-bottom: 1px solid #c7d7f5; padding-bottom: 4px; }
+  h3 { font-size: 12pt; color: #374151; margin-top: 20px; margin-bottom: 6px; }
+  .endpoint-block { background: #f8faff; border-left: 4px solid #1a56db; padding: 14px 18px; margin: 16px 0; border-radius: 0 6px 6px 0; }
+  .method { display: inline-block; padding: 2px 10px; border-radius: 4px; font-weight: bold; font-size: 10pt; margin-right: 8px; }
+  .post { background: #dcfce7; color: #166534; }
+  .get  { background: #dbeafe; color: #1e40af; }
+  .path { font-family: Consolas, monospace; font-size: 11pt; font-weight: bold; }
+  .auth-badge { display: inline-block; background: #fef9c3; color: #854d0e; border: 1px solid #fde047; padding: 1px 8px; border-radius: 10px; font-size: 9pt; margin-left: 8px; }
+  .auth-open  { background: #f0fdf4; color: #166534; border-color: #86efac; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 10pt; }
+  th { background: #1a56db; color: white; padding: 7px 12px; text-align: left; }
+  td { padding: 6px 12px; border: 1px solid #d1d5db; }
+  tr:nth-child(even) td { background: #f3f4f6; }
+  code { font-family: Consolas, monospace; background: #f1f5f9; padding: 1px 5px; border-radius: 3px; font-size: 10pt; }
+  pre  { font-family: Consolas, monospace; background: #1e293b; color: #e2e8f0; padding: 14px; border-radius: 6px; font-size: 9.5pt; overflow-x: auto; line-height: 1.5; }
+  .note { background: #fffbeb; border: 1px solid #fcd34d; padding: 10px 14px; border-radius: 6px; margin: 10px 0; font-size: 10pt; }
+  .warn { background: #fff1f2; border: 1px solid #fca5a5; padding: 10px 14px; border-radius: 6px; margin: 10px 0; font-size: 10pt; }
+  .role-owner  { color: #7c3aed; font-weight: bold; }
+  .role-admin  { color: #1d4ed8; font-weight: bold; }
+  .role-member { color: #047857; font-weight: bold; }
+  .role-visitor{ color: #6b7280; }
+  .check { color: #16a34a; }
+  .cross { color: #dc2626; }
+  .toc a { color: #1a56db; text-decoration: none; }
+  .toc li { margin: 4px 0; }
+  hr { border: none; border-top: 1px solid #e5e7eb; margin: 30px 0; }
+</style>
+</head>
+<body>
+
+<h1>Lomix Mobile API — Flutter Geliştirici Kılavuzu</h1>
+
+<h2>İçindekiler</h2>
+<ul class="toc">
+  <li><a href="#genel">1. Genel Bilgiler</a></li>
+  <li><a href="#auth">2. Kimlik Doğrulama (Auth)</a></li>
+  <li><a href="#profile">3. Profil</a></li>
+  <li><a href="#rooms">4. Odalar</a></li>
+  <li><a href="#mic">5. Mikrofon Yönetimi</a></li>
+  <li><a href="#member">6. Üye Yönetimi</a></li>
+  <li><a href="#report">6.1 Oda Raporlama</a></li>
+  <li><a href="#stories">7. Hikayeler</a></li>
+  <li><a href="#search">8. Arama &amp; Medya</a></li>
+  <li><a href="#rtm">9. Agora Signaling (RTM) Entegrasyonu</a></li>
+  <li><a href="#roles">10. Yetki Matrisi</a></li>
+</ul>
+
+<hr>
+
+<!-- ===== GENEL ===== -->
+<h2 id="genel">1. Genel Bilgiler</h2>
+
+<h3>Base URL</h3>
+<table>
+  <tr><th>Ortam</th><th>URL</th></tr>
+  <tr><td>Production</td><td><code>https://lomix-be-i2rg.vercel.app</code></td></tr>
+  <tr><td>Development</td><td><code>http://localhost:3000</code></td></tr>
+</table>
+
+<h3>Kimlik Doğrulama</h3>
+<p>Korumalı tüm endpoint'ler <code>Authorization</code> header'ı gerektirir:</p>
+<pre>Authorization: Bearer &lt;JWT_TOKEN&gt;</pre>
+<p>Token, login / register / social login endpoint'lerinden döner. <strong>Süresi dolunca tekrar login yapılması gerekir.</strong></p>
+
+<h3>Standart Yanıt Formatı</h3>
+<p>Yeni endpoint'ler (<code>ApiResponseHelper</code>):</p>
+<pre>{
+  "success": true,
+  "message": "İşlem başarılı.",
+  "data": { ... }
+}</pre>
+<p>Eski endpoint'ler (<code>create</code>, <code>join</code>, <code>leave</code>) — aynı yapı ama alan adı farklı:</p>
+<pre>{
+  "status": true,
+  "message": "İşlem başarılı.",
+  "data": { ... }
+}</pre>
+<div class="note">ℹ️ Başarı kontrolü için hem <code>success</code> hem <code>status</code> alanını kontrol edin veya sadece HTTP durum koduna göre işlem yapın.</div>
+
+<h3>HTTP Durum Kodları</h3>
+<table>
+  <tr><th>Kod</th><th>Anlam</th></tr>
+  <tr><td>200</td><td>Başarılı</td></tr>
+  <tr><td>201</td><td>Kayıt oluşturuldu</td></tr>
+  <tr><td>400</td><td>Hatalı istek / eksik parametre</td></tr>
+  <tr><td>401</td><td>Token yok veya geçersiz</td></tr>
+  <tr><td>403</td><td>Yetkisiz (token var ama izin yok)</td></tr>
+  <tr><td>404</td><td>Kayıt bulunamadı</td></tr>
+  <tr><td>409</td><td>Çakışma (zaten mevcut)</td></tr>
+  <tr><td>500</td><td>Sunucu hatası</td></tr>
+</table>
+
+<hr>
+
+<!-- ===== AUTH ===== -->
+<h2 id="auth">2. Kimlik Doğrulama (Auth)</h2>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/auth/register</span>
+  <span class="auth-badge auth-open">Açık</span>
+  <h3>Yeni kullanıcı kaydı</h3>
+  <p><strong>Request Body (JSON):</strong></p>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th><th>Açıklama</th></tr>
+    <tr><td>username</td><td>string</td><td class="check">✔</td><td>Kullanıcı adı</td></tr>
+    <tr><td>email</td><td>string</td><td class="check">✔</td><td>E-posta adresi</td></tr>
+    <tr><td>password</td><td>string</td><td class="check">✔</td><td>Şifre</td></tr>
+    <tr><td>gender</td><td>string</td><td class="cross">✘</td><td>Cinsiyet</td></tr>
+    <tr><td>phone</td><td>string</td><td class="cross">✘</td><td>Telefon numarası</td></tr>
+    <tr><td>deviceModel</td><td>string</td><td class="cross">✘</td><td>Cihaz modeli</td></tr>
+  </table>
+  <p><strong>Başarılı Yanıt (201):</strong> Kayıt tamamlandı, e-posta doğrulama kodu gönderildi.</p>
+  <div class="note">⚠️ Kayıt sonrası hesap aktif değildir. <code>/auth/verify</code> ile kod doğrulanmalıdır.</div>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/auth/verify</span>
+  <span class="auth-badge auth-open">Açık</span>
+  <h3>E-posta / OTP doğrulama</h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th><th>Açıklama</th></tr>
+    <tr><td>email</td><td>string</td><td class="check">✔</td><td></td></tr>
+    <tr><td>code</td><td>string</td><td class="check">✔</td><td>6 haneli OTP kodu</td></tr>
+    <tr><td>type</td><td>string</td><td class="cross">✘</td><td><code>activation</code> (varsayılan) veya <code>reset_password</code></td></tr>
+  </table>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/auth/resend-code</span>
+  <span class="auth-badge auth-open">Açık</span>
+  <h3>Yeni OTP kodu gönder</h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th></tr>
+    <tr><td>email</td><td>string</td><td class="check">✔</td></tr>
+  </table>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/auth/login</span>
+  <span class="auth-badge auth-open">Açık</span>
+  <h3>Giriş yap</h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th><th>Açıklama</th></tr>
+    <tr><td>email</td><td>string</td><td class="check">✔</td><td></td></tr>
+    <tr><td>password</td><td>string</td><td class="check">✔</td><td></td></tr>
+    <tr><td>deviceInfo</td><td>string</td><td class="cross">✘</td><td>Cihaz bilgisi (ban kontrolü için)</td></tr>
+  </table>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "success": true,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIs...",
+    "user": {
+      "id": 1,
+      "username": "ali",
+      "email": "ali@example.com",
+      "avatar": "https://...",
+      "level": 5
+    }
+  }
+}</pre>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/auth/google</span>
+  <span class="auth-badge auth-open">Açık</span>
+  <h3>Google ile giriş</h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th><th>Açıklama</th></tr>
+    <tr><td>token</td><td>string</td><td class="check">✔</td><td>Google OAuth ID token</td></tr>
+    <tr><td>deviceInfo</td><td>string</td><td class="cross">✘</td><td></td></tr>
+  </table>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/auth/apple</span>
+  <span class="auth-badge auth-open">Açık</span>
+  <h3>Apple ile giriş</h3>
+  <div class="note">Apple Sign-In identity token gönderilir.</div>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/auth/facebook</span>
+  <span class="auth-badge auth-open">Açık</span>
+  <h3>Facebook ile giriş</h3>
+  <div class="note">Facebook access token gönderilir.</div>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/auth/forgot-password</span>
+  <span class="auth-badge auth-open">Açık</span>
+  <h3>Şifre sıfırlama kodu gönder</h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th></tr>
+    <tr><td>email</td><td>string</td><td class="check">✔</td></tr>
+  </table>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/auth/reset-password</span>
+  <span class="auth-badge auth-open">Açık</span>
+  <h3>Yeni şifre belirle</h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th></tr>
+    <tr><td>email</td><td>string</td><td class="check">✔</td></tr>
+    <tr><td>code</td><td>string</td><td class="check">✔</td></tr>
+    <tr><td>newPassword</td><td>string</td><td class="check">✔</td></tr>
+  </table>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/auth/logout</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Oturumu kapat</h3>
+  <p>Body gerekmez. Token geçersiz kılınır.</p>
+</div>
+
+<hr>
+
+<!-- ===== PROFİL ===== -->
+<h2 id="profile">3. Profil</h2>
+
+<div class="endpoint-block">
+  <span class="method get">GET</span><span class="path">/api/mobile/profile/me</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Kendi profil bilgilerini getir</h3>
+  <p>Body / parametre gerekmez.</p>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "success": true,
+  "data": {
+    "id": 1,
+    "username": "ali",
+    "fullName": "Ali Yılmaz",
+    "email": "ali@example.com",
+    "avatar": "https://...",
+    "bio": "Merhaba",
+    "level": 5,
+    "createdAt": "2025-01-15T10:00:00Z"
+  }
+}</pre>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/profile/update</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Profili güncelle</h3>
+  <p><strong>Content-Type:</strong> <code>multipart/form-data</code></p>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th><th>Açıklama</th></tr>
+    <tr><td>username</td><td>string</td><td class="cross">✘</td><td>Yeni kullanıcı adı</td></tr>
+    <tr><td>bio</td><td>string</td><td class="cross">✘</td><td>Biyografi</td></tr>
+    <tr><td>profileImage</td><td>File</td><td class="cross">✘</td><td>Profil fotoğrafı (jpeg/png)</td></tr>
+  </table>
+</div>
+
+<div class="endpoint-block">
+  <span class="method get">GET</span><span class="path">/api/mobile/users/recommended</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Önerilen kullanıcılar</h3>
+  <p>Takip / arkadaş önerileri listesi döner.</p>
+</div>
+
+<hr>
+
+<!-- ===== ODALAR ===== -->
+<h2 id="rooms">4. Odalar</h2>
+
+<div class="endpoint-block">
+  <span class="method get">GET</span><span class="path">/api/mobile/rooms</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Canlı sesli odaları listele</h3>
+  <table>
+    <tr><th>Query Param</th><th>Tip</th><th>Açıklama</th></tr>
+    <tr><td>page</td><td>integer</td><td>Sayfa numarası (varsayılan: 1)</td></tr>
+  </table>
+</div>
+
+<div class="endpoint-block">
+  <span class="method get">GET</span><span class="path">/api/mobile/rooms/video</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Canlı video odaları listele</h3>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/room/create</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Yeni oda oluştur</h3>
+  <p><strong>Content-Type:</strong> <code>multipart/form-data</code></p>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th><th>Açıklama</th></tr>
+    <tr><td>title</td><td>string</td><td class="cross">✘</td><td>Oda adı (varsayılan: "Yeni Oda")</td></tr>
+    <tr><td>description</td><td>string</td><td class="cross">✘</td><td>Oda açıklaması</td></tr>
+    <tr><td>type</td><td>string</td><td class="cross">✘</td><td><code>voice</code> (varsayılan) veya <code>video</code></td></tr>
+    <tr><td>image</td><td>File</td><td class="cross">✘</td><td>Oda kapak fotoğrafı</td></tr>
+  </table>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "status": true,
+  "message": "Oda başarıyla oluşturuldu.",
+  "data": {
+    "room_id": "room_A1B2C3",
+    "channel_name": "room_A1B2C3",
+    "mic_count": 8,
+    "share_url": "https://lomix.com/room/A1B2C3"
+  }
+}</pre>
+  <div class="note">
+    ℹ️ 8 mikrofon slotu otomatik oluşturulur (index 0–7).<br>
+    Oda oluşturulduktan sonra <code>POST /room/join</code> ile odaya katılıp Agora token alınmalıdır.
+  </div>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/room/detay</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Oda detayını getir</h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th></tr>
+    <tr><td>roomId</td><td>string</td><td class="check">✔</td></tr>
+  </table>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "success": true,
+  "data": {
+    "room_id": "room_A1B2C3",
+    "name": "Oda Adı",
+    "description": "Açıklama",
+    "thumbnail_url": "https://...",
+    "type": "voice",
+    "is_live": true,
+    "viewer_count": 42,
+    "mic_count": 8,
+    "member_only_mic": false,
+    "level": 0,
+    "owner": { "id": 1, "username": "ali", "avatar": "https://..." },
+    "my_role": "visitor",
+    "can_manage_mic": false,
+    "can_use_mic": true,
+    "mic_slots": [
+      { "slotIndex": 0, "userId": null, "username": null, "avatarUrl": null, "isMuted": false, "isLocked": false },
+      { "slotIndex": 1, "userId": 5, "username": "veli", "avatarUrl": "https://...", "isMuted": false, "isLocked": false }
+    ],
+    "participants": [
+      { "id": 1, "username": "ali", "avatar": "https://..." }
+    ]
+  }
+}</pre>
+  <div class="note">
+    <strong>my_role</strong> değerleri: <span class="role-owner">owner</span> | <span class="role-admin">admin</span> | <span class="role-member">member</span> | <span class="role-visitor">visitor</span><br>
+    <strong>can_manage_mic:</strong> Mute/lock/kick yetkisi var mı?<br>
+    <strong>can_use_mic:</strong> Mikrofona çıkabilir mi?
+  </div>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/room/join</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Odaya katıl</h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th></tr>
+    <tr><td>roomId</td><td>string</td><td class="check">✔</td></tr>
+  </table>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "status": true,
+  "data": {
+    "room_id": "room_A1B2C3",
+    "channel_name": "room_A1B2C3",
+    "agora_token": "006...",
+    "uid": 1,
+    "my_role": "visitor",
+    "member_only_mic": false,
+    "can_use_mic": true,
+    "rtm_event": { "type": "USER_JOINED", "userId": "5", "username": "Ali Veli", "avatarUrl": "https://..." }
+  }
+}</pre>
+  <div class="note">
+    ℹ️ <strong>agora_token</strong> = Agora RTC token (ses/video için).<br>
+    Agora Signaling (oda event'leri) için ayrıca <code>POST /room/signalling-token</code> çağrılmalıdır.<br>
+    Agora Chat (mesajlaşma) için ayrıca <code>POST /room/chat-token</code> çağrılmalıdır.
+  </div>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/room/leave</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Odadan ayrıl</h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th></tr>
+    <tr><td>roomId</td><td>string</td><td class="check">✔</td></tr>
+  </table>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "status": true,
+  "data": {
+    "rtm_event": { "type": "USER_LEFT", "userId": "5" }
+  }
+}</pre>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/room/kick</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Kullanıcıyı odadan at <span style="font-size:9pt; color:#1d4ed8;">(Owner / Admin)</span></h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th><th>Açıklama</th></tr>
+    <tr><td>roomId</td><td>string</td><td class="check">✔</td><td></td></tr>
+    <tr><td>userId</td><td>integer</td><td class="check">✔</td><td>Atılacak kullanıcının ID'si</td></tr>
+  </table>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "success": true,
+  "data": {
+    "targetUserId": "42",
+    "rtm_event": { "type": "KICKED", "targetUserId": "42" }
+  }
+}</pre>
+  <div class="warn">⚠️ Admin başka bir admin'i atamaz. Sadece owner yapabilir.</div>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/room/desc</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Oda açıklamasını güncelle <span style="font-size:9pt; color:#1d4ed8;">(Owner / Admin)</span></h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th></tr>
+    <tr><td>roomId</td><td>string</td><td class="check">✔</td></tr>
+    <tr><td>description</td><td>string</td><td class="check">✔</td></tr>
+  </table>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "success": true,
+  "data": {
+    "rtm_event": { "type": "SETTINGS_UPDATED", "description": "Yeni açıklama" }
+  }
+}</pre>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/room/settings</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Oda ayarlarını güncelle <span style="font-size:9pt; color:#7c3aed;">(Sadece Owner)</span></h3>
+  <p><strong>Content-Type:</strong> <code>multipart/form-data</code></p>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th><th>Açıklama</th></tr>
+    <tr><td>roomId</td><td>string</td><td class="check">✔</td><td></td></tr>
+    <tr><td>name</td><td>string</td><td class="cross">✘</td><td>Yeni oda adı</td></tr>
+    <tr><td>memberOnlyMic</td><td>boolean</td><td class="cross">✘</td><td><code>true</code>: Sadece üyeler mic alabilir</td></tr>
+    <tr><td>image</td><td>File</td><td class="cross">✘</td><td>Yeni kapak fotoğrafı</td></tr>
+  </table>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "success": true,
+  "data": {
+    "room_id": "room_A1B2C3",
+    "name": "Yeni Ad",
+    "thumbnail_url": "https://...",
+    "member_only_mic": true,
+    "rtm_event": { "type": "SETTINGS_UPDATED", "name": "Yeni Ad", "memberOnlyMic": true }
+  }
+}</pre>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/room/close</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Odayı kapat <span style="font-size:9pt; color:#7c3aed;">(Sadece Owner)</span></h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th></tr>
+    <tr><td>roomId</td><td>string</td><td class="check">✔</td></tr>
+  </table>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "success": true,
+  "message": "Oda kapatıldı.",
+  "data": null
+}</pre>
+  <div class="note">ℹ️ Oda kapatılınca <code>ROOM_CLOSED</code> eventi tüm katılımcılara push edilir. Flutter bu eventi alınca kullanıcıları odadan çıkarmalıdır.</div>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/room/token-refresh</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Agora RTC token yenile</h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th></tr>
+    <tr><td>roomId</td><td>string</td><td class="check">✔</td></tr>
+  </table>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "success": true,
+  "data": {
+    "rtc_token": "006...",
+    "uid": 1
+  }
+}</pre>
+  <div class="note">ℹ️ Agora token süresi genellikle 24 saattir. <code>onTokenPrivilegeWillExpire</code> callback'inde çağrılmalıdır.</div>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/room/signalling-token</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Agora Signalling token al (oda event'leri için)</h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th></tr>
+    <tr><td>roomId</td><td>string</td><td class="check">✔</td></tr>
+  </table>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "success": true,
+  "data": {
+    "signalling_token": "006...",
+    "uid": "1",
+    "channel_name": "room_A1B2C3",
+    "app_id": "agora_app_id_buraya"
+  }
+}</pre>
+  <div class="note">
+    ℹ️ <strong>channel_name</strong> = Agora Signalling kanalı. Flutter'da odaya join sonrası bu isimle kanal oluşturulur:<br>
+    <code>AgoraRtmChannel channel = await rtmClient.createChannel(channel_name);</code><br>
+    <code>await channel.join();</code>
+  </div>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/room/chat-token</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Agora Chat token al (mesajlaşma için)</h3>
+  <p>Body gerekmez. Token kullanıcıya özeldir, oda bağımsızdır.</p>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "success": true,
+  "data": {
+    "chat_token": "007...",
+    "chat_uid": "1",
+    "app_id": "agora_app_id_buraya"
+  }
+}</pre>
+  <div class="note">
+    ℹ️ Chat token kullanıcı bazlıdır. Uygulama açılışında bir kez alınıp saklanabilir. Agora Chat SDK'yı initialize ederken kullanılır.
+  </div>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/room/message</span> &nbsp;|&nbsp;
+  <span class="method get">GET</span><span class="path">/api/mobile/room/message</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Oda mesajları</h3>
+  <p><strong>POST — Mesaj gönder:</strong></p>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th></tr>
+    <tr><td>roomId</td><td>string</td><td class="check">✔</td></tr>
+    <tr><td>message</td><td>string</td><td class="check">✔</td></tr>
+    <tr><td>emoji</td><td>string</td><td class="cross">✘</td></tr>
+  </table>
+  <p><strong>POST — Başarılı Yanıt:</strong></p>
+  <pre>{
+  "success": true,
+  "data": {
+    "id": 101,
+    "message": "Merhaba!",
+    "emoji": null,
+    "createdAt": "2025-05-12T10:00:00Z",
+    "user": { "id": 5, "name": "Ali Veli", "avatar": "https://...", "level": 3 }
+  }
+}</pre>
+  <p><strong>GET — Mesaj geçmişi:</strong></p>
+  <table>
+    <tr><th>Query Param</th><th>Tip</th><th>Açıklama</th></tr>
+    <tr><td>roomId</td><td>string</td><td>Zorunlu</td></tr>
+    <tr><td>limit</td><td>integer</td><td>Varsayılan: 50, maks: 100</td></tr>
+  </table>
+  <div class="note">ℹ️ Bu endpoint mesajı DB'ye kaydeder. Gerçek zamanlı dağıtım için Agora Chat SDK kullanılır.</div>
+</div>
+
+<hr>
+
+<!-- ===== MİKROFON ===== -->
+<h2 id="mic">5. Mikrofon Yönetimi</h2>
+
+<div class="note">
+  <strong>Slot index:</strong> Slotlar 0'dan başlar. 8 slotlu odada indeksler 0–7'dir.<br>
+  <strong>memberOnlyMic=true:</strong> Sadece owner/admin/member mic alabilir. Visitor mic alamaz.<br>
+  <strong>memberOnlyMic=false:</strong> Odadaki herkes mic alabilir.<br>
+  <strong>Mic talebi (request) akışı kaldırılmıştır.</strong> Mic almak için doğrudan <code>/mic/take</code> kullanılır.
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/room/mic/take</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Mic slotu al (direkt)</h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th><th>Açıklama</th></tr>
+    <tr><td>roomId</td><td>string</td><td class="check">✔</td><td></td></tr>
+    <tr><td>slotIndex</td><td>integer</td><td class="check">✔</td><td>Alınmak istenen slot (0-N)</td></tr>
+  </table>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "success": true,
+  "data": {
+    "slotIndex": 2,
+    "userId": "5",
+    "rtm_event": {
+      "type": "MIC_TAKEN",
+      "slotIndex": 2,
+      "userId": "5",
+      "username": "Veli Demir",
+      "avatarUrl": "https://..."
+    }
+  }
+}</pre>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/room/mic/leave</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Mic slotunu bırak (odadan çıkmadan)</h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th></tr>
+    <tr><td>roomId</td><td>string</td><td class="check">✔</td></tr>
+  </table>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "success": true,
+  "data": {
+    "rtm_event": { "type": "MIC_LEFT", "slotIndex": 2, "userId": "5" }
+  }
+}</pre>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/room/mic/mute</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Mic slotunu sessize al / aç <span style="font-size:9pt; color:#1d4ed8;">(Owner / Admin)</span></h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th><th>Açıklama</th></tr>
+    <tr><td>roomId</td><td>string</td><td class="check">✔</td><td></td></tr>
+    <tr><td>slotIndex</td><td>integer</td><td class="check">✔</td><td></td></tr>
+    <tr><td>action</td><td>string</td><td class="check">✔</td><td><code>mute</code> veya <code>unmute</code></td></tr>
+  </table>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "success": true,
+  "data": {
+    "rtm_event": { "type": "MIC_MUTED", "slotIndex": 2, "isMuted": true }
+  }
+}</pre>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/room/mic/lock</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Mic slotunu kilitle / kilidi aç <span style="font-size:9pt; color:#1d4ed8;">(Owner / Admin)</span></h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th><th>Açıklama</th></tr>
+    <tr><td>roomId</td><td>string</td><td class="check">✔</td><td></td></tr>
+    <tr><td>slotIndex</td><td>integer</td><td class="check">✔</td><td></td></tr>
+    <tr><td>action</td><td>string</td><td class="check">✔</td><td><code>lock</code> veya <code>unlock</code></td></tr>
+  </table>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "success": true,
+  "data": {
+    "rtm_event": { "type": "MIC_LOCKED", "slotIndex": 2, "isLocked": true, "freedUserId": "5" }
+  }
+}</pre>
+  <div class="note">ℹ️ Kilit koyulduğunda slotta kullanıcı varsa <code>freedUserId</code> dolu gelir, otomatik çıkarılmış demektir.</div>
+</div>
+
+
+<hr>
+
+<!-- ===== ÜYE YÖNETİMİ ===== -->
+<h2 id="member">6. Üye Yönetimi</h2>
+
+<div class="note">
+  <strong>Üyelik nedir?</strong> Bir kullanıcı odaya katılabilir (visitor) veya <em>davet edilerek üye</em> olabilir (member). Üyeler memberOnlyMic=true odada mic alabilir.
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/room/member/invite</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Kullanıcıyı üye olarak davet et <span style="font-size:9pt; color:#1d4ed8;">(Owner / Admin)</span></h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th><th>Açıklama</th></tr>
+    <tr><td>roomId</td><td>string</td><td class="check">✔</td><td></td></tr>
+    <tr><td>userId</td><td>integer</td><td class="check">✔</td><td>Davet edilecek kullanıcı</td></tr>
+  </table>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "success": true,
+  "data": {
+    "userId": "7",
+    "rtm_event": { "type": "MEMBER_INVITED", "invitedUserId": "7", "invitedBy": "1" }
+  }
+}</pre>
+  <div class="note">ℹ️ Daha önce reddedilmiş kullanıcı yeniden davet edilebilir.</div>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/room/member/invite-respond</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Daveti kabul et / reddet</h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th><th>Açıklama</th></tr>
+    <tr><td>inviteId</td><td>integer</td><td class="check">✔</td><td>Davet kaydının ID'si</td></tr>
+    <tr><td>action</td><td>string</td><td class="check">✔</td><td><code>accept</code> veya <code>reject</code></td></tr>
+  </table>
+  <p><strong>Kabul (accept) Yanıtı:</strong></p>
+  <pre>{
+  "success": true,
+  "data": {
+    "rtm_event": { "type": "MEMBER_JOINED", "userId": "7", "username": "Ayşe Kaya", "avatarUrl": "https://..." }
+  }
+}</pre>
+  <p><strong>Reddet (reject) Yanıtı:</strong></p>
+  <pre>{
+  "success": true,
+  "data": {
+    "rtm_event": { "type": "MEMBER_INVITE_REJECTED", "userId": "7" }
+  }
+}</pre>
+  <div class="note">ℹ️ Kabul edilince kullanıcı otomatik olarak <code>member</code> rolüyle eklenir.</div>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/room/member/list</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Oda üye listesi</h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th></tr>
+    <tr><td>roomId</td><td>string</td><td class="check">✔</td></tr>
+  </table>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "success": true,
+  "data": {
+    "owner": { "id": 1, "username": "ali", "avatar": "https://..." },
+    "admins": [
+      { "id": 3, "username": "can", "avatar": "https://..." }
+    ],
+    "members": [
+      { "id": 7, "username": "ayse", "avatar": "https://..." }
+    ],
+    "admin_count": 1,
+    "member_count": 1
+  }
+}</pre>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/room/member/remove</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Üyeyi odadan çıkar <span style="font-size:9pt; color:#1d4ed8;">(Owner / Admin)</span></h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th><th>Açıklama</th></tr>
+    <tr><td>roomId</td><td>string</td><td class="check">✔</td><td></td></tr>
+    <tr><td>userId</td><td>integer</td><td class="check">✔</td><td>Çıkarılacak kullanıcı</td></tr>
+  </table>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "success": true,
+  "data": {
+    "userId": "7",
+    "rtm_event": { "type": "MEMBER_REMOVED", "userId": "7" }
+  }
+}</pre>
+  <div class="warn">⚠️ Admin sadece member'ları çıkarabilir. Admin → Admin çıkarmak için owner yetkisi gerekir.</div>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/room/member/set-admin</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Admin ata veya geri al <span style="font-size:9pt; color:#7c3aed;">(Sadece Owner)</span></h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th><th>Açıklama</th></tr>
+    <tr><td>roomId</td><td>string</td><td class="check">✔</td><td></td></tr>
+    <tr><td>userId</td><td>integer</td><td class="check">✔</td><td>Hedef kullanıcı</td></tr>
+    <tr><td>action</td><td>string</td><td class="check">✔</td><td><code>promote</code> (member→admin) veya <code>demote</code> (admin→member)</td></tr>
+  </table>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "success": true,
+  "data": {
+    "userId": "7",
+    "role": "admin",
+    "rtm_event": { "type": "ROLE_UPDATED", "userId": "7", "role": "admin" }
+  }
+}</pre>
+  <div class="note">ℹ️ <code>demote</code> durumunda <code>role</code> alanı <code>"member"</code> döner.</div>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/room/report</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Odayı raporla</h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th><th>Açıklama</th></tr>
+    <tr><td>roomId</td><td>string</td><td class="check">✔</td><td></td></tr>
+    <tr><td>reason</td><td>string (enum)</td><td class="check">✔</td><td><code>spam</code>, <code>inappropriate</code>, <code>harassment</code>, <code>fake</code>, <code>other</code></td></tr>
+    <tr><td>description</td><td>string</td><td class="cross">✘</td><td>Ek açıklama</td></tr>
+  </table>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "success": true,
+  "message": "Raporunuz alındı. Teşekkürler.",
+  "data": null
+}</pre>
+  <div class="note">ℹ️ Aynı kullanıcı aynı odayı yalnızca bir kez raporlayabilir. Raporlar admin panelinde <strong>Oda Yönetimi → Raporlar</strong> altında görüntülenir.</div>
+</div>
+
+<hr id="report">
+
+<!-- ===== HİKAYELER ===== -->
+<h2 id="stories">7. Hikayeler</h2>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/stories</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Yeni hikaye oluştur</h3>
+  <p><strong>Content-Type:</strong> <code>multipart/form-data</code></p>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th><th>Açıklama</th></tr>
+    <tr><td>media_file</td><td>File</td><td class="check">✔</td><td>Fotoğraf veya video</td></tr>
+    <tr><td>duration_hours</td><td>integer</td><td class="cross">✘</td><td>Hikayenin süresi (saat)</td></tr>
+  </table>
+</div>
+
+<div class="endpoint-block">
+  <span class="method get">GET</span><span class="path">/api/mobile/stories/users</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Aktif hikayesi olan kullanıcılar (story bar)</h3>
+</div>
+
+<hr>
+
+<!-- ===== ARAMA & MEDYA ===== -->
+<h2 id="search">8. Arama &amp; Medya</h2>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/search</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Kullanıcı veya oda ara</h3>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th><th>Açıklama</th></tr>
+    <tr><td>query</td><td>string</td><td class="check">✔</td><td>Arama terimi</td></tr>
+    <tr><td>category</td><td>string</td><td class="check">✔</td><td><code>kullanıcı</code> veya <code>oda</code></td></tr>
+  </table>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "success": true,
+  "data": [
+    {
+      "id": "1",
+      "type": "user",
+      "name": "Ali Yılmaz",
+      "display_id": "ali",
+      "avatar_url": "https://..."
+    },
+    {
+      "id": "room_A1B2C3",
+      "type": "room",
+      "name": "Müzik Odası",
+      "room_id": "room_A1B2C3",
+      "owner_id": "1",
+      "viewer_count": 12,
+      "is_live": true,
+      "mode": "voice"
+    }
+  ]
+}</pre>
+</div>
+
+<div class="endpoint-block">
+  <span class="method post">POST</span><span class="path">/api/mobile/upload</span>
+  <span class="auth-badge">🔒 Token gerekli</span>
+  <h3>Genel medya yükleme</h3>
+  <p><strong>Content-Type:</strong> <code>multipart/form-data</code></p>
+  <table>
+    <tr><th>Alan</th><th>Tip</th><th>Zorunlu</th></tr>
+    <tr><td>file</td><td>File</td><td class="check">✔</td></tr>
+  </table>
+  <p><strong>Başarılı Yanıt:</strong></p>
+  <pre>{
+  "success": true,
+  "data": {
+    "url": "https://public.blob.vercel-storage.com/..."
+  }
+}</pre>
+</div>
+
+<hr>
+
+<!-- ===== RTM ===== -->
+<h2 id="rtm">9. Agora Signaling (RTM) Entegrasyonu</h2>
+
+<h3>Nasıl Çalışır?</h3>
+<p>Backend, aksiyon endpoint'lerinden <code>rtm_event</code> alanı döner. Flutter client bu objeyi alıp Agora Signaling kanalına yayınlar. Diğer tüm katılımcılar bu mesajı dinleyerek UI'ı günceller.</p>
+<div class="note">ℹ️ <strong>Admin paneli aksiyonları</strong> (kapat, kick, mute vb.) Agora RTM REST API üzerinden event'i <em>doğrudan</em> kanala push eder — Flutter'ın herhangi bir şey yapmasına gerek kalmaz, dinleyici otomatik tetiklenir.</div>
+
+<pre>// Aksiyon endpoint'i çağrıldıktan sonra:
+final res = await api.post('/api/mobile/room/mic/take', { 'roomId': roomId, 'slotIndex': 2 });
+if (res['success'] == true && res['data']['rtm_event'] != null) {
+  await rtmChannel.sendMessage(
+    AgoraRtmMessage.fromText(jsonEncode(res['data']['rtm_event']))
+  );
+}
+
+// Diğer kullanıcılarda dinleyici:
+rtmChannel.onMessageReceived = (AgoraRtmMessage msg, String memberId) {
+  final event = jsonDecode(msg.text);
+  switch (event['type']) {
+    case 'MIC_TAKEN':
+      updateMicSlot(event['slotIndex'], event['userId'], event['username']);
+      break;
+    case 'KICKED':
+      if (event['targetUserId'] == myUserId) leaveRoom();
+      break;
+    // ...
+  }
+};
+</pre>
+
+<h3>Token Akışı</h3>
+<p>Join endpoint'i sadece Agora RTC token döndürür. Odaya girdikten sonra iki ek token alınmalıdır:</p>
+<ul>
+  <li><code>POST /api/mobile/room/signalling-token</code> — Oda event'leri için (USER_JOINED, KICKED vb.). <code>roomId</code> gerektirir, <code>channel_name</code> döner.</li>
+  <li><code>POST /api/mobile/room/chat-token</code> — Agora Chat mesajlaşma için. Body gerekmez, uygulama açılışında bir kez alınabilir.</li>
+</ul>
+
+<h3>Tüm RTM Event Tipleri</h3>
+<table>
+  <tr><th>Event Type</th><th>Tetikleyen Endpoint</th><th>Payload Alanları</th></tr>
+  <tr><td><code>USER_JOINED</code></td><td>/room/join</td><td>userId, username, avatarUrl</td></tr>
+  <tr><td><code>USER_LEFT</code></td><td>/room/leave</td><td>userId</td></tr>
+  <tr><td><code>KICKED</code></td><td>/room/kick</td><td>targetUserId</td></tr>
+  <tr><td><code>MIC_TAKEN</code></td><td>/room/mic/take</td><td>slotIndex, userId, username, avatarUrl</td></tr>
+  <tr><td><code>MIC_LEFT</code></td><td>/room/mic/leave</td><td>slotIndex, userId</td></tr>
+  <tr><td><code>MIC_MUTED</code></td><td>/room/mic/mute</td><td>slotIndex, isMuted</td></tr>
+  <tr><td><code>MIC_LOCKED</code></td><td>/room/mic/lock</td><td>slotIndex, isLocked, freedUserId</td></tr>
+  <tr><td><code>MEMBER_INVITED</code></td><td>/room/member/invite</td><td>invitedUserId, invitedBy</td></tr>
+  <tr><td><code>MEMBER_JOINED</code></td><td>/room/member/invite-respond (accept)</td><td>userId, username, avatarUrl</td></tr>
+  <tr><td><code>MEMBER_INVITE_REJECTED</code></td><td>/room/member/invite-respond (reject)</td><td>userId</td></tr>
+  <tr><td><code>MEMBER_REMOVED</code></td><td>/room/member/remove</td><td>userId</td></tr>
+  <tr><td><code>ROLE_UPDATED</code></td><td>/room/member/set-admin</td><td>userId, role</td></tr>
+  <tr><td><code>SETTINGS_UPDATED</code></td><td>/room/settings, /room/desc</td><td>name?, memberOnlyMic?, thumbnailUrl?, description?</td></tr>
+  <tr><td><code>ROOM_CLOSED</code></td><td>/room/close, Admin paneli (kapat / sil)</td><td>— (payload yok)</td></tr>
+</table>
+<div class="note">ℹ️ <code>ROOM_CLOSED</code> eventi sadece admin panelinden tetiklenir ve Agora REST API ile push edilir. Flutter bu eventi alınca kullanıcıyı odadan çıkarmalıdır.</div>
+
+<hr>
+
+<!-- ===== YETKİ MATRİSİ ===== -->
+<h2 id="roles">10. Yetki Matrisi</h2>
+
+<h3>Rol Hiyerarşisi</h3>
+<p>
+  <span class="role-owner">Owner (Sahip)</span> &gt;
+  <span class="role-admin">Admin</span> &gt;
+  <span class="role-member">Member (Üye)</span> &gt;
+  <span class="role-visitor">Visitor (Ziyaretçi)</span>
+</p>
+
+<table>
+  <tr>
+    <th>Yetki / Eylem</th>
+    <th style="color:#fff;">Owner (Sahip)</th>
+    <th style="color:#fff;">Admin</th>
+    <th style="color:#fff;">Member (Üye)</th>
+    <th style="color:#fff;">Visitor (Ziyaretçi)</th>
+  </tr>
+  <tr><td>Oda ayarlarını değiştir (isim, fotoğraf)</td><td class="check">✔</td><td class="cross">✘</td><td class="cross">✘</td><td class="cross">✘</td></tr>
+  <tr><td>memberOnlyMic ayarını değiştir</td><td class="check">✔</td><td class="cross">✘</td><td class="cross">✘</td><td class="cross">✘</td></tr>
+  <tr><td>Oda konusunu güncelle</td><td class="check">✔</td><td class="check">✔</td><td class="cross">✘</td><td class="cross">✘</td></tr>
+  <tr><td>Admin ata / geri al</td><td class="check">✔</td><td class="cross">✘</td><td class="cross">✘</td><td class="cross">✘</td></tr>
+  <tr><td>Kullanıcıyı odadan at (kick)</td><td class="check">✔</td><td>✔ *</td><td class="cross">✘</td><td class="cross">✘</td></tr>
+  <tr><td>Mic mute / unmute</td><td class="check">✔</td><td class="check">✔</td><td class="cross">✘</td><td class="cross">✘</td></tr>
+  <tr><td>Mic kilitle / aç</td><td class="check">✔</td><td class="check">✔</td><td class="cross">✘</td><td class="cross">✘</td></tr>
+  <tr><td>Üye davet et</td><td class="check">✔</td><td class="check">✔</td><td class="cross">✘</td><td class="cross">✘</td></tr>
+  <tr><td>Üyeyi çıkar</td><td class="check">✔</td><td>✔ *</td><td class="cross">✘</td><td class="cross">✘</td></tr>
+  <tr><td>Mic al (memberOnlyMic=false)</td><td class="check">✔</td><td class="check">✔</td><td class="check">✔</td><td class="check">✔</td></tr>
+  <tr><td>Mic al (memberOnlyMic=true)</td><td class="check">✔</td><td class="check">✔</td><td class="check">✔</td><td class="cross">✘</td></tr>
+</table>
+<p style="font-size:9.5pt; color:#6b7280;">* Admin, başka bir admin'i atamaz/çıkaramaz — sadece member'ları hedef alabilir.</p>
+
+<hr>
+<p style="font-size:9pt; color:#9ca3af; text-align:center;">Lomix Mobile API Dokümantasyonu — v1.0 — Mayıs 2025</p>
+</body>
+</html>

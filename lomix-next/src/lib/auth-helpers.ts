@@ -1,7 +1,79 @@
 import prisma from '@/lib/prisma';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { OAuth2Client } from 'google-auth-library';
+
+/** Minimal Google tokeninfo response type */
+interface GoogleTokenPayload {
+    iss: string;
+    sub: string;
+    azp: string;
+    aud: string;
+    iat: string;
+    exp: string;
+    email?: string;
+    email_verified?: string;
+    name?: string;
+    picture?: string;
+    given_name?: string;
+    family_name?: string;
+    locale?: string;
+}
+
+const DB_RETRY_MAX = 3;
+const DB_RETRY_DELAY_MS = 700;
+
+function sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isTransientDbError(error: unknown): boolean {
+    const message = String((error as any)?.message || '').toLowerCase();
+    const name = String((error as any)?.name || '').toLowerCase();
+    return (
+        message.includes('the database system is not yet accepting connections') ||
+        message.includes('consistent recovery state has not been yet reached') ||
+        message.includes('the database system is in recovery mode') ||
+        message.includes('rejecting connections') ||
+        message.includes('can\'t reach database server') ||
+        message.includes('connection terminated unexpectedly') ||
+        name.includes('prismaclientinitializationerror')
+    );
+}
+
+async function withDbRetry<T>(operation: () => Promise<T>, label: string): Promise<T> {
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= DB_RETRY_MAX; attempt += 1) {
+        try {
+            return await operation();
+        } catch (error) {
+            lastError = error;
+            if (!isTransientDbError(error) || attempt === DB_RETRY_MAX) {
+                throw error;
+            }
+            console.warn(`[DB RETRY] ${label} attempt ${attempt}/${DB_RETRY_MAX} failed, retrying...`);
+            await sleep(DB_RETRY_DELAY_MS * attempt);
+        }
+    }
+    throw lastError;
+}
+
+function getGoogleAudiences(): string[] {
+    const raw = [
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_WEB_CLIENT_ID,
+        process.env.GOOGLE_ANDROID_CLIENT_ID,
+        process.env.GOOGLE_IOS_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_IDS,
+    ].filter(Boolean) as string[];
+
+    const split = raw
+        .flatMap((value) => value.split(','))
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .filter((value) => value !== 'your_google_id');
+
+    return Array.from(new Set(split));
+}
 
 export const handleSocialAuth = async (req: Request, provider: 'google' | 'facebook' | 'apple') => {
     let logEntry: any;
@@ -16,33 +88,53 @@ export const handleSocialAuth = async (req: Request, provider: 'google' | 'faceb
         }
 
         // 1. Log Başlat
-        logEntry = await prisma.socialAuthLog.create({
-            data: {
-                provider,
-                incomingRequest: JSON.stringify(body),
-                ipAddress,
-                userAgent: userAgent || deviceInfo
-            }
-        });
+        try {
+            logEntry = await withDbRetry(() => prisma.socialAuthLog.create({
+                data: {
+                    provider,
+                    incomingRequest: JSON.stringify(body),
+                    ipAddress,
+                    userAgent: userAgent || deviceInfo
+                }
+            }), 'socialAuthLog.create');
+        } catch (logError) {
+            // Log tablosu geçici olarak erişilemezse auth akışını düşürme.
+            console.warn(`${provider} Auth Log Start Skipped:`, (logError as any)?.message || logError);
+            logEntry = null;
+        }
 
         let socialUser: any = {};
 
         // 2. Provider Doğrulama
         if (provider === 'google') {
-            const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-            const audiences = [
-                process.env.GOOGLE_CLIENT_ID,
-                process.env.GOOGLE_ANDROID_CLIENT_ID,
-                process.env.GOOGLE_IOS_CLIENT_ID
-            ].filter(Boolean) as string[];
+            const audiences = getGoogleAudiences();
+            if (audiences.length === 0) {
+                return {
+                    error: 'Google giriş yapılandırması eksik. GOOGLE_CLIENT_ID/GOOGLE_CLIENT_IDS ayarlayın.',
+                    status: 500,
+                    code: 'GOOGLE_CONFIG_MISSING'
+                };
+            }
 
-            const ticket = await client.verifyIdToken({
-                idToken: token,
-                audience: audiences.length > 0 ? audiences : process.env.GOOGLE_CLIENT_ID,
-            });
-            const payload = ticket.getPayload();
+            // Token'ı Google'ın tokeninfo endpoint'i ile doğrula.
+            // Not: google-auth-library'nin kullandığı www.googleapis.com/oauth2/v1/certs
+            // sunucunun IP'sinden erişilemediği için doğrudan tokeninfo kullanılıyor.
+            const tokeninfoUrl = `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(token)}`;
+            const tokeninfoRes = await fetch(tokeninfoUrl);
 
-            if (!payload) throw new Error('Google payload boş.');
+            if (!tokeninfoRes.ok) {
+                const errorText = await tokeninfoRes.text();
+                throw new Error(`Google token doğrulama başarısız (${tokeninfoRes.status}): ${errorText}`);
+            }
+
+            const payload: GoogleTokenPayload = await tokeninfoRes.json();
+
+            // Audience doğrulaması - token hangi client ID için oluşturulmuş?
+            if (!audiences.includes(payload.aud)) {
+                throw new Error(
+                    `Google token audience uyuşmazlığı. Token: ${payload.aud}, Beklenen: ${audiences.join(', ')}`
+                );
+            }
 
             socialUser = {
                 email: payload.email,
@@ -51,10 +143,12 @@ export const handleSocialAuth = async (req: Request, provider: 'google' | 'faceb
                 sub: payload.sub
             };
 
-            await prisma.socialAuthLog.update({
-                where: { id: logEntry.id },
-                data: { verificationRequest: 'Google verifyIdToken', providerResponse: JSON.stringify(payload) }
-            });
+            if (logEntry) {
+                await withDbRetry(() => prisma.socialAuthLog.update({
+                    where: { id: logEntry.id },
+                    data: { verificationRequest: 'Google tokeninfo', providerResponse: JSON.stringify(payload) }
+                }), 'socialAuthLog.update.verification');
+            }
 
         } else if (provider === 'facebook') {
             // Mock Facebook - İleride SDK eklenebilir
@@ -73,7 +167,7 @@ export const handleSocialAuth = async (req: Request, provider: 'google' | 'faceb
         }
 
         // 3. Veritabanı İşlemleri
-        let user = await prisma.user.findFirst({ where: { email: socialUser.email } });
+        let user = await withDbRetry(() => prisma.user.findFirst({ where: { email: socialUser.email } }), 'user.findFirst');
 
         if (!user) {
             const randomPassword = Math.random().toString(36).slice(-8);
@@ -81,7 +175,7 @@ export const handleSocialAuth = async (req: Request, provider: 'google' | 'faceb
             const baseUsername = socialUser.name || socialUser.email?.split('@')[0] || 'user';
             const uniqueUsername = `${baseUsername.replace(/\s+/g, '')}_${Math.floor(Math.random() * 10000)}`;
 
-            user = await prisma.user.create({
+            user = await withDbRetry(() => prisma.user.create({
                 data: {
                     username: uniqueUsername,
                     email: socialUser.email,
@@ -90,13 +184,13 @@ export const handleSocialAuth = async (req: Request, provider: 'google' | 'faceb
                     status: 'active',
                     avatar: socialUser.picture
                 }
-            });
+            }), 'user.create');
         } else {
             if (user.status === 'suspended') {
                 return { error: 'Hesabınız askıya alınmıştır.', status: 403, code: 'ACCOUNT_SUSPENDED' };
             }
             if (socialUser.picture && user.avatar !== socialUser.picture) {
-                await prisma.user.update({ where: { id: user.id }, data: { avatar: socialUser.picture } });
+                await withDbRetry(() => prisma.user.update({ where: { id: user!.id }, data: { avatar: socialUser.picture } }), 'user.update.avatar');
             }
         }
 
@@ -120,10 +214,12 @@ export const handleSocialAuth = async (req: Request, provider: 'google' | 'faceb
         };
 
         // Log Güncelle
-        await prisma.socialAuthLog.update({
-            where: { id: logEntry.id },
-            data: { appResponse: JSON.stringify(appResponse) }
-        });
+        if (logEntry) {
+            await withDbRetry(() => prisma.socialAuthLog.update({
+                where: { id: logEntry.id },
+                data: { appResponse: JSON.stringify(appResponse) }
+            }), 'socialAuthLog.update.appResponse');
+        }
 
         return { data: appResponse, status: 200 };
 
@@ -131,12 +227,29 @@ export const handleSocialAuth = async (req: Request, provider: 'google' | 'faceb
         console.error(`${provider} Auth Error:`, error);
 
         if (logEntry) {
-            await prisma.socialAuthLog.update({
+            await withDbRetry(() => prisma.socialAuthLog.update({
                 where: { id: logEntry.id },
                 data: { errorMessage: error.message, appResponse: JSON.stringify({ error_code: 'SERVER_ERROR' }) }
-            }).catch(() => { });
+            }), 'socialAuthLog.update.error').catch(() => { });
         }
 
-        return { error: error.message, status: 500, code: 'SERVER_ERROR' };
+        const message = String(error?.message || 'Bilinmeyen hata');
+        if (provider === 'google' && /Wrong recipient|audience/i.test(message)) {
+            return {
+                error: 'Google token audience uyuşmuyor. Mobil/Web Client ID değerlerini backend .env içine ekleyin.',
+                status: 401,
+                code: 'GOOGLE_AUDIENCE_MISMATCH'
+            };
+        }
+
+        if (isTransientDbError(error)) {
+            return {
+                error: 'Veritabanı şu anda hazırlanıyor. Lütfen birkaç saniye sonra tekrar deneyin.',
+                status: 503,
+                code: 'DB_NOT_READY'
+            };
+        }
+
+        return { error: message, status: 500, code: 'SERVER_ERROR' };
     }
 };

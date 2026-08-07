@@ -7,7 +7,68 @@ const SECRET_KEY = new TextEncoder().encode(
 );
 
 export async function proxy(request: NextRequest) {
+    const originalPathname = request.nextUrl.pathname;
+    // Çift slash'ları normalize et (//api/ -> /api/)
+    const normalizedPathname = originalPathname.replace(/\/+/g, '/');
+    request.nextUrl.pathname = normalizedPathname;
     const { pathname } = request.nextUrl;
+
+    // Eğer pathname değiştiyse (çift slash varsa), rewrite ile düzelt
+    if (originalPathname !== normalizedPathname) {
+        console.log(`[MIDDLEWARE] Normalize: ${originalPathname} -> ${normalizedPathname}`);
+        return NextResponse.rewrite(request.nextUrl);
+    }
+
+    // Debug: gelen tüm istekleri logla
+    console.log(`[${request.method}] ${pathname}`);
+
+    // POST/PUT/PATCH body'lerini logla
+    if (['POST', 'PUT', 'PATCH'].includes(request.method)) {
+        try {
+            const cloned = request.clone();
+            const text = await cloned.text();
+            if (text) {
+                // Content-Type kontrolü: multipart/form-data ise sadece keys göster
+                const contentType = request.headers.get('content-type') || '';
+                if (contentType.includes('multipart/form-data')) {
+                    const boundary = contentType.split('boundary=')[1]?.split(';')[0]?.trim();
+                    const fieldCount = (text.match(/--{1,2}[\w-]+/g) || []).length / 2 - 1;
+                    console.log(`  Body: (multipart, ~${Math.max(0, fieldCount)} fields)`);
+                } else {
+                    try {
+                        const json = JSON.parse(text);
+                        const redactKeys = new Set([
+                            'token',
+                            'idToken',
+                            'accessToken',
+                            'refreshToken',
+                            'password',
+                            'newPassword',
+                            'oldPassword'
+                        ]);
+                        const redacted = Object.fromEntries(
+                            Object.entries(json).map(([key, value]) => {
+                                if (redactKeys.has(key)) {
+                                    const textValue = typeof value === 'string' ? value : String(value);
+                                    const masked = textValue.length > 12
+                                        ? `${textValue.slice(0, 6)}...${textValue.slice(-4)}`
+                                        : '***';
+                                    return [key, `[REDACTED:${masked}]`];
+                                }
+                                return [key, value];
+                            })
+                        );
+                        console.log(`  Body: ${JSON.stringify(redacted, null, 2)}`);
+                    } catch {
+                        // URL-encoded veya düz metin
+                        console.log(`  Body: ${text.length > 500 ? text.substring(0, 500) + '...' : text}`);
+                    }
+                }
+            }
+        } catch (e: any) {
+            console.log(`  Body: (okunamadı - ${e.message})`);
+        }
+    }
 
     // 1. CORS Preflight
     if (request.method === 'OPTIONS') {
@@ -34,6 +95,7 @@ export async function proxy(request: NextRequest) {
         '/api/auth/login',
         '/api/auth/register',
         '/api/auth/forgot-password',
+        '/api/auth/check-ban',
         '/api/docs',
         '/swagger.json',
         '/img',
@@ -53,6 +115,7 @@ export async function proxy(request: NextRequest) {
             '/api/mobile/auth/forgot-password',
             '/api/mobile/auth/verify',
             '/api/mobile/auth/reset-password',
+            '/api/mobile/auth/logout',
             '/api/mobile/auth/google',
             '/api/mobile/auth/facebook',
             '/api/mobile/auth/apple'
@@ -66,6 +129,7 @@ export async function proxy(request: NextRequest) {
         const token = authHeader?.split(' ')[1];
 
         if (!token) {
+            console.warn(`[AUTH 401] ${request.method} ${pathname} - Token yok`);
             return addCors(NextResponse.json({ message: 'Yetkisiz erişim: Token yok' }, { status: 401 }));
         }
 
@@ -95,6 +159,7 @@ export async function proxy(request: NextRequest) {
 
             return addCors(NextResponse.next());
         } catch {
+            console.warn(`[AUTH 401] ${request.method} ${pathname} - Gecersiz veya suresi dolmus token`);
             return addCors(NextResponse.json({ message: 'Geçersiz veya süresi dolmuş token' }, { status: 401 }));
         }
     }

@@ -37,11 +37,14 @@ import jwt from 'jsonwebtoken';
  *         description: Eksik bilgi
  */
 export async function POST(req: Request) {
+    const { default: logger } = await import('@/lib/logger');
     try {
         const body = await req.json();
         const { email, username, password, deviceInfo } = body;
         const identifier = email || username;
         const ipAddress = req.headers.get('x-forwarded-for') || 'unknown';
+
+        logger.debug(`Mobil Login isteği: ${identifier}`, { ip: ipAddress, device: deviceInfo });
 
         if (!identifier || !password) {
             return ApiResponseHelper.error('Lütfen email/kullanıcı adı ve şifre giriniz.', 400);
@@ -79,7 +82,6 @@ export async function POST(req: Request) {
         });
 
         // System Log
-        const { default: logger } = await import('@/lib/logger');
         logger.info(`Mobil Giriş: ${user.email}`, { userId: user.id, ip: ipAddress, device: deviceInfo });
 
         return ApiResponseHelper.success({
@@ -94,7 +96,6 @@ export async function POST(req: Request) {
         }, 'Giriş başarılı.');
 
     } catch (error: any) {
-        const { default: logger } = await import('@/lib/logger');
         logger.error(`Mobil Login Hatası: ${error.message}`, { error });
 
         return ApiResponseHelper.error(error.message, 500);

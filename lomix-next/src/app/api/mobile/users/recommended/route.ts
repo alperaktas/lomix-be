@@ -27,7 +27,7 @@ export async function GET(request: Request) {
         // Karşı cinsiyeti belirle: erkek → kadın, kadın → erkek, bilinmiyorsa filtre yok
         const oppositeGender =
             currentUser?.gender === 'male' ? 'female' :
-            currentUser?.gender === 'female' ? 'male' : null;
+                currentUser?.gender === 'female' ? 'male' : null;
 
         const users = await prisma.user.findMany({
             where: {
@@ -85,7 +85,18 @@ export async function GET(request: Request) {
         }) : [];
         const interactionMap = new Map(interactions.map(i => [i.targetId, i.actionType]));
 
-        const responseData = users.length > 0 ? users.map(r => ({
+        // const responseData = users.length > 0 ? users.map(r => ({
+        //     id: r.id,
+        //     name: r.fullName || r.username,
+        //     image_url: r.avatar?.trim() || `${new URL(request.url).origin}/img/default-avatar.svg`,
+        //     is_vip: r.isVip || false,
+        //     action_type: interactionMap.get(r.id) || "hi",
+        //     level: r.level,
+        //     score: r.prestigePoints,
+        //     hakkimda: r.description || null,
+        // })) : fallback;
+
+        const responseData = users.map(r => ({
             id: r.id,
             name: r.fullName || r.username,
             image_url: r.avatar?.trim() || `${new URL(request.url).origin}/img/default-avatar.svg`,
@@ -94,8 +105,7 @@ export async function GET(request: Request) {
             level: r.level,
             score: r.prestigePoints,
             hakkimda: r.description || null,
-        })) : fallback;
-
+        }));
         return ApiResponseHelper.success(responseData, "Önerilen kullanıcılar listelendi.");
     } catch (error: any) {
         return ApiResponseHelper.error(error.message, 500);

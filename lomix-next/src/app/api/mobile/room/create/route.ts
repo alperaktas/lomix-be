@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
-import { put } from '@vercel/blob';
 import { logRoomEvent } from '@/lib/room-log';
 import { createAgoraChatRoom, registerAgoraChatUser } from '@/lib/agora';
+import fs from 'fs';
+import path from 'path';
 
 /**
  * @swagger
@@ -55,18 +56,44 @@ export async function POST(request: Request) {
         let thumbnailUrl = null;
 
         if (image && typeof image !== 'string') {
-            const blob = await put(image.name, image, {
-                access: 'public',
-                addRandomSuffix: true,
-            });
-            thumbnailUrl = blob.url;
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            const ext = (image.name.split('.').pop() || '').toLowerCase();
+
+            const isValidMime = allowedTypes.includes(image.type);
+            const isValidExt = allowedExts.includes(ext);
+
+            if (!isValidMime && !isValidExt) {
+                return NextResponse.json({ status: false, message: "Sadece JPEG, PNG, GIF veya WebP dosyaları kabul edilir." }, { status: 400 });
+            }
+
+            if (image.size > 5 * 1024 * 1024) {
+                return NextResponse.json({ status: false, message: "Dosya boyutu 5MB'dan büyük olamaz." }, { status: 400 });
+            }
+
+            const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'rooms');
+            if (!fs.existsSync(uploadDir)) {
+                fs.mkdirSync(uploadDir, { recursive: true });
+            }
+
+            const fileName = `room_${Date.now()}_${image.name}`;
+            const filePath = path.join(uploadDir, fileName);
+            const buffer = Buffer.from(await image.arrayBuffer());
+            fs.writeFileSync(filePath, buffer);
+
+            thumbnailUrl = `/uploads/rooms/${fileName}`;
         }
 
         const DEFAULT_MIC_COUNT = 8;
 
-        // Owner'ı Agora Chat'e kaydet ve chatroom oluştur
-        await registerAgoraChatUser(String(userId));
-        const agoraChatRoomId = await createAgoraChatRoom(title, String(userId));
+        // Owner'ı Agora Chat'e kaydet ve chatroom oluştur (opsiyonel)
+        let agoraChatRoomId: string | null = null;
+        try {
+            await registerAgoraChatUser(String(userId));
+            agoraChatRoomId = await createAgoraChatRoom(title, String(userId));
+        } catch (e: any) {
+            console.warn("Agora Chat devre dışı, oda chatsiz oluşturuluyor:", e.message);
+        }
 
         // roomId olarak DB'nin auto-increment id'si kullanılacak — önce geçici bir değerle oluştur
         const newRoom = await prisma.room.create({
