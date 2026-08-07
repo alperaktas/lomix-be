@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "LOG_LEVEL=silly LOG_CHANNELS=console,file,database node scripts/generate-swagger.js && next dev -H 0.0.0.0 -p 3001",
+    "dev": "node scripts/generate-swagger.js && next dev -H 0.0.0.0 -p 3001",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
