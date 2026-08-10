@@ -87,6 +87,7 @@ model User {
   memberRequests       RoomMemberRequest[]
   sentGiftLogs         GiftLog[]           @relation("GiftSender")
   receivedGiftLogs     GiftLog[]           @relation("GiftReceiver")
+  diamondTransactions  DiamondTransaction[]
 
   @@map("users")
 }
@@ -767,6 +768,18 @@ model DiamondShopItem {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("diamond_shop_items")
+}
+
+model DiamondTransaction {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  type          String
+  diamondAmount Int      @map("diamond_amount")
+  coinValue     Int?     @map("coin_value")
+  createdAt     DateTime @default(now()) @map("created_at")
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("diamond_transactions")
 }
 
 model AppSetting {

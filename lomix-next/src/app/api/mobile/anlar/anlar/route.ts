@@ -88,6 +88,7 @@ export async function POST(request: Request) {
         return ApiResponseHelper.success({
             anlar: anlar.map(an => ({
                 id: String(an.id),
+                userId: String(an.user.id),
                 name: an.user.fullName || an.user.username,
                 anTime: getAnTime(an.createdAt),
                 imageUrl: an.user.avatar || '',

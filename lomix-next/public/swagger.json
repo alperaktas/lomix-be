@@ -955,6 +955,75 @@
         }
       }
     },
+    "/api/mobile/diamond/data": {
+      "post": {
+        "summary": "Elmas bakiyesi ve geçmiş bozdurma/çekim işlemlerini döndürür",
+        "tags": [
+          "Mobile Diamond"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Elmas verisi gönderildi"
+          }
+        }
+      }
+    },
+    "/api/mobile/diamond/exchange": {
+      "post": {
+        "summary": "Elmasları coin ile bozdur",
+        "tags": [
+          "Mobile Diamond"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id",
+                  "diamond_amount"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "integer"
+                  },
+                  "diamond_amount": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bozdurma işlemi tamamlandı"
+          },
+          "400": {
+            "description": "Geçersiz paket veya yetersiz bakiye"
+          }
+        }
+      }
+    },
     "/api/mobile/diamond/shop": {
       "post": {
         "summary": "Elmas shop verilerini döndürür",
@@ -979,6 +1048,44 @@
         "responses": {
           "200": {
             "description": "Elmas verisi gönderildi"
+          }
+        }
+      }
+    },
+    "/api/mobile/diamond/withdraw": {
+      "post": {
+        "summary": "Elmas çekim talebi oluştur",
+        "tags": [
+          "Mobile Diamond"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id",
+                  "diamond_amount"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "integer"
+                  },
+                  "diamond_amount": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Çekim talebi oluşturuldu"
+          },
+          "400": {
+            "description": "Geçersiz paket veya yetersiz bakiye"
           }
         }
       }
@@ -1028,6 +1135,27 @@
         "responses": {
           "200": {
             "description": "Emoji listesi döndürüldü"
+          }
+        }
+      }
+    },
+    "/api/mobile/friends": {
+      "post": {
+        "summary": "Kullanıcının arkadaşları",
+        "tags": [
+          "Mobile Friends"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Arkadaşlar başarıyla getirildi"
+          },
+          "401": {
+            "description": "Yetkisiz erişim"
           }
         }
       }
@@ -2635,6 +2763,27 @@
           },
           "404": {
             "description": "Oda bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/rooms/mine": {
+      "get": {
+        "summary": "Kendi odam ve takip ettiklerimin canlı odaları",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Odalar getirildi"
+          },
+          "401": {
+            "description": "Yetkisiz erişim"
           }
         }
       }
