@@ -26,6 +26,9 @@ import { put } from '@vercel/blob';
  *               tags:
  *                 type: string
  *                 description: 'JSON array string. Örn: ["Spor","Yemek"]'
+ *               topic_id:
+ *                 type: string
+ *                 description: Sıcak konu ID'si (boş gönderilirse konu kaldırılır)
  *               image_path:
  *                 type: string
  *                 format: binary
@@ -58,6 +61,11 @@ export async function POST(request: Request) {
         if (imageFile && typeof imageFile !== 'string') {
             const blob = await put(imageFile.name, imageFile, { access: 'public', addRandomSuffix: true });
             updateData.imageUrl = blob.url;
+        }
+
+        const topicIdRaw = formData.get('topic_id') as string | null;
+        if (topicIdRaw !== null) {
+            updateData.topicId = topicIdRaw ? Number(topicIdRaw) : null;
         }
 
         if (Object.keys(updateData).length > 0) {

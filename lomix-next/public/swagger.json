@@ -198,6 +198,10 @@
                     "type": "string",
                     "description": "JSON array string. Örn: [\"Spor\",\"Yemek\"]"
                   },
+                  "topic_id": {
+                    "type": "string",
+                    "description": "Sıcak konu ID'si (boş gönderilirse konu kaldırılır)"
+                  },
                   "image_path": {
                     "type": "string",
                     "format": "binary"
@@ -255,6 +259,10 @@
                       "sohbet"
                     ],
                     "default": "hi"
+                  },
+                  "topic_id": {
+                    "type": "string",
+                    "description": "Sıcak konu ID'si (opsiyonel)"
                   },
                   "image_path": {
                     "type": "string",

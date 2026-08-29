@@ -28,6 +28,9 @@ import { put } from '@vercel/blob';
  *                 type: string
  *                 enum: [hi, sohbet]
  *                 default: hi
+ *               topic_id:
+ *                 type: string
+ *                 description: Sıcak konu ID'si (opsiyonel)
  *               image_path:
  *                 type: string
  *                 format: binary
@@ -50,6 +53,8 @@ export async function POST(request: Request) {
         if (!description) return ApiResponseHelper.error("description zorunludur.", 400);
 
         const actionType = (formData.get('action_type') as string) || 'hi';
+        const topicIdRaw = formData.get('topic_id') as string | null;
+        const topicId = topicIdRaw ? Number(topicIdRaw) : null;
         const tagsRaw = formData.get('tags') as string | null;
         const tagList: string[] = tagsRaw ? JSON.parse(tagsRaw) : [];
 
@@ -66,6 +71,7 @@ export async function POST(request: Request) {
                 description,
                 actionType,
                 imageUrl,
+                topicId,
                 tags: { create: tagList.map(tag => ({ tag })) },
             },
         });
