@@ -963,6 +963,37 @@
         }
       }
     },
+    "/api/mobile/coin/purchase-data": {
+      "post": {
+        "summary": "Coin bakiyesi ve satın alınabilir coin paketleri",
+        "tags": [
+          "Mobile Coin"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Coin satın alma verisi gönderildi"
+          }
+        }
+      }
+    },
     "/api/mobile/diamond/data": {
       "post": {
         "summary": "Elmas bakiyesi ve geçmiş bozdurma/çekim işlemlerini döndürür",
