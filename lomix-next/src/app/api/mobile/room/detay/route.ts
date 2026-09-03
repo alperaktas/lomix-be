@@ -9,6 +9,12 @@ function formatGoldAmount(balance: number): string {
     return balance.toString();
 }
 
+// TODO: giftBannerThreshold admin panelden (genel veya oda bazlı) ayarlanabilir olacak,
+// duration alanları da netleşecek — şimdilik varsayılan değerler gönderiliyor.
+const GIFT_BANNER_THRESHOLD = 500;
+const GIFT_BANNER_TOP_DURATION_SECONDS = 4;
+const GIFT_BANNER_BOTTOM_DURATION_SECONDS = 5;
+
 /**
  * @swagger
  * /api/mobile/room/detay:
@@ -36,7 +42,10 @@ function formatGoldAmount(balance: number): string {
  *                 description: Oda sahibinin kullanıcı ID'si
  *     responses:
  *       200:
- *         description: Oda detayı başarıyla getirildi
+ *         description: >
+ *           Oda detayı başarıyla getirildi. Yanıt ayrıca hediye banner ayarlarını içerir:
+ *           giftBannerThreshold (varsayılan 500, bu tutarın üzerindeki hediyelerde üst banner gösterilir),
+ *           giftBannerTopDurationSeconds (varsayılan 4), giftBannerBottomDurationSeconds (varsayılan 5).
  */
 export async function POST(request: Request) {
     try {
@@ -173,6 +182,9 @@ export async function POST(request: Request) {
                 canManageMic: myRole === 'owner' || myRole === 'admin',
                 canUseMic: myRole !== 'visitor' || !room.memberOnlyMic,
                 agoraChatRoomId: room.agoraChatRoomId,
+                giftBannerThreshold: GIFT_BANNER_THRESHOLD,
+                giftBannerTopDurationSeconds: GIFT_BANNER_TOP_DURATION_SECONDS,
+                giftBannerBottomDurationSeconds: GIFT_BANNER_BOTTOM_DURATION_SECONDS,
                 participants,
                 micSlots,
                 messages,

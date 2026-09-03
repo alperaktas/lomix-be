@@ -1869,7 +1869,7 @@
         },
         "responses": {
           "200": {
-            "description": "Oda detayı başarıyla getirildi"
+            "description": "Oda detayı başarıyla getirildi. Yanıt ayrıca hediye banner ayarlarını içerir: giftBannerThreshold (varsayılan 500, bu tutarın üzerindeki hediyelerde üst banner gösterilir), giftBannerTopDurationSeconds (varsayılan 4), giftBannerBottomDurationSeconds (varsayılan 5).\n"
           }
         }
       }
