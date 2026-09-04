@@ -12,6 +12,7 @@ function mapRoom(room: any, origin: string) {
     return {
         room_id: room.roomId,
         room_name: room.name,
+        thumbnail_url: room.thumbnailUrl || null,
         owner_id: String(room.ownerId),
         owner_name: room.owner?.fullName || room.owner?.username,
         avatar_url: room.owner?.avatar?.trim() || `${origin}/img/default-avatar.svg`,

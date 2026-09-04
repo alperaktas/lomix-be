@@ -170,6 +170,7 @@ export async function POST(request: Request) {
             data: {
                 roomId: room.roomId,
                 roomName: room.name,
+                thumbnailUrl: room.thumbnailUrl || "",
                 hostName,
                 hostAvatar,
                 level: room.owner.level,

@@ -69,6 +69,7 @@ export async function GET(request: Request) {
             rooms: rooms.map(room => ({
                 id: room.roomId,
                 name: room.name,
+                thumbnail_url: room.thumbnailUrl || null,
                 owner: {
                     id: String(room.ownerId),
                     name: room.owner?.fullName || room.owner?.username,
