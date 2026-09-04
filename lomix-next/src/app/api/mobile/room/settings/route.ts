@@ -1,7 +1,7 @@
 ﻿import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
-import { put } from '@vercel/blob';
+import { uploadRoomThumbnail } from '@/lib/room-thumbnail';
 import { logRoomEvent } from '@/lib/room-log';
 
 /**
@@ -69,8 +69,9 @@ export async function POST(request: Request) {
 
         const image = formData.get('image') as File | null;
         if (image && typeof image !== 'string') {
-            const blob = await put(image.name, image, { access: 'public', addRandomSuffix: true });
-            updateData.thumbnailUrl = blob.url;
+            const upload = await uploadRoomThumbnail(image);
+            if (!upload.ok) return ApiResponseHelper.error(upload.message, 400);
+            updateData.thumbnailUrl = upload.url;
         }
 
         if (Object.keys(updateData).length === 0) {

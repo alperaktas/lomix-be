@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { logRoomEvent } from '@/lib/room-log';
 import { createAgoraChatRoom, registerAgoraChatUser } from '@/lib/agora';
-import { put } from '@vercel/blob';
+import { uploadRoomThumbnail } from '@/lib/room-thumbnail';
 
 /**
  * @swagger
@@ -55,23 +55,11 @@ export async function POST(request: Request) {
         let thumbnailUrl = null;
 
         if (image && typeof image !== 'string') {
-            const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-            const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-            const ext = (image.name.split('.').pop() || '').toLowerCase();
-
-            const isValidMime = allowedTypes.includes(image.type);
-            const isValidExt = allowedExts.includes(ext);
-
-            if (!isValidMime && !isValidExt) {
-                return NextResponse.json({ status: false, message: "Sadece JPEG, PNG, GIF veya WebP dosyaları kabul edilir." }, { status: 400 });
+            const upload = await uploadRoomThumbnail(image);
+            if (!upload.ok) {
+                return NextResponse.json({ status: false, message: upload.message }, { status: 400 });
             }
-
-            if (image.size > 5 * 1024 * 1024) {
-                return NextResponse.json({ status: false, message: "Dosya boyutu 5MB'dan büyük olamaz." }, { status: 400 });
-            }
-
-            const blob = await put(`room-thumbnails/room_${Date.now()}.${ext}`, image, { access: 'public' });
-            thumbnailUrl = blob.url;
+            thumbnailUrl = upload.url;
         }
 
         const DEFAULT_MIC_COUNT = 8;
