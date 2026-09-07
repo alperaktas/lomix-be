@@ -28,6 +28,21 @@ import { logRoomEvent } from '@/lib/room-log';
  *                 type: string
  *               memberOnlyMic:
  *                 type: boolean
+ *               room_topic:
+ *                 type: string
+ *                 description: Oda konusu
+ *               room_desc_message:
+ *                 type: string
+ *                 description: Oda tanıtım mesajı
+ *               room_theme:
+ *                 type: string
+ *                 description: Oda teması
+ *               mic_settings:
+ *                 type: boolean
+ *                 description: Mikrofon ayarları
+ *               block_kick_settings:
+ *                 type: boolean
+ *                 description: Odadan atma/block ayarları
  *               image:
  *                 type: string
  *                 format: binary
@@ -67,6 +82,25 @@ export async function POST(request: Request) {
             updateData.memberOnlyMic = memberOnlyMic === 'true' || memberOnlyMic === '1';
         }
 
+        const roomTopic = formData.get('room_topic') as string | null;
+        if (roomTopic !== null) updateData.roomTopic = roomTopic.trim();
+
+        const roomDescMessage = formData.get('room_desc_message') as string | null;
+        if (roomDescMessage !== null) updateData.roomDescMessage = roomDescMessage.trim();
+
+        const roomTheme = formData.get('room_theme') as string | null;
+        if (roomTheme !== null) updateData.roomTheme = roomTheme.trim();
+
+        const micSettings = formData.get('mic_settings');
+        if (micSettings !== null) {
+            updateData.micSettings = micSettings === 'true' || micSettings === '1';
+        }
+
+        const blockKickSettings = formData.get('block_kick_settings');
+        if (blockKickSettings !== null) {
+            updateData.blockKickSettings = blockKickSettings === 'true' || blockKickSettings === '1';
+        }
+
         const image = formData.get('image') as File | null;
         if (image && typeof image !== 'string') {
             const upload = await uploadRoomThumbnail(image);
@@ -81,13 +115,28 @@ export async function POST(request: Request) {
         const updated = await prisma.room.update({
             where: { id: room.id },
             data: updateData,
-            select: { roomId: true, name: true, thumbnailUrl: true, memberOnlyMic: true },
+            select: {
+                roomId: true,
+                name: true,
+                thumbnailUrl: true,
+                memberOnlyMic: true,
+                roomTopic: true,
+                roomDescMessage: true,
+                roomTheme: true,
+                micSettings: true,
+                blockKickSettings: true,
+            },
         });
 
         const rtm_event: Record<string, any> = { type: 'SETTINGS_UPDATED' };
         if (updateData.name) rtm_event.name = updated.name;
         if (updateData.memberOnlyMic !== undefined) rtm_event.memberOnlyMic = updated.memberOnlyMic;
         if (updateData.thumbnailUrl) rtm_event.thumbnailUrl = updated.thumbnailUrl;
+        if (updateData.roomTopic !== undefined) rtm_event.roomTopic = updated.roomTopic;
+        if (updateData.roomDescMessage !== undefined) rtm_event.roomDescMessage = updated.roomDescMessage;
+        if (updateData.roomTheme !== undefined) rtm_event.roomTheme = updated.roomTheme;
+        if (updateData.micSettings !== undefined) rtm_event.micSettings = updated.micSettings;
+        if (updateData.blockKickSettings !== undefined) rtm_event.blockKickSettings = updated.blockKickSettings;
 
         logRoomEvent(room.id, userId, 'SETTINGS_UPDATED');
 
@@ -96,6 +145,11 @@ export async function POST(request: Request) {
             name: updated.name,
             thumbnail_url: updated.thumbnailUrl,
             member_only_mic: updated.memberOnlyMic,
+            room_topic: updated.roomTopic,
+            room_desc_message: updated.roomDescMessage,
+            room_theme: updated.roomTheme,
+            mic_settings: updated.micSettings,
+            block_kick_settings: updated.blockKickSettings,
             rtm_event,
         }, "Oda ayarları güncellendi.");
     } catch (error: any) {

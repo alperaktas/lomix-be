@@ -2703,6 +2703,26 @@
                   "memberOnlyMic": {
                     "type": "boolean"
                   },
+                  "room_topic": {
+                    "type": "string",
+                    "description": "Oda konusu"
+                  },
+                  "room_desc_message": {
+                    "type": "string",
+                    "description": "Oda tanıtım mesajı"
+                  },
+                  "room_theme": {
+                    "type": "string",
+                    "description": "Oda teması"
+                  },
+                  "mic_settings": {
+                    "type": "boolean",
+                    "description": "Mikrofon ayarları"
+                  },
+                  "block_kick_settings": {
+                    "type": "boolean",
+                    "description": "Odadan atma/block ayarları"
+                  },
                   "image": {
                     "type": "string",
                     "format": "binary"
