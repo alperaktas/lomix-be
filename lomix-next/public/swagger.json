@@ -994,6 +994,43 @@
         }
       }
     },
+    "/api/mobile/coin/purchase-history": {
+      "post": {
+        "summary": "Kullanıcının aylık coin satın alma geçmişi",
+        "tags": [
+          "Mobile Coin"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "integer"
+                  },
+                  "month": {
+                    "type": "integer"
+                  },
+                  "year": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Coin satın alma geçmişi"
+          }
+        }
+      }
+    },
     "/api/mobile/diamond/data": {
       "post": {
         "summary": "Elmas bakiyesi ve geçmiş bozdurma/çekim işlemlerini döndürür",
@@ -1669,6 +1706,56 @@
         }
       }
     },
+    "/api/mobile/room/blocked-users": {
+      "post": {
+        "summary": "Odadan banlanmış kullanıcıları listele (Sahip veya Admin)",
+        "description": "Ban kayıtları, oda ayarında `block_kick_settings` açıkken yapılan\n`room/kick` işlemlerinden oluşur.\n",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomId",
+                  "action"
+                ],
+                "properties": {
+                  "roomId": {
+                    "type": "string"
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "list"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Banlı kullanıcılar başarıyla getirildi"
+          },
+          "403": {
+            "description": "Yetkisiz"
+          },
+          "404": {
+            "description": "Oda bulunamadı"
+          }
+        }
+      }
+    },
     "/api/mobile/room/chat-token": {
       "post": {
         "summary": "Agora Chat token al",
@@ -1870,6 +1957,55 @@
         "responses": {
           "200": {
             "description": "Oda detayı başarıyla getirildi. Yanıt ayrıca hediye banner ayarlarını içerir: giftBannerThreshold (varsayılan 500, bu tutarın üzerindeki hediyelerde üst banner gösterilir), giftBannerTopDurationSeconds (varsayılan 4), giftBannerBottomDurationSeconds (varsayılan 5).\n"
+          }
+        }
+      }
+    },
+    "/api/mobile/room/gifts/leaderboard": {
+      "post": {
+        "summary": "Oda Hediye Sıralaması",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomId",
+                  "period"
+                ],
+                "properties": {
+                  "roomId": {
+                    "type": "string"
+                  },
+                  "period": {
+                    "type": "string",
+                    "enum": [
+                      "daily",
+                      "weekly",
+                      "monthly",
+                      "all_time"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Hediye sıralaması başarıyla getirildi"
+          },
+          "404": {
+            "description": "Oda bulunamadı"
           }
         }
       }

@@ -33,6 +33,11 @@ export async function POST(request: Request) {
         if (!user_id) return ApiResponseHelper.error("user_id zorunludur.", 400);
 
         const blockedId = Number(user_id);
+        if (!blockedId || Number.isNaN(blockedId)) return ApiResponseHelper.error("Geçersiz user_id.", 400);
+        if (blockedId === userId) return ApiResponseHelper.error("Kendinizi engelleyemezsiniz.", 400);
+
+        const blockedUser = await prisma.user.findUnique({ where: { id: blockedId }, select: { id: true } });
+        if (!blockedUser) return ApiResponseHelper.error("Kullanıcı bulunamadı.", 404);
 
         const existing = await prisma.userBlock.findUnique({
             where: { userId_blockedId: { userId, blockedId } },

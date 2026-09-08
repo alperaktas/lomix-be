@@ -72,6 +72,14 @@ export async function POST(request: Request) {
             data: { userId: null },
         });
 
+        if (room.blockKickSettings) {
+            await prisma.roomBan.upsert({
+                where: { roomId_userId: { roomId: room.id, userId: targetId } },
+                create: { roomId: room.id, userId: targetId, bannedBy: actorId },
+                update: { bannedBy: actorId, createdAt: new Date() },
+            });
+        }
+
         logRoomEvent(room.id, actorId, 'KICKED', targetId);
 
         return ApiResponseHelper.success({

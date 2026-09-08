@@ -60,6 +60,8 @@ model User {
   roomMessages         RoomMessage[]
   roomReports          RoomReport[]
   adminActions         RoomAdminLog[]      @relation("AdminActions")
+  roomBans             RoomBan[]           @relation("RoomBanUser")
+  roomBansIssued       RoomBan[]           @relation("RoomBanIssuer")
   micRequests          RoomMicRequest[]
   roomMemberships      RoomMember[]        @relation("RoomMemberUser")
   invitedMembers       RoomMember[]        @relation("RoomMemberInviter")
@@ -88,6 +90,7 @@ model User {
   sentGiftLogs         GiftLog[]           @relation("GiftSender")
   receivedGiftLogs     GiftLog[]           @relation("GiftReceiver")
   diamondTransactions  DiamondTransaction[]
+  coinPurchases        CoinPurchase[]
 
   @@map("users")
 }
@@ -238,6 +241,7 @@ model Room {
   messages       RoomMessage[]
   reports        RoomReport[]
   adminLogs      RoomAdminLog[]
+  bans           RoomBan[]
   micRequests    RoomMicRequest[]
   members        RoomMember[]
   memberInvites   RoomMemberInvite[]
@@ -441,6 +445,20 @@ model RoomAdminLog {
   admin     User     @relation("AdminActions", fields: [adminId], references: [id], onDelete: Cascade)
 
   @@map("room_admin_logs")
+}
+
+model RoomBan {
+  id        Int      @id @default(autoincrement())
+  roomId    Int      @map("room_id")
+  userId    Int      @map("user_id")
+  bannedBy  Int      @map("banned_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user      User     @relation("RoomBanUser", fields: [userId], references: [id], onDelete: Cascade)
+  banner    User     @relation("RoomBanIssuer", fields: [bannedBy], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@map("room_bans")
 }
 
 model RoomMicRequest {
@@ -758,8 +776,24 @@ model CoinPackage {
   order       Int      @default(0)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
+  purchases   CoinPurchase[]
 
   @@map("coin_packages")
+}
+
+model CoinPurchase {
+  id          Int          @id @default(autoincrement())
+  userId      Int          @map("user_id")
+  packageId   Int?         @map("package_id")
+  amount      Int
+  unitPrice   Float        @map("unit_price")
+  totalPrice  Float        @map("total_price")
+  tlAmount    Float        @map("tl_amount")
+  purchasedAt DateTime     @default(now()) @map("purchased_at")
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package     CoinPackage? @relation(fields: [packageId], references: [id], onDelete: SetNull)
+
+  @@map("coin_purchases")
 }
 
 model DiamondShopItem {
