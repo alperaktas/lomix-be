@@ -1706,6 +1706,60 @@
         }
       }
     },
+    "/api/mobile/room/block-user": {
+      "post": {
+        "summary": "Kullanıcıyı odadan banla / banını kaldır (Sahip veya Admin)",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomId",
+                  "userId",
+                  "action"
+                ],
+                "properties": {
+                  "roomId": {
+                    "type": "string"
+                  },
+                  "userId": {
+                    "type": "integer"
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "block",
+                      "unblock"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ban durumu güncellendi"
+          },
+          "403": {
+            "description": "Yetkisiz"
+          },
+          "404": {
+            "description": "Oda bulunamadı"
+          }
+        }
+      }
+    },
     "/api/mobile/room/blocked-users": {
       "post": {
         "summary": "Odadan banlanmış kullanıcıları listele (Sahip veya Admin)",
