@@ -79,6 +79,7 @@ export async function GET(request: Request) {
                 is_live: room.isLive,
                 mode: room.mode,
                 type: room.type,
+                locked: room.isLocked,
                 tags: room.tags.map(tag => ({
                     text: tag.text,
                     color_hex: tag.colorHex || "#000000"

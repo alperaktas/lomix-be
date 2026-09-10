@@ -24,11 +24,14 @@ import { logRoomEvent } from '@/lib/room-log';
  *             properties:
  *               roomId:
  *                 type: string
+ *               password:
+ *                 type: string
+ *                 description: Oda kilitliyse zorunlu, 6 haneli oda şifresi.
  *     responses:
  *       200:
  *         description: Odaya başarıyla katıldınız
  *       403:
- *         description: Seviye yetersiz veya oda aktif değil
+ *         description: Seviye yetersiz, oda şifresi hatalı veya oda aktif değil
  *       404:
  *         description: Oda bulunamadı
  */
@@ -39,14 +42,14 @@ export async function POST(request: Request) {
             return NextResponse.json({ status: false, message: "Unauthorized" }, { status: 401 });
         }
 
-        const { roomId } = await request.json();
+        const { roomId, password } = await request.json();
         if (!roomId) {
             return NextResponse.json({ status: false, message: "roomId zorunludur" }, { status: 400 });
         }
 
         const room = await prisma.room.findUnique({
             where: { roomId: String(roomId) },
-            select: { id: true, roomId: true, name: true, isLive: true, isClosed: true, minLevel: true, ownerId: true, memberOnlyMic: true, agoraChatRoomId: true },
+            select: { id: true, roomId: true, name: true, isLive: true, isClosed: true, minLevel: true, ownerId: true, memberOnlyMic: true, agoraChatRoomId: true, isLocked: true, password: true },
         });
 
         if (!room) {
@@ -55,6 +58,10 @@ export async function POST(request: Request) {
 
         if (room.isClosed || !room.isLive) {
             return NextResponse.json({ status: false, message: "Bu oda aktif değil" }, { status: 403 });
+        }
+
+        if (room.isLocked && room.password !== password) {
+            return NextResponse.json({ status: false, message: "Oda şifresi hatalı" }, { status: 403 });
         }
 
         const user = await prisma.user.findUnique({

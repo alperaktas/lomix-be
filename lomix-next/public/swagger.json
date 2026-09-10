@@ -2087,6 +2087,10 @@
                 "properties": {
                   "roomId": {
                     "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "Oda kilitliyse zorunlu, 6 haneli oda şifresi."
                   }
                 }
               }
@@ -2098,7 +2102,7 @@
             "description": "Odaya başarıyla katıldınız"
           },
           "403": {
-            "description": "Seviye yetersiz veya oda aktif değil"
+            "description": "Seviye yetersiz, oda şifresi hatalı veya oda aktif değil"
           },
           "404": {
             "description": "Oda bulunamadı"
@@ -2185,6 +2189,56 @@
         "responses": {
           "200": {
             "description": "Odadan başarıyla ayrıldınız"
+          },
+          "404": {
+            "description": "Oda bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/room/lock": {
+      "post": {
+        "summary": "Odayı kilitle / kilidi kaldır (Sahip veya Admin)",
+        "description": "`password` 6 haneli rakam gönderilirse oda kilitlenir. `password` boş\ngönderilirse odanın kilidi kaldırılır.\n",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomId"
+                ],
+                "properties": {
+                  "roomId": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "6 haneli rakam. Boş bırakılırsa kilit kaldırılır."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Kilit durumu güncellendi"
+          },
+          "400": {
+            "description": "Şifre 6 haneli rakam olmalı"
+          },
+          "403": {
+            "description": "Yetkisiz"
           },
           "404": {
             "description": "Oda bulunamadı"
