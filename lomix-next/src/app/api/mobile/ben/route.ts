@@ -61,6 +61,7 @@ async function getUserProfile(targetUserId: number, request: Request) {
             avatar_url: user.avatar?.trim() || `${new URL(request.url).origin}/img/default-avatar.svg`,
             description: user.description || '',
             country: user.country || '',
+            gender: user.gender || null,
             birth_date: user.birthDate ? user.birthDate.toISOString().split('T')[0] : null,
             zodiac: user.birthDate ? getZodiac(user.birthDate) : null,
             join_date: user.createdAt.toISOString().split('T')[0],
