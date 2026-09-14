@@ -130,6 +130,7 @@ const data = {
         { title: "Hikaye Fiyatları", url: "/dashboard/settings/story-prices" },
         { title: "Komisyon & Fiyatlar", url: "/dashboard/settings/commissions" },
         { title: "Coin Paketleri", url: "/dashboard/settings/coin-packages" },
+        { title: "Oda Temaları", url: "/dashboard/settings/room-themes" },
       ],
     },
   ],

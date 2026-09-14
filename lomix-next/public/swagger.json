@@ -3028,6 +3028,78 @@
         }
       }
     },
+    "/api/mobile/room/themes": {
+      "get": {
+        "summary": "Oda temalarını listele",
+        "description": "Oda temaları ve VIP temaları ayrı listeler halinde döner.\nSadece `is_active` olan temalar listelenir, sıralama `sort_order` alanına göredir.\n",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Temalar başarıyla getirildi"
+          },
+          "401": {
+            "description": "Yetkisiz erişim"
+          }
+        }
+      },
+      "post": {
+        "summary": "Seçilen temayı odaya uygula (Sadece Oda Sahibi)",
+        "description": "Tema `rooms.room_theme` alanına tema id'si olarak yazılır.\nVIP tema seçiliyorsa kullanıcının aktif VIP'i ve yeterli VIP seviyesi olması gerekir.\nYanıttaki `rtm_event` odadaki istemcilere yayınlanmak içindir.\n",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "room_id",
+                  "theme_id"
+                ],
+                "properties": {
+                  "room_id": {
+                    "type": "string",
+                    "description": "Oda ID"
+                  },
+                  "theme_id": {
+                    "type": "string",
+                    "description": "Tema ID (örn. room_1, vip_1)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tema başarıyla uygulandı"
+          },
+          "400": {
+            "description": "Eksik parametre"
+          },
+          "403": {
+            "description": "Yetkisiz veya VIP seviyesi yetersiz"
+          },
+          "404": {
+            "description": "Oda veya tema bulunamadı"
+          }
+        }
+      }
+    },
     "/api/mobile/room/token-refresh": {
       "post": {
         "summary": "Agora Token Yenile",
@@ -3341,6 +3413,105 @@
         "responses": {
           "200": {
             "description": "Hikayesi olan kullanıcılar listelendi."
+          }
+        }
+      }
+    },
+    "/api/mobile/stories/view": {
+      "post": {
+        "summary": "Hikaye görüntüleme kaydı oluştur",
+        "description": "Token'daki kullanıcıyı ilgili hikayenin görüntüleyeni olarak kaydeder.\n`story_id` gönderilmezse hikaye sahibinin süresi dolmamış **en yeni** hikayesi kullanılır;\naktif hikayesi yoksa en son hikayesine düşülür.\nAynı kullanıcının aynı hikayeyi tekrar görüntülemesi yeni kayıt oluşturmaz,\nilk görüntüleme zamanı korunur. Kullanıcı kendi hikayesine bakarsa kayıt tutulmaz.\n",
+        "tags": [
+          "Mobile Stories"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "string",
+                    "description": "Hikaye sahibinin kullanıcı ID'si"
+                  },
+                  "story_id": {
+                    "type": "string",
+                    "description": "Hikaye ID (opsiyonel)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Hikaye görüntüleme kaydı başarıyla alındı"
+          },
+          "400": {
+            "description": "Eksik veya geçersiz parametre"
+          },
+          "401": {
+            "description": "Yetkisiz erişim"
+          },
+          "404": {
+            "description": "Hikaye bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/stories/viewers": {
+      "get": {
+        "summary": "Hikayeyi görüntüleyenleri listele",
+        "description": "Hikaye görüntüleyenlerini en yeniden eskiye doğru listeler.\nGizlilik gereği bu listeyi **sadece hikaye sahibi** (ve platform admini) görebilir.\n`story_id` gönderilmezse kullanıcının tüm hikayelerinin görüntüleyenleri birleştirilir,\naynı kişi birden fazla hikayeyi görmüşse listede bir kez yer alır.\n",
+        "tags": [
+          "Mobile Stories"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Hikaye sahibinin kullanıcı ID'si"
+          },
+          {
+            "in": "query",
+            "name": "story_id",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Hikaye ID (opsiyonel)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Hikaye görüntüleyenleri başarıyla getirildi"
+          },
+          "400": {
+            "description": "Eksik veya geçersiz parametre"
+          },
+          "401": {
+            "description": "Yetkisiz erişim"
+          },
+          "403": {
+            "description": "Başkasının hikaye görüntüleyenleri listelenemez"
           }
         }
       }

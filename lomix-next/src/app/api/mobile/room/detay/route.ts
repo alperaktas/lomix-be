@@ -135,6 +135,11 @@ export async function POST(request: Request) {
         const goldAmount = formatGoldAmount(room.owner.wallet?.balance ?? 0);
         const myRole = await getRoomRole(room.id, userId, room.ownerId);
 
+        // roomTheme alani RoomTheme.themeId degerini tutar; gorseli buradan cozuyoruz.
+        const theme = room.roomTheme
+            ? await prisma.roomTheme.findFirst({ where: { themeId: room.roomTheme } })
+            : null;
+
         const participants = room.participants.map((p) => ({
             id: String(p.user.id),
             username: p.user.fullName || p.user.username,
@@ -182,6 +187,9 @@ export async function POST(request: Request) {
                 roomTopic: room.roomTopic || "",
                 roomDescMessage: room.roomDescMessage || "",
                 roomTheme: room.roomTheme || "",
+                roomThemeUrl: theme?.imageUrl || "",
+                roomThemeGradientColors: theme?.gradientColors ?? [],
+                roomThemeIsVip: theme?.isVip ?? false,
                 micSettings: room.micSettings,
                 blockKickSettings: room.blockKickSettings,
                 myRole,
