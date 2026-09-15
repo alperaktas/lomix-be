@@ -1599,6 +1599,229 @@
         }
       }
     },
+    "/api/mobile/profile/follow": {
+      "post": {
+        "summary": "Kullanıcı takip et / takipten çık",
+        "description": "Token'daki kullanıcı, `user_id` ile belirtilen kullanıcıyı takip eder veya takipten çıkar.\nİşlem tekrar edilebilir (idempotent): zaten takip edilen biri için tekrar `follow` gönderilirse\nyeni kayıt açılmaz, ilk takip tarihi korunur. Takip edilmeyen biri için `unfollow`\nhata değil, `is_following: false` ile başarı döner.\nHata durumlarında da `data` gövdesi döner ve `error_code: FOLLOW_FAILED` içerir.\n",
+        "tags": [
+          "Mobile Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "string",
+                    "description": "Hedef kullanıcının id değeri"
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "follow",
+                      "unfollow"
+                    ],
+                    "description": "Varsayılan: follow"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Takip / takipten çıkma işlemi tamamlandı"
+          },
+          "400": {
+            "description": "Eksik veya geçersiz parametre"
+          },
+          "401": {
+            "description": "Yetkisiz erişim"
+          },
+          "403": {
+            "description": "Engel nedeniyle takip edilemez"
+          },
+          "404": {
+            "description": "Kullanıcı bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/profile/followers": {
+      "get": {
+        "summary": "Takipçi listesi",
+        "description": "`user_id` gönderilmezse token'daki kullanıcının takipçileri döner,\ngönderilirse o kullanıcının takipçileri. Her satırdaki `is_following`,\n**isteği yapan kullanıcının** o kişiyi takip edip etmediğini söyler —\ngeri takip etme düğmesi bununla çizilebilir.\nAynı uç POST ile de çağrılabilir (parametreler gövdeden okunur).\n",
+        "tags": [
+          "Mobile Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "user_id",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Varsayılan 100, en fazla 200"
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Takipçiler başarıyla getirildi"
+          },
+          "400": {
+            "description": "Geçersiz user_id"
+          },
+          "401": {
+            "description": "Yetkisiz erişim"
+          },
+          "404": {
+            "description": "Kullanıcı bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/profile/following": {
+      "get": {
+        "summary": "Takip edilenler listesi",
+        "description": "`user_id` gönderilmezse token'daki kullanıcının takip ettikleri döner,\ngönderilirse o kullanıcının takip ettikleri. Her satırdaki `is_following`,\n**isteği yapan kullanıcının** o kişiyi takip edip etmediğini söyler.\nAynı uç POST ile de çağrılabilir (parametreler gövdeden okunur).\n",
+        "tags": [
+          "Mobile Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "user_id",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Varsayılan 100, en fazla 200"
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Takip edilenler başarıyla getirildi"
+          },
+          "400": {
+            "description": "Geçersiz user_id"
+          },
+          "401": {
+            "description": "Yetkisiz erişim"
+          },
+          "404": {
+            "description": "Kullanıcı bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/profile/friends": {
+      "get": {
+        "summary": "Arkadaş listesi",
+        "description": "`user_friends` tablosundan arkadaş listesi. Kayıt çift yönlü tutulduğu için\n(user1/user2) her iki taraftaki eşleşmeler birleştirilip karşı taraftaki kişi döner.\n`user_id` gönderilmezse token'daki kullanıcının arkadaşları döner.\nMevcut `POST /api/mobile/friends` ucu daha dar bir gövde (id/name/avatar) döndürüyor\nve olduğu gibi duruyor; bu uç ise diğer profil listeleriyle aynı biçimde yanıt verir.\nAynı uç POST ile de çağrılabilir (parametreler gövdeden okunur).\n",
+        "tags": [
+          "Mobile Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "user_id",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Varsayılan 100, en fazla 200"
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Arkadaşlar başarıyla getirildi"
+          },
+          "400": {
+            "description": "Geçersiz user_id"
+          },
+          "401": {
+            "description": "Yetkisiz erişim"
+          },
+          "404": {
+            "description": "Kullanıcı bulunamadı"
+          }
+        }
+      }
+    },
     "/api/mobile/profile/me": {
       "get": {
         "summary": "Giriş yapmış kullanıcının profil bilgilerini getirir",

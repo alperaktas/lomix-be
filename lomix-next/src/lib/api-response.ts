@@ -25,11 +25,18 @@ export class ApiResponseHelper {
     return NextResponse.json(response, { status });
   }
 
-  static error(message: string = "Bir hata oluştu", status: number = 400) {
-    return NextResponse.json({
+  static error(message: string = "Bir hata oluştu", status: number = 400, data?: any) {
+    const body: Record<string, any> = {
       status: false,
       success: false,
       message
-    }, { status });
+    };
+
+    // Bazi uclar (orn. profile/follow) hata durumunda da govde bekliyor.
+    if (data !== undefined) {
+      body.data = data;
+    }
+
+    return NextResponse.json(body, { status });
   }
 }
