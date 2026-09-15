@@ -1,7 +1,7 @@
 import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
-import { USER_SELECT, formatUserRow, followingIdSet, readListParams, resolveTargetId } from '@/lib/profile-lists';
+import { USER_SELECT, formatUserRow, followingIdSet, friendIdSet, readListParams, resolveTargetId } from '@/lib/profile-lists';
 
 /**
  * @swagger
@@ -75,10 +75,18 @@ async function handle(request: Request) {
             since: r.createdAt,
         }));
 
-        const followingSet = await followingIdSet(currentUserId, friends.map(f => f.user.id));
+        const ids = friends.map(f => f.user.id);
+        const [followingSet, friendSet] = await Promise.all([
+            followingIdSet(currentUserId, ids),
+            friendIdSet(currentUserId, ids),
+        ]);
 
         const data = friends.map(f =>
-            formatUserRow(f.user, { isFollowing: followingSet.has(f.user.id), since: f.since })
+            formatUserRow(f.user, {
+                isFollowing: followingSet.has(f.user.id),
+                isFriend: friendSet.has(f.user.id),
+                since: f.since,
+            })
         );
 
         return ApiResponseHelper.success(data, "Arkadaşlar başarıyla getirildi");

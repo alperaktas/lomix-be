@@ -1,6 +1,7 @@
 import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
+import { orderedFriendPair } from '@/lib/profile-lists';
 
 /**
  * @swagger
@@ -84,17 +85,24 @@ export async function POST(request: Request) {
             where: { followerId_followingId: { followerId, followingId: targetId } },
         });
 
+        const pair = orderedFriendPair(followerId, targetId);
+
         if (action === 'unfollow') {
             if (existing) {
-                await prisma.userFollow.delete({
-                    where: { followerId_followingId: { followerId, followingId: targetId } },
-                });
+                // Takip biterse karsiliklilik da biter; arkadaslik kaydi kalkar.
+                await prisma.$transaction([
+                    prisma.userFollow.delete({
+                        where: { followerId_followingId: { followerId, followingId: targetId } },
+                    }),
+                    prisma.userFriend.deleteMany({ where: pair }),
+                ]);
             }
 
             return ApiResponseHelper.success(
                 {
                     success: true,
                     is_following: false,
+                    is_friend: false,
                     user_id: String(targetId),
                     follower_id: String(followerId),
                     unfollowed_at: new Date().toISOString(),
@@ -120,10 +128,26 @@ export async function POST(request: Request) {
             data: { followerId, followingId: targetId },
         });
 
+        // Karsilikli takip = arkadaslik. Mesajlasma ucreti arkadaslar arasinda kalkiyor.
+        const reverse = await prisma.userFollow.findUnique({
+            where: { followerId_followingId: { followerId: targetId, followingId: followerId } },
+        });
+
+        let isFriend = false;
+        if (reverse) {
+            await prisma.userFriend.upsert({
+                where: { user1Id_user2Id: pair },
+                create: pair,
+                update: {},
+            });
+            isFriend = true;
+        }
+
         return ApiResponseHelper.success(
             {
                 success: true,
                 is_following: true,
+                is_friend: isFriend,
                 user_id: String(targetId),
                 follower_id: String(followerId),
                 followed_at: follow.createdAt.toISOString(),

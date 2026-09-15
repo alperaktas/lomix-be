@@ -25,7 +25,7 @@ export const USER_SELECT = {
 
 export function formatUserRow(
     user: ListUser,
-    opts: { isFollowing: boolean; since?: Date | null }
+    opts: { isFollowing: boolean; isFriend?: boolean; since?: Date | null }
 ) {
     const displayName = (user.fullName || user.username || "").trim();
     const nameParts = displayName.split(" ");
@@ -42,6 +42,9 @@ export function formatUserRow(
         image_url: user.avatar || null,
         display_id: String(user.id),
         is_following: opts.isFollowing,
+        // Karsilikli takip = arkadaslik. Mesajlasma ucretinin kalkip kalkmadigini
+        // istemci bu alandan anlayabilir.
+        is_friend: opts.isFriend ?? false,
         since: opts.since ? opts.since.toISOString() : null,
     };
 }
@@ -54,6 +57,29 @@ export async function followingIdSet(currentUserId: number, targetIds: number[])
         select: { followingId: true },
     });
     return new Set(rows.map(r => r.followingId));
+}
+
+/** Istegi yapan kullanicinin, verilen id'lerden hangileriyle arkadas oldugu. */
+export async function friendIdSet(currentUserId: number, targetIds: number[]): Promise<Set<number>> {
+    if (targetIds.length === 0) return new Set();
+    const rows = await prisma.userFriend.findMany({
+        where: {
+            OR: [
+                { user1Id: currentUserId, user2Id: { in: targetIds } },
+                { user2Id: currentUserId, user1Id: { in: targetIds } },
+            ],
+        },
+        select: { user1Id: true, user2Id: true },
+    });
+    return new Set(rows.map(r => (r.user1Id === currentUserId ? r.user2Id : r.user1Id)));
+}
+
+/**
+ * user_friends kaydi tek satir olarak tutulur; ayni ciftin iki kez yazilmamasi icin
+ * id'ler her zaman kucukten buyuge siralanir.
+ */
+export function orderedFriendPair(a: number, b: number): { user1Id: number; user2Id: number } {
+    return a < b ? { user1Id: a, user2Id: b } : { user1Id: b, user2Id: a };
 }
 
 /**
