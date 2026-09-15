@@ -30,6 +30,11 @@ const KEY_META: Record<string, { icon: React.ElementType; unit: string; min: num
     voice_call_price_per_min: { icon: Phone,         unit: "coin/dk", min: 0,  max: 9999, description: "Sesli arama başlatmak için dakika başına düşen coin maliyeti." },
     video_call_price_per_min: { icon: Video,         unit: "coin/dk", min: 0,  max: 9999, description: "Görüntülü arama başlatmak için dakika başına düşen coin maliyeti." },
     message_price:            { icon: MessageCircle, unit: "coin",    min: 0,  max: 9999, description: "Her mesaj gönderimi için düşülecek coin miktarı." },
+    message_commission_rate:  { icon: Percent,       unit: "%",       min: 0,  max: 100,  description: "Mesaj ücretinden kesilecek komisyon yüzdesi. Kalan, cevap veren yayıncının elmas bakiyesine eklenir." },
+    message_escrow_timeout_hours: { icon: MessageCircle, unit: "saat", min: 1, max: 720, description: "Yayıncı cevap vermezse havuzda bekleyen coin bu süre sonunda gönderene iade edilir." },
+    max_unanswered_messages:  { icon: MessageCircle, unit: "mesaj",   min: 0,  max: 100,  description: "Cevap gelmeden art arda gönderilebilecek en fazla mesaj sayısı. 0 = sınırsız." },
+    broadcaster_free_daily_messages: { icon: MessageCircle, unit: "mesaj/gün", min: 0, max: 1000, description: "Yayıncının günlük ücretsiz otomatik (hi/auto) mesaj hakkı." },
+    friend_message_free:      { icon: MessageCircle, unit: "1/0",     min: 0,  max: 1,    description: "Arkadaşlar (karşılıklı takipleşenler) arasında mesaj ücretsiz olsun mu? 1 açık, 0 kapalı." },
 };
 
 function CommissionExample({ rate }: { rate: number }) {

@@ -5,6 +5,11 @@ export const SETTING_DEFAULTS: Record<string, { label: string; group: string; va
     voice_call_price_per_min:   { label: 'Sesli Arama Ücreti (coin/dk)',     group: 'pricing',     value: '10' },
     video_call_price_per_min:   { label: 'Görüntülü Arama Ücreti (coin/dk)', group: 'pricing',     value: '20' },
     message_price:              { label: 'Mesaj Ücreti (coin)',              group: 'pricing',     value: '5'  },
+    message_commission_rate:    { label: 'Mesaj Komisyon Oranı (%)',         group: 'commission',  value: '20' },
+    message_escrow_timeout_hours: { label: 'Mesaj Coin İade Süresi (saat)',  group: 'pricing',     value: '24' },
+    max_unanswered_messages:    { label: 'Ardışık Cevapsız Mesaj Limiti',    group: 'pricing',     value: '3'  },
+    broadcaster_free_daily_messages: { label: 'Yayıncı Günlük Ücretsiz Mesaj Hakkı', group: 'pricing', value: '10' },
+    friend_message_free:        { label: 'Arkadaşlar Arası Mesaj Ücretsiz (1 açık, 0 kapalı)', group: 'pricing', value: '1' },
 };
 
 export async function getSetting(key: string): Promise<number> {

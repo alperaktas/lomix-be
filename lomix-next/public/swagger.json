@@ -924,6 +924,7 @@
     "/api/mobile/chat/send": {
       "post": {
         "summary": "Direkt Mesaj Gönder",
+        "description": "Mesaj ücretlendirmesi burada işler:\n- Arkadaşlar (karşılıklı takip) arasında ücret alınmaz (`friend_message_free` ayarı ile kapatılabilir).\n- Yayıncının `hi` / `auto` mesajları günlük hak (`broadcaster_free_daily_messages`) dahilinde ücretsizdir.\n- Karşı taraf sohbete daha önce cevap yazmışsa yayıncı ücretsiz yazar.\n- Diğer durumlarda gönderenden `message_price` kadar coin düşer. Alıcı yayıncıysa coin\n  havuzda bekler (`message_escrows`); yayıncı cevap yazınca komisyon düşülerek elmasa çevrilir,\n  `message_escrow_timeout_hours` içinde cevap gelmezse coin gönderene iade edilir.\n- Cevap gelmeden art arda en fazla `max_unanswered_messages` mesaj gönderilebilir.\nYanıttaki `billing` alanı ne olduğunu söyler (`charged`, `free`, `escrow_held`).\n",
         "tags": [
           "Mobile Chat"
         ],
@@ -950,6 +951,15 @@
                   },
                   "image_url": {
                     "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "user",
+                      "hi",
+                      "auto"
+                    ],
+                    "description": "Varsayılan user. hi/auto yalnızca yayıncılar için, günlük ücretsiz haktan düşer."
                   }
                 }
               }
@@ -959,6 +969,18 @@
         "responses": {
           "200": {
             "description": "Mesaj gönderildi"
+          },
+          "400": {
+            "description": "Eksik parametre veya yetersiz bakiye"
+          },
+          "403": {
+            "description": "İzin yok"
+          },
+          "404": {
+            "description": "Kullanıcı bulunamadı"
+          },
+          "429": {
+            "description": "Cevapsız mesaj limiti veya günlük ücretsiz hak doldu"
           }
         }
       }

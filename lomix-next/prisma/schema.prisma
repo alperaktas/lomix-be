@@ -8,91 +8,95 @@ datasource db {
 }
 
 model User {
-  id                   Int                  @id @default(autoincrement())
-  username             String               @unique
-  password             String
-  email                String               @unique
-  role                 String               @default("user")
-  createdAt            DateTime             @default(now()) @map("created_at")
-  updatedAt            DateTime             @updatedAt @map("updated_at")
-  gender               String?
-  ipAddress            String?              @map("ip_address")
-  userAgent            String?              @map("user_agent")
-  deviceModel          String?              @map("device_model")
-  avatar               String?
-  phone                String?
-  status               String               @default("pending")
-  verificationCode     String?              @map("verification_code")
-  resetPasswordCode    String?              @map("reset_password_code")
-  resetPasswordExpires DateTime?            @map("reset_password_expires")
-  fullName             String?              @map("full_name")
-  isVerified           Boolean              @default(false) @map("is_verified")
-  isVip                Boolean              @default(false) @map("is_vip")
-  level                Int                  @default(1)
-  prestigePoints       Int                  @default(0) @map("prestige_points")
-  banReason            String?              @map("ban_reason")
-  bannedDeviceId       String?              @map("banned_device_id")
-  bannedUntil          DateTime?            @map("banned_until")
-  isPermanentBan       Boolean              @default(false) @map("is_permanent_ban")
-  nickname             String?
-  vipExpiresAt         DateTime?            @map("vip_expires_at")
-  vipLevel             Int                  @default(0) @map("vip_level")
-  visitorViewLimit     Int                  @default(10) @map("visitor_view_limit")
-  anBanned             Boolean              @default(false) @map("an_banned")
-  description          String?
-  country              String?
-  birthDate            DateTime?            @map("birth_date")
-  ownedAgency          Agency?              @relation("AgencyOwner")
-  agencyMembership     AgencyMember?
-  sentFamilyMessages   FamilyMessage[]
-  rooms                Room[]
-  stories              Story[]
-  bans                 UserBan[]
-  following            UserFollow[]         @relation("following")
-  followers            UserFollow[]         @relation("followers")
-  friends1             UserFriend[]         @relation("user1")
-  friends2             UserFriend[]         @relation("user2")
-  userGroups           UserGroup[]
-  logs                 UserLog[]
-  wallet               Wallet?
-  roomParticipations   RoomParticipant[]
-  roomMicSlots         RoomMicSlot[]
-  roomMessages         RoomMessage[]
-  roomReports          RoomReport[]
-  adminActions         RoomAdminLog[]       @relation("AdminActions")
-  roomBans             RoomBan[]            @relation("RoomBanUser")
-  roomBansIssued       RoomBan[]            @relation("RoomBanIssuer")
-  micRequests          RoomMicRequest[]
-  roomMemberships      RoomMember[]         @relation("RoomMemberUser")
-  invitedMembers       RoomMember[]         @relation("RoomMemberInviter")
-  receivedInvites      RoomMemberInvite[]   @relation("InviteRecipient")
-  sentInvites          RoomMemberInvite[]   @relation("InviteSender")
-  anlar                An[]
-  anLikes              AnLike[]
-  anHiLikes            AnHiLike[]
-  anComments           AnComment[]
-  anCommentLikes       AnCommentLike[]
-  avatarHistory        UserAvatarHistory[]
-  sentMessages         DirectMessage[]      @relation("SentMessages")
-  receivedMessages     DirectMessage[]      @relation("ReceivedMessages")
-  conversationsOwned   Conversation[]       @relation("ConversationOwner")
-  conversationsOther   Conversation[]       @relation("ConversationOther")
-  interactions         UserInteraction[]    @relation("InteractionSender")
-  interactionsReceived UserInteraction[]    @relation("InteractionReceiver")
-  blocks               UserBlock[]          @relation("BlockingUser")
-  blockedBy            UserBlock[]          @relation("BlockedUser")
-  reports              UserReport[]         @relation("ReportingUser")
-  reportedBy           UserReport[]         @relation("ReportedUser")
-  sentTransactions     WalletTransaction[]  @relation("TransactionSender")
-  receivedTransactions WalletTransaction[]  @relation("TransactionReceiver")
-  photos               UserPhoto[]
-  memberRequests       RoomMemberRequest[]
-  sentGiftLogs         GiftLog[]            @relation("GiftSender")
-  receivedGiftLogs     GiftLog[]            @relation("GiftReceiver")
-  diamondTransactions  DiamondTransaction[]
-  coinPurchases        CoinPurchase[]
-  storyViews           StoryView[]          @relation("StoryViewer")
-  receivedStoryViews   StoryView[]          @relation("StoryOwner")
+  id                    Int                  @id @default(autoincrement())
+  username              String               @unique
+  password              String
+  email                 String               @unique
+  role                  String               @default("user")
+  createdAt             DateTime             @default(now()) @map("created_at")
+  updatedAt             DateTime             @updatedAt @map("updated_at")
+  gender                String?
+  ipAddress             String?              @map("ip_address")
+  userAgent             String?              @map("user_agent")
+  deviceModel           String?              @map("device_model")
+  avatar                String?
+  phone                 String?
+  status                String               @default("pending")
+  verificationCode      String?              @map("verification_code")
+  resetPasswordCode     String?              @map("reset_password_code")
+  resetPasswordExpires  DateTime?            @map("reset_password_expires")
+  fullName              String?              @map("full_name")
+  isVerified            Boolean              @default(false) @map("is_verified")
+  isVip                 Boolean              @default(false) @map("is_vip")
+  level                 Int                  @default(1)
+  prestigePoints        Int                  @default(0) @map("prestige_points")
+  banReason             String?              @map("ban_reason")
+  bannedDeviceId        String?              @map("banned_device_id")
+  bannedUntil           DateTime?            @map("banned_until")
+  isPermanentBan        Boolean              @default(false) @map("is_permanent_ban")
+  nickname              String?
+  vipExpiresAt          DateTime?            @map("vip_expires_at")
+  vipLevel              Int                  @default(0) @map("vip_level")
+  visitorViewLimit      Int                  @default(10) @map("visitor_view_limit")
+  anBanned              Boolean              @default(false) @map("an_banned")
+  isBroadcaster         Boolean              @default(false) @map("is_broadcaster")
+  broadcasterApprovedAt DateTime?            @map("broadcaster_approved_at")
+  description           String?
+  country               String?
+  birthDate             DateTime?            @map("birth_date")
+  ownedAgency           Agency?              @relation("AgencyOwner")
+  agencyMembership      AgencyMember?
+  sentFamilyMessages    FamilyMessage[]
+  rooms                 Room[]
+  stories               Story[]
+  bans                  UserBan[]
+  following             UserFollow[]         @relation("following")
+  followers             UserFollow[]         @relation("followers")
+  friends1              UserFriend[]         @relation("user1")
+  friends2              UserFriend[]         @relation("user2")
+  userGroups            UserGroup[]
+  logs                  UserLog[]
+  wallet                Wallet?
+  roomParticipations    RoomParticipant[]
+  roomMicSlots          RoomMicSlot[]
+  roomMessages          RoomMessage[]
+  roomReports           RoomReport[]
+  adminActions          RoomAdminLog[]       @relation("AdminActions")
+  roomBans              RoomBan[]            @relation("RoomBanUser")
+  roomBansIssued        RoomBan[]            @relation("RoomBanIssuer")
+  micRequests           RoomMicRequest[]
+  roomMemberships       RoomMember[]         @relation("RoomMemberUser")
+  invitedMembers        RoomMember[]         @relation("RoomMemberInviter")
+  receivedInvites       RoomMemberInvite[]   @relation("InviteRecipient")
+  sentInvites           RoomMemberInvite[]   @relation("InviteSender")
+  anlar                 An[]
+  anLikes               AnLike[]
+  anHiLikes             AnHiLike[]
+  anComments            AnComment[]
+  anCommentLikes        AnCommentLike[]
+  avatarHistory         UserAvatarHistory[]
+  sentMessages          DirectMessage[]      @relation("SentMessages")
+  receivedMessages      DirectMessage[]      @relation("ReceivedMessages")
+  conversationsOwned    Conversation[]       @relation("ConversationOwner")
+  conversationsOther    Conversation[]       @relation("ConversationOther")
+  interactions          UserInteraction[]    @relation("InteractionSender")
+  interactionsReceived  UserInteraction[]    @relation("InteractionReceiver")
+  blocks                UserBlock[]          @relation("BlockingUser")
+  blockedBy             UserBlock[]          @relation("BlockedUser")
+  reports               UserReport[]         @relation("ReportingUser")
+  reportedBy            UserReport[]         @relation("ReportedUser")
+  sentTransactions      WalletTransaction[]  @relation("TransactionSender")
+  receivedTransactions  WalletTransaction[]  @relation("TransactionReceiver")
+  photos                UserPhoto[]
+  memberRequests        RoomMemberRequest[]
+  sentGiftLogs          GiftLog[]            @relation("GiftSender")
+  receivedGiftLogs      GiftLog[]            @relation("GiftReceiver")
+  diamondTransactions   DiamondTransaction[]
+  coinPurchases         CoinPurchase[]
+  storyViews            StoryView[]          @relation("StoryViewer")
+  escrowsPaid           MessageEscrow[]      @relation("EscrowPayer")
+  escrowsReceived       MessageEscrow[]      @relation("EscrowReceiver")
+  receivedStoryViews    StoryView[]          @relation("StoryOwner")
 
   @@map("users")
 }
@@ -657,6 +661,7 @@ model DirectMessage {
   text      String?
   imageUrl  String?  @map("image_url")
   giftId    Int?     @map("gift_id")
+  kind      String   @default("user")
   isRead    Boolean  @default(false) @map("is_read")
   createdAt DateTime @default(now()) @map("created_at")
   from      User     @relation("SentMessages", fields: [fromId], references: [id], onDelete: Cascade)
@@ -889,4 +894,24 @@ model StoryView {
   @@unique([storyId, viewerId])
   @@index([ownerId, viewedAt])
   @@map("story_views")
+}
+
+model MessageEscrow {
+  id            Int       @id @default(autoincrement())
+  messageId     Int?      @map("message_id")
+  payerId       Int       @map("payer_id")
+  receiverId    Int       @map("receiver_id")
+  coinAmount    Int       @map("coin_amount")
+  diamondAmount Int?      @map("diamond_amount")
+  commission    Int?
+  status        String    @default("held")
+  heldAt        DateTime  @default(now()) @map("held_at")
+  expiresAt     DateTime  @map("expires_at")
+  resolvedAt    DateTime? @map("resolved_at")
+  payer         User      @relation("EscrowPayer", fields: [payerId], references: [id], onDelete: Cascade)
+  receiver      User      @relation("EscrowReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([receiverId, payerId, status])
+  @@index([status, expiresAt])
+  @@map("message_escrows")
 }
