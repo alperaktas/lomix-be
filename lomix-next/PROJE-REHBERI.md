@@ -1,6 +1,7 @@
-# CLAUDE.md
+# Proje Rehberi
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Bu dosya depoda calisirken basvurulacak teknik rehberdir: komutlar, mimari,
+API kurallari ve ortam degiskenleri.
 
 ## Commands
 
