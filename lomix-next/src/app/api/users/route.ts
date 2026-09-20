@@ -53,7 +53,8 @@ export async function POST(req: Request) {
                 email,
                 password: hashedPassword, // Hashlenmiş şifre
                 role: role || 'user',
-                status: 'active'
+                status: 'active',
+                isFirstLogin: true
             }
         });
 

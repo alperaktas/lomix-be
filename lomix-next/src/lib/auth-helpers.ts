@@ -182,6 +182,7 @@ export const handleSocialAuth = async (req: Request, provider: 'google' | 'faceb
                     password: hashedPassword,
                     role: 'user',
                     status: 'active',
+                    isFirstLogin: true,
                     avatar: socialUser.picture
                 }
             }), 'user.create');

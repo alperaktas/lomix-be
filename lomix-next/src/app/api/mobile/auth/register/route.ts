@@ -81,6 +81,7 @@ export async function POST(req: Request) {
                 userAgent,
                 role: 'user',
                 status: 'pending',
+                isFirstLogin: true,
                 verificationCode
             }
         });
