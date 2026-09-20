@@ -24,6 +24,7 @@ E-posta **veya** kullanıcı adı ile giriş. İkisinden biri yeterli.
   "success": true,
   "data": {
     "token": "eyJ...",
+    "is_first_login": true,
     "user": {
       "id": 1,
       "username": "testuser",
@@ -34,6 +35,12 @@ E-posta **veya** kullanıcı adı ile giriş. İkisinden biri yeterli.
   }
 }
 ```
+
+`is_first_login`: hesabın bu ilk başarılı girişi mi. Yeni hesap açıldığında `true`
+başlar, ilk başarılı girişten sonra backend kalıcı olarak `false` yapar; sonraki her
+girişte `false` döner. Mobil taraf profil kurulum ekranını buna bakarak gösterir —
+cihazda bayrak tutmaya gerek yok, farklı cihaz/hesap kombinasyonlarında da doğru çalışır.
+Google/Apple/Facebook girişleri de aynı alanı döndürür.
 
 ---
 

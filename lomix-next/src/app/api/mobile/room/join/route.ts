@@ -60,7 +60,11 @@ export async function POST(request: Request) {
             return NextResponse.json({ status: false, message: "Bu oda aktif değil" }, { status: 403 });
         }
 
-        if (room.isLocked && room.password !== password) {
+        // Rol once hesaplaniyor: sahip ve yoneticiler kilitli odaya sifresiz girebiliyor.
+        const myRole = await getRoomRole(room.id, userId, room.ownerId);
+        const canBypassLock = myRole === 'owner' || myRole === 'admin';
+
+        if (room.isLocked && !canBypassLock && room.password !== password) {
             return NextResponse.json({ status: false, message: "Oda şifresi hatalı" }, { status: 403 });
         }
 
@@ -97,7 +101,6 @@ export async function POST(request: Request) {
         }
 
         const agoraToken = generateAgoraToken(room.roomId, userId);
-        const myRole = await getRoomRole(room.id, userId, room.ownerId);
 
         logRoomEvent(room.id, userId, 'ROOM_JOINED');
 

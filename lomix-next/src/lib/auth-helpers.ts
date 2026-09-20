@@ -194,6 +194,15 @@ export const handleSocialAuth = async (req: Request, provider: 'google' | 'faceb
             }
         }
 
+        // Ilk giris bayragi: bu girisin degeri cevapta doner, sonra kapatilir.
+        const isFirstLogin = user.isFirstLogin;
+        if (isFirstLogin) {
+            await withDbRetry(() => prisma.user.update({
+                where: { id: user!.id },
+                data: { isFirstLogin: false }
+            }), 'user.update.isFirstLogin');
+        }
+
         // 4. Token Üretimi
         const appToken = jwt.sign(
             { id: user.id, email: user.email, role: user.role },
@@ -204,6 +213,7 @@ export const handleSocialAuth = async (req: Request, provider: 'google' | 'faceb
         const appResponse = {
             message: `${provider.charAt(0).toUpperCase() + provider.slice(1)} ile giriş başarılı.`,
             token: appToken,
+            is_first_login: isFirstLogin,
             user: {
                 id: user.id,
                 username: user.username,

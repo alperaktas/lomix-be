@@ -71,6 +71,15 @@ export async function POST(req: Request) {
             { expiresIn: '30d' }
         );
 
+        // Ilk giris bayragi: cevapta bu girisin degeri doner, sonra kapatilir.
+        const isFirstLogin = user.isFirstLogin;
+        if (isFirstLogin) {
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { isFirstLogin: false }
+            });
+        }
+
         // User Log
         await prisma.userLog.create({
             data: {
@@ -86,6 +95,7 @@ export async function POST(req: Request) {
 
         return ApiResponseHelper.success({
             token: token,
+            is_first_login: isFirstLogin,
             user: {
                 id: user.id,
                 username: user.username,

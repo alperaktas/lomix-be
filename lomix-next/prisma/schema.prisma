@@ -41,6 +41,7 @@ model User {
   anBanned              Boolean              @default(false) @map("an_banned")
   isBroadcaster         Boolean              @default(false) @map("is_broadcaster")
   broadcasterApprovedAt DateTime?            @map("broadcaster_approved_at")
+  isFirstLogin          Boolean              @default(true) @map("is_first_login")
   description           String?
   country               String?
   birthDate             DateTime?            @map("birth_date")
