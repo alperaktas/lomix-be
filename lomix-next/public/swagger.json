@@ -950,7 +950,20 @@
                     "type": "string"
                   },
                   "image_url": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Geriye dönük uyumluluk için ayrı tutulur, resim mesajlarında kullanılmaya devam eder."
+                  },
+                  "file_url": {
+                    "type": "string",
+                    "description": "Ses veya diğer dosya tipleri için (önce /api/mobile/upload ile yüklenir). file_type ile birlikte gönderilir."
+                  },
+                  "file_type": {
+                    "type": "string",
+                    "enum": [
+                      "audio",
+                      "file"
+                    ],
+                    "description": "file_url gönderiliyorsa zorunlu."
                   },
                   "kind": {
                     "type": "string",
@@ -3783,7 +3796,8 @@
                 "properties": {
                   "file": {
                     "type": "string",
-                    "format": "binary"
+                    "format": "binary",
+                    "description": "Resim (jpeg/png/gif/webp), video (mp4), ses (mp3/m4a/aac/wav/ogg/webm/3gpp) veya pdf."
                   }
                 }
               }

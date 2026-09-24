@@ -20,6 +20,7 @@ import { getCurrentUserId } from '@/lib/current-user';
  *               file:
  *                 type: string
  *                 format: binary
+ *                 description: Resim (jpeg/png/gif/webp), video (mp4), ses (mp3/m4a/aac/wav/ogg/webm/3gpp) veya pdf.
  *     responses:
  *       200:
  *         description: Dosya başarıyla yüklendi
@@ -40,7 +41,11 @@ export async function POST(request: Request) {
             return NextResponse.json({ status: false, message: "Dosya bulunamadı." }, { status: 400 });
         }
 
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4'];
+        const allowedTypes = [
+            'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4',
+            'audio/mpeg', 'audio/mp4', 'audio/x-m4a', 'audio/aac', 'audio/wav', 'audio/ogg', 'audio/webm', 'audio/3gpp',
+            'application/pdf',
+        ];
         if (!allowedTypes.includes(file.type)) {
             return NextResponse.json({ status: false, message: "Desteklenmeyen dosya türü." }, { status: 400 });
         }

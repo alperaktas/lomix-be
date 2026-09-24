@@ -45,6 +45,8 @@ export async function GET(request: Request) {
                 id: m.id,
                 text: m.text,
                 imageUrl: m.imageUrl,
+                fileUrl: m.fileUrl,
+                fileType: m.fileType,
                 isRead: m.isRead,
                 createdAt: m.createdAt,
                 from: m.from,

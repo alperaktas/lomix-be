@@ -61,9 +61,10 @@ export async function GET(request: Request) {
         return ApiResponseHelper.success(
             messages.map(m => ({
                 id: String(m.id),
-                type: m.giftId ? 'gift' : m.imageUrl ? 'image' : 'text',
+                type: m.giftId ? 'gift' : m.fileType ? m.fileType : m.imageUrl ? 'image' : 'text',
                 text: m.text,
                 imageUrl: m.imageUrl,
+                fileUrl: m.fileUrl,
                 gift: m.gift ? {
                     id: m.gift.id,
                     name: m.gift.name,

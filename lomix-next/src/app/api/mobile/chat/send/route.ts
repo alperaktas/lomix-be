@@ -36,6 +36,14 @@ import { decideBilling, refundExpiredEscrows, releaseEscrowsOnReply } from '@/li
  *                 type: string
  *               image_url:
  *                 type: string
+ *                 description: Geriye dönük uyumluluk için ayrı tutulur, resim mesajlarında kullanılmaya devam eder.
+ *               file_url:
+ *                 type: string
+ *                 description: Ses veya diğer dosya tipleri için (önce /api/mobile/upload ile yüklenir). file_type ile birlikte gönderilir.
+ *               file_type:
+ *                 type: string
+ *                 enum: [audio, file]
+ *                 description: file_url gönderiliyorsa zorunlu.
  *               kind:
  *                 type: string
  *                 enum: [user, hi, auto]
@@ -57,9 +65,14 @@ export async function POST(request: Request) {
         const userId = await getCurrentUserId(request);
         if (!userId) return ApiResponseHelper.error("Yetkisiz erişim.", 401);
 
-        const { user_id, text, image_url, kind } = await request.json();
+        const { user_id, text, image_url, file_url, file_type, kind } = await request.json();
         if (!user_id) return ApiResponseHelper.error("user_id zorunludur.", 400);
-        if (!text?.trim() && !image_url) return ApiResponseHelper.error("text veya image_url zorunludur.", 400);
+        if (!text?.trim() && !image_url && !file_url) {
+            return ApiResponseHelper.error("text, image_url veya file_url zorunludur.", 400);
+        }
+        if (file_url && !['audio', 'file'].includes(file_type)) {
+            return ApiResponseHelper.error("file_url gönderiliyorsa file_type 'audio' veya 'file' olmalıdır.", 400);
+        }
 
         const toId = Number(user_id);
         if (isNaN(toId)) return ApiResponseHelper.error("Geçersiz user_id.", 400);
@@ -114,6 +127,8 @@ export async function POST(request: Request) {
                 toId,
                 text: text?.trim() || null,
                 imageUrl: image_url || null,
+                fileUrl: file_url || null,
+                fileType: file_url ? file_type : null,
                 kind: messageKind,
             },
         });

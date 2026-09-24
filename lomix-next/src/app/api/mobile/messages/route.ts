@@ -3,6 +3,16 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { formatDmTime } from '@/lib/dm-time';
 
+function previewText(message: { text: string | null; imageUrl: string | null; fileType: string | null; gift: { name: string } | null } | null): string {
+    if (!message) return '';
+    if (message.text) return message.text;
+    if (message.gift) return `🎁 ${message.gift.name}`;
+    if (message.fileType === 'audio') return '🎤 Sesli mesaj';
+    if (message.fileType === 'file') return '📎 Dosya';
+    if (message.imageUrl) return '📷 Fotoğraf';
+    return '';
+}
+
 /**
  * @swagger
  * /api/mobile/messages:
@@ -63,8 +73,8 @@ export async function GET(request: Request) {
                 user_name: conv.otherUser.fullName || conv.otherUser.username,
                 user_avatar: conv.otherUser.avatar || '',
                 user_level: conv.otherUser.level,
-                last_message: lastMessage?.text || (lastMessage?.gift ? `🎁 ${lastMessage.gift.name}` : lastMessage?.imageUrl ? '📷 Fotoğraf' : ''),
-                message: lastMessage?.text || (lastMessage?.gift ? `🎁 ${lastMessage.gift.name}` : lastMessage?.imageUrl ? '📷 Fotoğraf' : ''),
+                last_message: previewText(lastMessage),
+                message: previewText(lastMessage),
                 time: lastMessage ? formatDmTime(lastMessage.createdAt) : '',
                 new_message_count: unreadCount,
                 last_message_tik_no: tikNo,
