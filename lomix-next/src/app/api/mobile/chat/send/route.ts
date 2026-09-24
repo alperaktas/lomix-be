@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { getSetting } from '@/lib/app-settings';
 import { decideBilling, refundExpiredEscrows, releaseEscrowsOnReply } from '@/lib/message-billing';
+import { uploadChatMedia } from '@/lib/chat-media';
 
 /**
  * @swagger
@@ -19,6 +20,12 @@ import { decideBilling, refundExpiredEscrows, releaseEscrowsOnReply } from '@/li
  *         `message_escrow_timeout_hours` içinde cevap gelmezse coin gönderene iade edilir.
  *       - Cevap gelmeden art arda en fazla `max_unanswered_messages` mesaj gönderilebilir.
  *       Yanıttaki `billing` alanı ne olduğunu söyler (`charged`, `free`, `escrow_held`).
+ *
+ *       İki gönderim şekli desteklenir:
+ *       - `application/json`: `image_url`/`file_url` önceden `/api/mobile/upload` ile yüklenmiş bir URL taşır.
+ *       - `multipart/form-data`: dosya doğrudan `file` alanında gönderilir, endpoint kendi yükler
+ *         (resimse `image_url`'e, ses/diğerse `file_url`+`file_type`'a otomatik atanır — `file_type`
+ *         alanı gönderilmezse MIME türünden çıkarılır).
  *     tags: [Mobile Chat]
  *     security:
  *       - bearerAuth: []
@@ -48,6 +55,26 @@ import { decideBilling, refundExpiredEscrows, releaseEscrowsOnReply } from '@/li
  *                 type: string
  *                 enum: [user, hi, auto]
  *                 description: 'Varsayılan user. hi/auto yalnızca yayıncılar için, günlük ücretsiz haktan düşer.'
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [user_id]
+ *             properties:
+ *               user_id:
+ *                 type: integer
+ *               text:
+ *                 type: string
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: Resim, ses (mp3/m4a/aac/wav/ogg/webm/3gpp) veya pdf. Sunucu yükleyip URL'i mesaja bağlar.
+ *               file_type:
+ *                 type: string
+ *                 enum: [audio, file]
+ *                 description: Opsiyonel, verilmezse dosyanın MIME türünden çıkarılır.
+ *               kind:
+ *                 type: string
+ *                 enum: [user, hi, auto]
  *     responses:
  *       200:
  *         description: Mesaj gönderildi
@@ -65,12 +92,46 @@ export async function POST(request: Request) {
         const userId = await getCurrentUserId(request);
         if (!userId) return ApiResponseHelper.error("Yetkisiz erişim.", 401);
 
-        const { user_id, text, image_url, file_url, file_type, kind } = await request.json();
+        let user_id: any, text: string | null, image_url: string | null, file_url: string | null, file_type: string | null, kind: string | null;
+
+        const contentType = request.headers.get('content-type') || '';
+        if (contentType.includes('multipart/form-data')) {
+            const formData = await request.formData();
+            user_id = formData.get('user_id');
+            text = (formData.get('text') as string | null) || null;
+            image_url = (formData.get('image_url') as string | null) || null;
+            file_url = (formData.get('file_url') as string | null) || null;
+            file_type = (formData.get('file_type') as string | null) || null;
+            kind = (formData.get('kind') as string | null) || null;
+
+            const file = formData.get('file');
+            if (file && typeof file !== 'string') {
+                const uploaded = await uploadChatMedia(file);
+                if (!uploaded.ok) return ApiResponseHelper.error(uploaded.message, 400);
+                if (uploaded.type.startsWith('image/')) {
+                    image_url = uploaded.url;
+                } else {
+                    file_url = uploaded.url;
+                    if (!['audio', 'file'].includes(file_type || '')) {
+                        file_type = uploaded.type.startsWith('audio/') ? 'audio' : 'file';
+                    }
+                }
+            }
+        } else {
+            const body = await request.json();
+            user_id = body.user_id;
+            text = body.text ?? null;
+            image_url = body.image_url ?? null;
+            file_url = body.file_url ?? null;
+            file_type = body.file_type ?? null;
+            kind = body.kind ?? null;
+        }
+
         if (!user_id) return ApiResponseHelper.error("user_id zorunludur.", 400);
         if (!text?.trim() && !image_url && !file_url) {
-            return ApiResponseHelper.error("text, image_url veya file_url zorunludur.", 400);
+            return ApiResponseHelper.error("text, image_url veya file_url (ya da dosya) zorunludur.", 400);
         }
-        if (file_url && !['audio', 'file'].includes(file_type)) {
+        if (file_url && !['audio', 'file'].includes(file_type || '')) {
             return ApiResponseHelper.error("file_url gönderiliyorsa file_type 'audio' veya 'file' olmalıdır.", 400);
         }
 

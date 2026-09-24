@@ -924,7 +924,7 @@
     "/api/mobile/chat/send": {
       "post": {
         "summary": "Direkt Mesaj Gönder",
-        "description": "Mesaj ücretlendirmesi burada işler:\n- Arkadaşlar (karşılıklı takip) arasında ücret alınmaz (`friend_message_free` ayarı ile kapatılabilir).\n- Yayıncının `hi` / `auto` mesajları günlük hak (`broadcaster_free_daily_messages`) dahilinde ücretsizdir.\n- Karşı taraf sohbete daha önce cevap yazmışsa yayıncı ücretsiz yazar.\n- Diğer durumlarda gönderenden `message_price` kadar coin düşer. Alıcı yayıncıysa coin\n  havuzda bekler (`message_escrows`); yayıncı cevap yazınca komisyon düşülerek elmasa çevrilir,\n  `message_escrow_timeout_hours` içinde cevap gelmezse coin gönderene iade edilir.\n- Cevap gelmeden art arda en fazla `max_unanswered_messages` mesaj gönderilebilir.\nYanıttaki `billing` alanı ne olduğunu söyler (`charged`, `free`, `escrow_held`).\n",
+        "description": "Mesaj ücretlendirmesi burada işler:\n- Arkadaşlar (karşılıklı takip) arasında ücret alınmaz (`friend_message_free` ayarı ile kapatılabilir).\n- Yayıncının `hi` / `auto` mesajları günlük hak (`broadcaster_free_daily_messages`) dahilinde ücretsizdir.\n- Karşı taraf sohbete daha önce cevap yazmışsa yayıncı ücretsiz yazar.\n- Diğer durumlarda gönderenden `message_price` kadar coin düşer. Alıcı yayıncıysa coin\n  havuzda bekler (`message_escrows`); yayıncı cevap yazınca komisyon düşülerek elmasa çevrilir,\n  `message_escrow_timeout_hours` içinde cevap gelmezse coin gönderene iade edilir.\n- Cevap gelmeden art arda en fazla `max_unanswered_messages` mesaj gönderilebilir.\nYanıttaki `billing` alanı ne olduğunu söyler (`charged`, `free`, `escrow_held`).\n\nİki gönderim şekli desteklenir:\n- `application/json`: `image_url`/`file_url` önceden `/api/mobile/upload` ile yüklenmiş bir URL taşır.\n- `multipart/form-data`: dosya doğrudan `file` alanında gönderilir, endpoint kendi yükler\n  (resimse `image_url`'e, ses/diğerse `file_url`+`file_type`'a otomatik atanır — `file_type`\n  alanı gönderilmezse MIME türünden çıkarılır).\n",
         "tags": [
           "Mobile Chat"
         ],
@@ -973,6 +973,43 @@
                       "auto"
                     ],
                     "description": "Varsayılan user. hi/auto yalnızca yayıncılar için, günlük ücretsiz haktan düşer."
+                  }
+                }
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "integer"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Resim, ses (mp3/m4a/aac/wav/ogg/webm/3gpp) veya pdf. Sunucu yükleyip URL'i mesaja bağlar."
+                  },
+                  "file_type": {
+                    "type": "string",
+                    "enum": [
+                      "audio",
+                      "file"
+                    ],
+                    "description": "Opsiyonel, verilmezse dosyanın MIME türünden çıkarılır."
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "user",
+                      "hi",
+                      "auto"
+                    ]
                   }
                 }
               }
