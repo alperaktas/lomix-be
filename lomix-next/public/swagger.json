@@ -891,6 +891,42 @@
             "description": "Bilgiler başarıyla getirildi"
           }
         }
+      },
+      "post": {
+        "summary": "Profil Bilgilerim / Bir Kullanıcının Profili",
+        "description": "`user_id` gönderilmezse token'daki kullanıcının kendi profili döner.\n`user_id` gönderilirse o kullanıcının profili döner; bu durumda `user_info` içindeki\n`takip` (token'daki kullanıcı bu kişiyi takip ediyor mu) ve `arkadas` (karşılıklı takip)\nalanları isteği yapan kullanıcıya göre hesaplanır.\n",
+        "tags": [
+          "Mobile Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user_id": {
+                    "type": "integer",
+                    "description": "Opsiyonel. Verilmezse kendi profili döner."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bilgiler başarıyla getirildi"
+          },
+          "404": {
+            "description": "Kullanıcı bulunamadı"
+          }
+        }
       }
     },
     "/api/mobile/chat/messages": {
@@ -3674,7 +3710,7 @@
                   },
                   "duration_hours": {
                     "type": "integer",
-                    "description": "Hikaye süresi (saat). Varsayılan: 24"
+                    "description": "Hikaye süresi (saat). Varsayılan: 24. 'duration' alan adı da kabul edilir."
                   }
                 }
               }
@@ -3697,6 +3733,7 @@
     "/api/mobile/stories/users": {
       "get": {
         "summary": "Aktif hikayesi olan kullanıcıları getirir (story bar)",
+        "description": "Her girdi `user_id` ve o kullanıcının süresi dolmamış tüm hikayelerini\n(`stories[]`: story_id, media_url, duration_hours, created_at, expires_at) taşır.\nBir hikayeyi açtıktan sonra görüntüleme kaydı için `/api/mobile/stories/view`'a\nilgili `user_id` (ve istenirse `story_id`) gönderilmelidir.\n",
         "tags": [
           "Mobile Stories"
         ],

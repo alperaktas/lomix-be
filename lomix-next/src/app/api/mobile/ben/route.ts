@@ -2,6 +2,7 @@ import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { getZodiac } from '@/lib/dm-time';
+import { followingIdSet, friendIdSet } from '@/lib/profile-lists';
 
 /**
  * @swagger
@@ -14,9 +15,34 @@ import { getZodiac } from '@/lib/dm-time';
  *     responses:
  *       200:
  *         description: Bilgiler başarıyla getirildi
+ *   post:
+ *     summary: Profil Bilgilerim / Bir Kullanıcının Profili
+ *     description: |
+ *       `user_id` gönderilmezse token'daki kullanıcının kendi profili döner.
+ *       `user_id` gönderilirse o kullanıcının profili döner; bu durumda `user_info` içindeki
+ *       `takip` (token'daki kullanıcı bu kişiyi takip ediyor mu) ve `arkadas` (karşılıklı takip)
+ *       alanları isteği yapan kullanıcıya göre hesaplanır.
+ *     tags: [Mobile Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               user_id:
+ *                 type: integer
+ *                 description: Opsiyonel. Verilmezse kendi profili döner.
+ *     responses:
+ *       200:
+ *         description: Bilgiler başarıyla getirildi
+ *       404:
+ *         description: Kullanıcı bulunamadı
  */
-async function getUserProfile(targetUserId: number, request: Request) {
-    const [user, photos] = await Promise.all([
+async function getUserProfile(targetUserId: number, viewerId: number, request: Request) {
+    const [user, photos, followingSet, friendSet] = await Promise.all([
         prisma.user.findUnique({
             where: { id: targetUserId },
             include: {
@@ -47,6 +73,8 @@ async function getUserProfile(targetUserId: number, request: Request) {
             orderBy: { order: 'asc' },
             select: { id: true, url: true, order: true },
         }),
+        followingIdSet(viewerId, [targetUserId]),
+        friendIdSet(viewerId, [targetUserId]),
     ]);
 
     if (!user) return ApiResponseHelper.error("Kullanıcı bulunamadı.", 404);
@@ -67,6 +95,8 @@ async function getUserProfile(targetUserId: number, request: Request) {
             join_date: user.createdAt.toISOString().split('T')[0],
             level: user.level,
             is_vip: user.isVip,
+            takip: followingSet.has(targetUserId),
+            arkadas: friendSet.has(targetUserId),
             avatar_history: user.avatarHistory.map(h => ({
                 id: h.id,
                 image_url: h.imageUrl,
@@ -104,7 +134,7 @@ export async function GET(request: Request) {
     try {
         const userId = await getCurrentUserId(request);
         if (!userId) return ApiResponseHelper.error("Yetkisiz erişim.", 401);
-        return await getUserProfile(userId, request);
+        return await getUserProfile(userId, userId, request);
     } catch (error: any) {
         return ApiResponseHelper.error(error.message, 500);
     }
@@ -118,7 +148,7 @@ export async function POST(request: Request) {
         const body = await request.json().catch(() => ({}));
         const targetUserId = body.user_id ? Number(body.user_id) : authUserId;
 
-        return await getUserProfile(targetUserId, request);
+        return await getUserProfile(targetUserId, authUserId, request);
     } catch (error: any) {
         return ApiResponseHelper.error(error.message, 500);
     }

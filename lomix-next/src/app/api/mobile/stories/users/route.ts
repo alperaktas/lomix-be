@@ -7,6 +7,11 @@ import prisma from '@/lib/prisma';
  * /api/mobile/stories/users:
  *   get:
  *     summary: Aktif hikayesi olan kullanıcıları getirir (story bar)
+ *     description: |
+ *       Her girdi `user_id` ve o kullanıcının süresi dolmamış tüm hikayelerini
+ *       (`stories[]`: story_id, media_url, duration_hours, created_at, expires_at) taşır.
+ *       Bir hikayeyi açtıktan sonra görüntüleme kaydı için `/api/mobile/stories/view`'a
+ *       ilgili `user_id` (ve istenirse `story_id`) gönderilmelidir.
  *     tags: [Mobile Stories]
  *     security:
  *       - bearerAuth: []
@@ -19,12 +24,11 @@ export async function GET(request: Request) {
         // Süresi dolmamış hikayeleri olan kullanıcıları al
         const now = new Date();
 
-        // Distinct userId ile hikayeleri al
         const activeStories = await prisma.story.findMany({
             where: {
                 expiresAt: { gt: now }
             },
-            distinct: ['userId'],
+            orderBy: { createdAt: 'desc' },
             include: {
                 user: {
                     select: {
@@ -36,16 +40,32 @@ export async function GET(request: Request) {
             }
         });
 
-        const usersData = activeStories.map(story => {
-            const user = story.user;
+        // Kullaniciya gore grupla: her kullanicinin tum aktif hikayelerini tek girdide topla.
+        const byUser = new Map<number, typeof activeStories>();
+        for (const story of activeStories) {
+            const list = byUser.get(story.userId);
+            if (list) list.push(story);
+            else byUser.set(story.userId, [story]);
+        }
+
+        const usersData = Array.from(byUser.values()).map(stories => {
+            const user = stories[0].user;
             const nameParts = (user?.fullName || user?.username || "").trim().split(" ");
             const first_name = nameParts[0] || "";
             const last_name = nameParts.slice(1).join(" ") || "";
 
             return {
+                user_id: String(stories[0].userId),
                 first_name,
                 last_name,
-                image_url: user?.avatar || null
+                image_url: user?.avatar || null,
+                stories: stories.map(s => ({
+                    story_id: String(s.id),
+                    media_url: s.mediaUrl,
+                    duration_hours: s.durationHours,
+                    created_at: s.createdAt.toISOString(),
+                    expires_at: s.expiresAt.toISOString(),
+                })),
             };
         });
 

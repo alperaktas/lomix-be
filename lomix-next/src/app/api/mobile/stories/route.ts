@@ -23,7 +23,7 @@ import { put } from '@vercel/blob';
  *                 format: binary
  *               duration_hours:
  *                 type: integer
- *                 description: 'Hikaye süresi (saat). Varsayılan: 24'
+ *                 description: "Hikaye süresi (saat). Varsayılan: 24. 'duration' alan adı da kabul edilir."
  *     responses:
  *       201:
  *         description: Hikaye başarıyla eklendi.
@@ -65,7 +65,9 @@ export async function POST(request: Request) {
 
         const formData = await request.formData();
         const file = formData.get('media_file') as File | null;
-        const durationHours = parseInt(formData.get('duration_hours') as string || '24', 10);
+        // Mobil bazen 'duration' gonderiyor, bazen 'duration_hours' — ikisini de kabul et.
+        const durationRaw = (formData.get('duration_hours') ?? formData.get('duration')) as string | null;
+        const durationHours = parseInt(durationRaw || '24', 10);
 
         if (!file || typeof file === 'string') {
             return ApiResponseHelper.error("media_file zorunludur.", 400);
