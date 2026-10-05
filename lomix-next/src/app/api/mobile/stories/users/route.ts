@@ -1,5 +1,6 @@
 import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
+import { storyThumbnail } from '@/lib/story-media';
 
 
 /**
@@ -9,7 +10,9 @@ import prisma from '@/lib/prisma';
  *     summary: Aktif hikayesi olan kullanıcıları getirir (story bar)
  *     description: |
  *       Her girdi `user_id` ve o kullanıcının süresi dolmamış tüm hikayelerini
- *       (`stories[]`: story_id, media_url, duration_hours, created_at, expires_at) taşır.
+ *       (`stories[]`: story_id, media_url, thumbnail_url, duration_hours, created_at, expires_at) taşır.
+ *       `image_url` story bar önizlemesidir: en yeni hikayenin görseli (video ise yüklenen thumbnail),
+ *       yoksa profil avatarı. Profil avatarı her zaman `avatar_url` alanındadır.
  *       Bir hikayeyi açtıktan sonra görüntüleme kaydı için `/api/mobile/stories/view`'a
  *       ilgili `user_id` (ve istenirse `story_id`) gönderilmelidir.
  *     tags: [Mobile Stories]
@@ -58,10 +61,14 @@ export async function GET(request: Request) {
                 user_id: String(stories[0].userId),
                 first_name,
                 last_name,
-                image_url: user?.avatar || null,
+                // Story bar önizlemesi: en yeni hikayenin görseli (video ise thumbnail),
+                // yoksa profil avatarına düşer.
+                image_url: storyThumbnail(stories[0]) || user?.avatar || null,
+                avatar_url: user?.avatar || null,
                 stories: stories.map(s => ({
                     story_id: String(s.id),
                     media_url: s.mediaUrl,
+                    thumbnail_url: storyThumbnail(s),
                     duration_hours: s.durationHours,
                     created_at: s.createdAt.toISOString(),
                     expires_at: s.expiresAt.toISOString(),

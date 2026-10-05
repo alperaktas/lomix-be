@@ -79,6 +79,7 @@ export async function GET(request: Request) {
                 new_message_count: unreadCount,
                 last_message_tik_no: tikNo,
                 is_pinned: conv.isPinned,
+                is_muted: conv.isMuted,
             };
         }));
 

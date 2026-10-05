@@ -1522,6 +1522,51 @@
         }
       }
     },
+    "/api/mobile/messages/mute": {
+      "post": {
+        "summary": "Sohbet Bildirimlerini Sessize Al / Sesi Aç",
+        "description": "`muted` gönderilirse o değer yazılır (idempotent). Gönderilmezse mevcut durumun tersine\nçevrilir (pin ile aynı toggle davranışı). Durum sohbet listesinde `is_muted` olarak döner.\n",
+        "tags": [
+          "Mobile Chat"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "integer",
+                    "description": "Sohbetin karşı tarafındaki kullanıcı"
+                  },
+                  "muted": {
+                    "type": "boolean",
+                    "description": "Opsiyonel. Verilmezse toggle."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sessize alma durumu güncellendi"
+          },
+          "404": {
+            "description": "Kullanıcı bulunamadı"
+          }
+        }
+      }
+    },
     "/api/mobile/messages/pin": {
       "post": {
         "summary": "Mesaj Kutusunu Sabitle / Sabitlemeden Kaldır",
@@ -3708,6 +3753,11 @@
                     "type": "string",
                     "format": "binary"
                   },
+                  "thumbnail_file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Opsiyonel önizleme (jpeg/png/webp, 5MB). Video hikayelerde ilk kare için gönderilmeli; resim hikayelerde gerekmez, medyanın kendisi kullanılır."
+                  },
                   "duration_hours": {
                     "type": "integer",
                     "description": "Hikaye süresi (saat). Varsayılan: 24. 'duration' alan adı da kabul edilir."
@@ -3733,7 +3783,7 @@
     "/api/mobile/stories/users": {
       "get": {
         "summary": "Aktif hikayesi olan kullanıcıları getirir (story bar)",
-        "description": "Her girdi `user_id` ve o kullanıcının süresi dolmamış tüm hikayelerini\n(`stories[]`: story_id, media_url, duration_hours, created_at, expires_at) taşır.\nBir hikayeyi açtıktan sonra görüntüleme kaydı için `/api/mobile/stories/view`'a\nilgili `user_id` (ve istenirse `story_id`) gönderilmelidir.\n",
+        "description": "Her girdi `user_id` ve o kullanıcının süresi dolmamış tüm hikayelerini\n(`stories[]`: story_id, media_url, thumbnail_url, duration_hours, created_at, expires_at) taşır.\n`image_url` story bar önizlemesidir: en yeni hikayenin görseli (video ise yüklenen thumbnail),\nyoksa profil avatarı. Profil avatarı her zaman `avatar_url` alanındadır.\nBir hikayeyi açtıktan sonra görüntüleme kaydı için `/api/mobile/stories/view`'a\nilgili `user_id` (ve istenirse `story_id`) gönderilmelidir.\n",
         "tags": [
           "Mobile Stories"
         ],
