@@ -31,7 +31,7 @@ import { logRoomEvent } from '@/lib/room-log';
  *       200:
  *         description: Odaya başarıyla katıldınız
  *       403:
- *         description: Seviye yetersiz, oda şifresi hatalı veya oda aktif değil
+ *         description: Oda şifresi hatalı veya oda aktif değil (oda seviyesi giriş engeli değildir)
  *       404:
  *         description: Oda bulunamadı
  */
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
 
         const room = await prisma.room.findUnique({
             where: { roomId: String(roomId) },
-            select: { id: true, roomId: true, name: true, isLive: true, isClosed: true, minLevel: true, ownerId: true, memberOnlyMic: true, agoraChatRoomId: true, isLocked: true, password: true },
+            select: { id: true, roomId: true, name: true, isLive: true, isClosed: true, ownerId: true, memberOnlyMic: true, agoraChatRoomId: true, isLocked: true, password: true },
         });
 
         if (!room) {
@@ -70,12 +70,8 @@ export async function POST(request: Request) {
 
         const user = await prisma.user.findUnique({
             where: { id: userId },
-            select: { level: true, username: true, fullName: true, avatar: true },
+            select: { username: true, fullName: true, avatar: true },
         });
-
-        if (user && user.level < room.minLevel) {
-            return NextResponse.json({ status: false, message: `Bu odaya katılmak için minimum seviye ${room.minLevel} gerekiyor` }, { status: 403 });
-        }
 
         // Katılımcıyı kaydet (zaten varsa güncelleme yapma)
         await prisma.roomParticipant.upsert({

@@ -2572,7 +2572,7 @@
             "description": "Odaya başarıyla katıldınız"
           },
           "403": {
-            "description": "Seviye yetersiz, oda şifresi hatalı veya oda aktif değil"
+            "description": "Oda şifresi hatalı veya oda aktif değil (oda seviyesi giriş engeli değildir)"
           },
           "404": {
             "description": "Oda bulunamadı"
