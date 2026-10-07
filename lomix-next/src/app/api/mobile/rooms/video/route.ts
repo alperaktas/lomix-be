@@ -34,7 +34,7 @@ export async function GET() {
             id: room.roomId,
             name: room.name,
             thumbnail_url: room.thumbnailUrl || "https://picsum.photos/400/200",
-            min_level: room.minLevel || 1,
+            min_level: room.minLevel ?? 0,
             type: room.type,
             tags: room.tags.map(tag => ({
                 text: tag.text,

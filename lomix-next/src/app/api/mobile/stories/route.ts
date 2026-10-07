@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { put } from '@vercel/blob';
 import { storyThumbnail } from '@/lib/story-media';
+import { spendOp, syncLevel, levelUpField } from '@/lib/level';
 
 /**
  * @swagger
@@ -144,7 +145,10 @@ export async function POST(request: Request) {
                 where: { userId },
                 data: { balance: { decrement: cost } },
             }),
+            spendOp(userId, cost),
         ]);
+
+        const levelResult = await syncLevel(userId);
 
         return ApiResponseHelper.success({
             story_id: newStory.id,
@@ -154,6 +158,7 @@ export async function POST(request: Request) {
             created_at: newStory.createdAt,
             cost_paid: cost,
             remaining_balance: balance - cost,
+            ...levelUpField(levelResult),
         }, "Hikaye başarıyla eklendi.", 201);
     } catch (error: any) {
         return ApiResponseHelper.error(error.message || "Hikaye eklenemedi.", 400);

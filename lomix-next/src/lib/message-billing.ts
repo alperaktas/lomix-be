@@ -1,6 +1,7 @@
 import prisma from '@/lib/prisma';
 import { getSetting } from '@/lib/app-settings';
 import { orderedFriendPair } from '@/lib/profile-lists';
+import { spendOp, syncLevel } from '@/lib/level';
 
 /**
  * Mesajlasma ucreti ve havuz (escrow) mantigi.
@@ -51,7 +52,14 @@ export async function refundExpiredEscrows(scope?: { payerId?: number; receiverI
                 where: { id: escrow.id },
                 data: { status: 'refunded', resolvedAt: new Date() },
             }),
+            // Iade edilen coin harcama sayilmaz.
+            spendOp(escrow.payerId, -escrow.coinAmount),
         ]);
+    }
+
+    // Sayac oncesi harcamalarin iadesi sayaci eksiye dusurebilir; syncLevel 0'a ceker.
+    for (const payerId of new Set(expired.map(e => e.payerId))) {
+        await syncLevel(payerId);
     }
 
     return expired.length;

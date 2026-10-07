@@ -17,6 +17,7 @@ import {
   Gift,
   Smile,
   FlaskConical,
+  Bell,
 } from "lucide-react"
 
 import {
@@ -122,11 +123,17 @@ const data = {
       icon: MessageSquare,
     },
     {
+      title: "Bildirimler",
+      url: "/dashboard/notifications",
+      icon: Bell,
+    },
+    {
       title: "Ayarlar",
       url: "#",
       icon: Settings,
       children: [
         { title: "Genel", url: "/dashboard/settings" },
+        { title: "Seviyeler", url: "/dashboard/settings/levels" },
         { title: "Hikaye Fiyatları", url: "/dashboard/settings/story-prices" },
         { title: "Komisyon & Fiyatlar", url: "/dashboard/settings/commissions" },
         { title: "Coin Paketleri", url: "/dashboard/settings/coin-packages" },

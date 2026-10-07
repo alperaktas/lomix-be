@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { getSetting } from '@/lib/app-settings';
+import { spendOp, syncLevel, levelUpField } from '@/lib/level';
 
 /**
  * @swagger
@@ -96,12 +97,16 @@ export async function POST(request: Request) {
                     diamondAmount,
                 },
             }),
+            spendOp(userId, totalCost),
         ]);
+
+        const levelResult = await syncLevel(userId);
 
         return NextResponse.json({
             status: true,
             message: 'Hediye gönderildi',
             data: {
+                ...levelUpField(levelResult),
                 remaining_balance: currentBalance - totalCost,
                 rtm_event: {
                     type: 'GIFT_SENT',

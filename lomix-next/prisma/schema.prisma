@@ -28,7 +28,8 @@ model User {
   fullName              String?              @map("full_name")
   isVerified            Boolean              @default(false) @map("is_verified")
   isVip                 Boolean              @default(false) @map("is_vip")
-  level                 Int                  @default(1)
+  level                 Int                  @default(0)
+  totalSpent            Int                  @default(0) @map("total_spent")
   prestigePoints        Int                  @default(0) @map("prestige_points")
   banReason             String?              @map("ban_reason")
   bannedDeviceId        String?              @map("banned_device_id")
@@ -94,6 +95,8 @@ model User {
   receivedGiftLogs      GiftLog[]            @relation("GiftReceiver")
   diamondTransactions   DiamondTransaction[]
   coinPurchases         CoinPurchase[]
+  notificationReads     NotificationRead[]
+  notificationsTargeted Notification[]        @relation("NotificationTarget")
   storyViews            StoryView[]          @relation("StoryViewer")
   escrowsPaid           MessageEscrow[]      @relation("EscrowPayer")
   escrowsReceived       MessageEscrow[]      @relation("EscrowReceiver")
@@ -231,7 +234,7 @@ model Room {
   micCount          Int                 @default(8) @map("mic_count")
   mode              String              @default("pk")
   type              String              @default("voice")
-  minLevel          Int                 @default(1) @map("min_level")
+  minLevel          Int                 @default(0) @map("min_level")
   description       String?
   thumbnailUrl      String?             @map("thumbnail_url")
   viewerCount       Int                 @default(0) @map("viewer_count")
@@ -336,6 +339,7 @@ model Agency {
   owner       User           @relation("AgencyOwner", fields: [ownerId], references: [id])
   invites     AgencyInvite[]
   members     AgencyMember[]
+  notifications Notification[]
 
   @@map("agencies")
 }
@@ -919,4 +923,47 @@ model MessageEscrow {
   @@index([receiverId, payerId, status])
   @@index([status, expiresAt])
   @@map("message_escrows")
+}
+
+
+model LevelThreshold {
+  id            Int      @id @default(autoincrement())
+  level         Int      @unique
+  requiredSpend Int      @map("required_spend")
+  name          String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("level_thresholds")
+}
+
+model Notification {
+  id           Int                @id @default(autoincrement())
+  title        String
+  body         String
+  type         String             @default("system")
+  audience     String
+  agencyId     Int?               @map("agency_id")
+  targetUserId Int?               @map("target_user_id")
+  data         Json?
+  createdBy    Int?               @map("created_by")
+  createdAt    DateTime           @default(now()) @map("created_at")
+  agency       Agency?            @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  targetUser   User?              @relation("NotificationTarget", fields: [targetUserId], references: [id], onDelete: Cascade)
+  reads        NotificationRead[]
+
+  @@index([audience, createdAt])
+  @@index([targetUserId])
+  @@map("notifications")
+}
+
+model NotificationRead {
+  id             Int          @id @default(autoincrement())
+  notificationId Int          @map("notification_id")
+  userId         Int          @map("user_id")
+  readAt         DateTime     @default(now()) @map("read_at")
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([notificationId, userId])
+  @@map("notification_reads")
 }

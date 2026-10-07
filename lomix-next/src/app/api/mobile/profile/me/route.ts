@@ -49,7 +49,7 @@ export async function GET(request: Request) {
                 avatar_url: user.avatar?.trim() || `${new URL(request.url).origin}/img/default-avatar.svg`,
                 is_verified: user.isVerified || false,
                 gender: user.gender || "unknown",
-                level: user.level || 1,
+                level: user.level ?? 0,
                 prestige_points: user.prestigePoints || 0
             },
             stats: {

@@ -1621,6 +1621,100 @@
         }
       }
     },
+    "/api/mobile/notifications/read": {
+      "post": {
+        "summary": "Bildirimi okundu işaretle",
+        "description": "`id` verilirse o bildirim, `all: true` verilirse görünen tüm bildirimler okundu olur (idempotent).",
+        "tags": [
+          "Mobile Notifications"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "integer"
+                  },
+                  "all": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Okundu olarak işaretlendi"
+          },
+          "404": {
+            "description": "Bildirim bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/notifications": {
+      "get": {
+        "summary": "Bildirimlerim (gelen kutusu)",
+        "description": "Kullanıcıya gönderilen genel, yayıncı, ajans ve kişiye özel bildirimleri en yeniden\neskiye listeler. Üyelikten önce gönderilmiş toplu bildirimler gösterilmez.\n`meta.unread_count` toplam okunmamış sayısını verir.\n",
+        "tags": [
+          "Mobile Notifications"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "description": "Varsayılan 20, en fazla 50"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bildirimler getirildi"
+          }
+        }
+      }
+    },
+    "/api/mobile/notifications/unread-count": {
+      "get": {
+        "summary": "Okunmamış bildirim sayısı (rozet için)",
+        "tags": [
+          "Mobile Notifications"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sayı getirildi"
+          }
+        }
+      }
+    },
     "/api/mobile/profile/avatar": {
       "post": {
         "summary": "Profil fotoğrafı yükle (en fazla 4)",

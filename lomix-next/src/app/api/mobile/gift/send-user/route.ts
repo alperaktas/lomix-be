@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { getSetting } from '@/lib/app-settings';
+import { spendOp, syncLevel, levelUpField } from '@/lib/level';
 
 /**
  * @swagger
@@ -110,7 +111,10 @@ export async function POST(request: Request) {
                     text: null,
                 },
             }),
+            spendOp(userId, totalCost),
         ]);
+
+        const levelResult = await syncLevel(userId);
 
         // Ensure conversation exists for both sides
         await Promise.all([
@@ -130,6 +134,7 @@ export async function POST(request: Request) {
             status: true,
             message: 'Hediye gönderildi',
             data: {
+                ...levelUpField(levelResult),
                 message_id: directMessage.id,
                 remaining_balance: currentBalance - totalCost,
                 rtm_event: {

@@ -4,6 +4,7 @@ import { getCurrentUserId } from '@/lib/current-user';
 import { getSetting } from '@/lib/app-settings';
 import { decideBilling, refundExpiredEscrows, releaseEscrowsOnReply } from '@/lib/message-billing';
 import { uploadChatMedia } from '@/lib/chat-media';
+import { spendOp, syncLevel, levelUpField } from '@/lib/level';
 
 /**
  * @swagger
@@ -210,12 +211,18 @@ export async function POST(request: Request) {
                             expiresAt,
                         },
                     }),
+                    spendOp(userId, coinAmount),
                 ]);
                 billing = 'escrow_held';
             } else {
-                await prisma.wallet.update({ where: { userId }, data: { balance: { decrement: coinAmount } } });
+                await prisma.$transaction([
+                    prisma.wallet.update({ where: { userId }, data: { balance: { decrement: coinAmount } } }),
+                    spendOp(userId, coinAmount),
+                ]);
             }
         }
+
+        const levelResult = decision.kind === 'charge' ? await syncLevel(userId) : null;
 
         // Bu mesaj ayni zamanda karsi tarafa verilmis bir cevap: bekleyen havuz varsa elmasa cevrilir.
         const release = await releaseEscrowsOnReply(userId, toId);
@@ -240,6 +247,7 @@ export async function POST(request: Request) {
             escrow_held: decision.kind === 'charge' && decision.escrow,
             earned_diamonds: release.diamonds,
             released_escrows: release.released,
+            ...levelUpField(levelResult),
         }, "Mesaj gönderildi.");
     } catch (error: any) {
         return ApiResponseHelper.error(error.message, 500);
