@@ -7,7 +7,10 @@ import { getCurrentUserId } from '@/lib/current-user';
  * /api/mobile/users/detail:
  *   post:
  *     summary: Kullanıcı Detayı
- *     description: Verilen userId'ye ait kullanıcının profil bilgilerini döner.
+ *     description: |
+ *       Verilen userId'ye ait kullanıcının profil bilgilerini döner. `is_blocked`, token'daki
+ *       kullanıcının bu kişiyi engelleyip engellemediğini söyler (engeli açıp kapatmak için
+ *       `/api/mobile/users/block`).
  *     tags: [Mobile Users]
  *     security:
  *       - bearerAuth: []
@@ -58,6 +61,11 @@ export async function POST(request: Request) {
 
         if (!user) return ApiResponseHelper.error("Kullanıcı bulunamadı.", 404);
 
+        const blockRow = await prisma.userBlock.findUnique({
+            where: { userId_blockedId: { userId: requesterId, blockedId: user.id } },
+            select: { id: true },
+        });
+
         return ApiResponseHelper.success({
             id: String(user.id),
             username: user.username,
@@ -74,6 +82,7 @@ export async function POST(request: Request) {
             birth_date: user.birthDate || null,
             nickname: user.nickname || null,
             created_at: user.createdAt,
+            is_blocked: !!blockRow,
         }, "Kullanıcı bilgileri getirildi.");
     } catch (error: any) {
         return ApiResponseHelper.error(error.message, 500);

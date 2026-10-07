@@ -20,8 +20,9 @@ import { followingIdSet, friendIdSet } from '@/lib/profile-lists';
  *     description: |
  *       `user_id` gönderilmezse token'daki kullanıcının kendi profili döner.
  *       `user_id` gönderilirse o kullanıcının profili döner; bu durumda `user_info` içindeki
- *       `takip` (token'daki kullanıcı bu kişiyi takip ediyor mu) ve `arkadas` (karşılıklı takip)
- *       alanları isteği yapan kullanıcıya göre hesaplanır.
+ *       `takip` (token'daki kullanıcı bu kişiyi takip ediyor mu), `arkadas` (karşılıklı takip) ve
+ *       `engelli` (token'daki kullanıcı bu kişiyi engellemiş mi) alanları isteği yapan kullanıcıya
+ *       göre hesaplanır. Engeli açıp kapatmak için `/api/mobile/users/block` kullanılır.
  *     tags: [Mobile Users]
  *     security:
  *       - bearerAuth: []
@@ -42,7 +43,7 @@ import { followingIdSet, friendIdSet } from '@/lib/profile-lists';
  *         description: Kullanıcı bulunamadı
  */
 async function getUserProfile(targetUserId: number, viewerId: number, request: Request) {
-    const [user, photos, followingSet, friendSet] = await Promise.all([
+    const [user, photos, followingSet, friendSet, blockRow] = await Promise.all([
         prisma.user.findUnique({
             where: { id: targetUserId },
             include: {
@@ -75,6 +76,10 @@ async function getUserProfile(targetUserId: number, viewerId: number, request: R
         }),
         followingIdSet(viewerId, [targetUserId]),
         friendIdSet(viewerId, [targetUserId]),
+        prisma.userBlock.findUnique({
+            where: { userId_blockedId: { userId: viewerId, blockedId: targetUserId } },
+            select: { id: true },
+        }),
     ]);
 
     if (!user) return ApiResponseHelper.error("Kullanıcı bulunamadı.", 404);
@@ -97,6 +102,7 @@ async function getUserProfile(targetUserId: number, viewerId: number, request: R
             is_vip: user.isVip,
             takip: followingSet.has(targetUserId),
             arkadas: friendSet.has(targetUserId),
+            engelli: !!blockRow,
             avatar_history: user.avatarHistory.map(h => ({
                 id: h.id,
                 image_url: h.imageUrl,

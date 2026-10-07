@@ -894,7 +894,7 @@
       },
       "post": {
         "summary": "Profil Bilgilerim / Bir Kullanıcının Profili",
-        "description": "`user_id` gönderilmezse token'daki kullanıcının kendi profili döner.\n`user_id` gönderilirse o kullanıcının profili döner; bu durumda `user_info` içindeki\n`takip` (token'daki kullanıcı bu kişiyi takip ediyor mu) ve `arkadas` (karşılıklı takip)\nalanları isteği yapan kullanıcıya göre hesaplanır.\n",
+        "description": "`user_id` gönderilmezse token'daki kullanıcının kendi profili döner.\n`user_id` gönderilirse o kullanıcının profili döner; bu durumda `user_info` içindeki\n`takip` (token'daki kullanıcı bu kişiyi takip ediyor mu), `arkadas` (karşılıklı takip) ve\n`engelli` (token'daki kullanıcı bu kişiyi engellemiş mi) alanları isteği yapan kullanıcıya\ngöre hesaplanır. Engeli açıp kapatmak için `/api/mobile/users/block` kullanılır.\n",
         "tags": [
           "Mobile Users"
         ],
@@ -4084,7 +4084,7 @@
     "/api/mobile/users/detail": {
       "post": {
         "summary": "Kullanıcı Detayı",
-        "description": "Verilen userId'ye ait kullanıcının profil bilgilerini döner.",
+        "description": "Verilen userId'ye ait kullanıcının profil bilgilerini döner. `is_blocked`, token'daki\nkullanıcının bu kişiyi engelleyip engellemediğini söyler (engeli açıp kapatmak için\n`/api/mobile/users/block`).\n",
         "tags": [
           "Mobile Users"
         ],
