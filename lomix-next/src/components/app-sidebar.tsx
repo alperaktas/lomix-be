@@ -18,6 +18,8 @@ import {
   Smile,
   FlaskConical,
   Bell,
+  Inbox,
+  Building2,
 } from "lucide-react"
 
 import {
@@ -126,6 +128,16 @@ const data = {
       title: "Bildirimler",
       url: "/dashboard/notifications",
       icon: Bell,
+    },
+    {
+      title: "Şikayet & Öneriler",
+      url: "/dashboard/complaints",
+      icon: Inbox,
+    },
+    {
+      title: "Ajans Başvuruları",
+      url: "/dashboard/agency-applications",
+      icon: Building2,
     },
     {
       title: "Ayarlar",
