@@ -96,6 +96,8 @@ model User {
   diamondTransactions   DiamondTransaction[]
   coinPurchases         CoinPurchase[]
   notificationReads     NotificationRead[]
+  agencyApplications    AgencyApplication[]
+  complaints            Complaint[]
   notificationsTargeted Notification[]        @relation("NotificationTarget")
   storyViews            StoryView[]          @relation("StoryViewer")
   escrowsPaid           MessageEscrow[]      @relation("EscrowPayer")
@@ -340,6 +342,7 @@ model Agency {
   invites     AgencyInvite[]
   members     AgencyMember[]
   notifications Notification[]
+  applications  AgencyApplication[]
 
   @@map("agencies")
 }
@@ -966,4 +969,37 @@ model NotificationRead {
 
   @@unique([notificationId, userId])
   @@map("notification_reads")
+}
+
+model AgencyApplication {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @map("user_id")
+  agencyId        Int      @map("agency_id")
+  applicationType String   @map("application_type")
+  contactMethod   String   @map("contact_method")
+  contactValue    String   @map("contact_value")
+  note            String?
+  kvkkAcceptedAt  DateTime @map("kvkk_accepted_at")
+  status          String   @default("pending")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agency          Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, agencyId])
+  @@map("agency_applications")
+}
+
+model Complaint {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  category    String
+  description String
+  status      String   @default("pending")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("complaints")
 }

@@ -1715,6 +1715,82 @@
         }
       }
     },
+    "/api/mobile/profile/ajans_katil": {
+      "post": {
+        "summary": "Ajansa katılım başvurusu",
+        "description": "Başvuran kullanıcı token'dan belirlenir. `phone_number` alanı istemcide sabit olduğu için\n`contact_method` email olduğunda da e-posta adresi bu alanda gönderilir; içerik seçilen\ntüre göre doğrulanır. Aynı ajansa ikinci başvuru reddedilir; reddedilmiş bir başvuru\nyeniden gönderilebilir.\n",
+        "tags": [
+          "Mobile Agency"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "application_type",
+                  "agency_id",
+                  "contact_method",
+                  "phone_number",
+                  "kvkk_accepted"
+                ],
+                "properties": {
+                  "application_type": {
+                    "type": "string",
+                    "enum": [
+                      "third_party",
+                      "management"
+                    ]
+                  },
+                  "agency_id": {
+                    "type": "string"
+                  },
+                  "contact_method": {
+                    "type": "string",
+                    "enum": [
+                      "phone",
+                      "email"
+                    ]
+                  },
+                  "phone_number": {
+                    "type": "string",
+                    "description": "contact_method phone ise telefon, email ise e-posta adresi"
+                  },
+                  "note": {
+                    "type": "string",
+                    "description": "Opsiyonel, en fazla 100 karakter"
+                  },
+                  "kvkk_accepted": {
+                    "type": "boolean",
+                    "description": "true olmalı"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ajans başvurusu alındı (data.application_id, data.status)"
+          },
+          "400": {
+            "description": "Doğrulama hatası"
+          },
+          "404": {
+            "description": "Ajans bulunamadı"
+          },
+          "409": {
+            "description": "Başvuru zaten var veya kullanıcı zaten bir ajansa bağlı"
+          }
+        }
+      }
+    },
     "/api/mobile/profile/avatar": {
       "post": {
         "summary": "Profil fotoğrafı yükle (en fazla 4)",
@@ -1842,6 +1918,159 @@
           },
           "404": {
             "description": "Fotoğraf bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/profile/complaints/{id}": {
+      "get": {
+        "summary": "Talep detayı",
+        "description": "Başka kullanıcıya ait ya da olmayan talep için 404 döner.",
+        "tags": [
+          "Mobile Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Talep detayı"
+          },
+          "404": {
+            "description": "Talep bulunamadı"
+          }
+        }
+      },
+      "post": {
+        "summary": "Talebi güncelle",
+        "description": "category ve description güncellenir. Yalnızca kendi talebiniz ve durumu `completed`\nolmayan talepler değiştirilebilir. Tamamlanmış talep için 409 döner. Durum kontrolü\ngüncellemeyle aynı sorguda yapıldığından tamamlanma ile güncelleme yarışında da\ntamamlanmış talep değişmez.\n",
+        "tags": [
+          "Mobile Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "category",
+                  "description"
+                ],
+                "properties": {
+                  "category": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Talep güncellendi"
+          },
+          "400": {
+            "description": "Doğrulama hatası"
+          },
+          "404": {
+            "description": "Talep bulunamadı"
+          },
+          "409": {
+            "description": "Tamamlanmış talep değiştirilemez"
+          }
+        }
+      }
+    },
+    "/api/mobile/profile/complaints": {
+      "get": {
+        "summary": "Şikayet ve önerilerim",
+        "description": "Yalnızca token'daki kullanıcının kendi talepleri, en yeniden eskiye.",
+        "tags": [
+          "Mobile Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Talepler listelendi (data kayıt dizisi)"
+          }
+        }
+      },
+      "post": {
+        "summary": "Şikayet / öneri oluştur",
+        "description": "Yeni talep `pending` durumuyla açılır.",
+        "tags": [
+          "Mobile Profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "category",
+                  "description"
+                ],
+                "properties": {
+                  "category": {
+                    "type": "string",
+                    "description": "En fazla 50 karakter"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "En fazla 1000 karakter"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Talep oluşturuldu (id, category, description, status)"
+          },
+          "400": {
+            "description": "Doğrulama hatası"
           }
         }
       }

@@ -44,7 +44,8 @@ export async function proxy(request: NextRequest) {
                             'refreshToken',
                             'password',
                             'newPassword',
-                            'oldPassword'
+                            'oldPassword',
+                            'phone_number'
                         ]);
                         const redacted = Object.fromEntries(
                             Object.entries(json).map(([key, value]) => {
