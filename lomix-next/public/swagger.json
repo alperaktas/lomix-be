@@ -1955,7 +1955,7 @@
       },
       "post": {
         "summary": "Talebi güncelle",
-        "description": "category ve description güncellenir. Yalnızca kendi talebiniz ve durumu `completed`\nolmayan talepler değiştirilebilir. Tamamlanmış talep için 409 döner. Durum kontrolü\ngüncellemeyle aynı sorguda yapıldığından tamamlanma ile güncelleme yarışında da\ntamamlanmış talep değişmez.\n",
+        "description": "category ve description güncellenir. Resim alanı (image_url / image_urls / dosya) gönderilirse\nresimler yeni listeyle değiştirilir, hiç gönderilmezse korunur; silmek için `image_urls: []`.\nGövde JSON ya da multipart olabilir (bkz. POST /complaints). Yalnızca kendi talebiniz ve durumu `completed`\nolmayan talepler değiştirilebilir. Tamamlanmış talep için 409 döner. Durum kontrolü\ngüncellemeyle aynı sorguda yapıldığından tamamlanma ile güncelleme yarışında da\ntamamlanmış talep değişmez.\n",
         "tags": [
           "Mobile Profile"
         ],
@@ -2059,6 +2059,39 @@
                   "description": {
                     "type": "string",
                     "description": "En fazla 1000 karakter"
+                  },
+                  "image_url": {
+                    "type": "string",
+                    "description": "Önceden /api/mobile/upload ile yüklenmiş tek resim adresi"
+                  },
+                  "image_urls": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Önceden yüklenmiş resim adresleri (en fazla 5)"
+                  }
+                }
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "category",
+                  "description"
+                ],
+                "properties": {
+                  "category": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Resim dosyası (jpeg/png/webp/gif, 5MB, en fazla 5 adet); alan adı önemli değil"
                   }
                 }
               }

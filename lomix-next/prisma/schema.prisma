@@ -995,6 +995,7 @@ model Complaint {
   userId      Int      @map("user_id")
   category    String
   description String
+  imageUrls   String[] @default([]) @map("image_urls")
   status      String   @default("pending")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")

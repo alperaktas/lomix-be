@@ -1,7 +1,7 @@
 import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
-import { parseComplaintBody, serializeComplaint } from '@/lib/complaints';
+import { readComplaintRequest, serializeComplaint } from '@/lib/complaints';
 
 /**
  * @swagger
@@ -35,6 +35,27 @@ import { parseComplaintBody, serializeComplaint } from '@/lib/complaints';
  *               description:
  *                 type: string
  *                 description: En fazla 1000 karakter
+ *               image_url:
+ *                 type: string
+ *                 description: Önceden /api/mobile/upload ile yüklenmiş tek resim adresi
+ *               image_urls:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Önceden yüklenmiş resim adresleri (en fazla 5)
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [category, description]
+ *             properties:
+ *               category:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *                 description: Resim dosyası (jpeg/png/webp/gif, 5MB, en fazla 5 adet); alan adı önemli değil
  *     responses:
  *       201:
  *         description: Talep oluşturuldu (id, category, description, status)
@@ -63,11 +84,17 @@ export async function POST(request: Request) {
         const userId = await getCurrentUserId(request);
         if (!userId) return ApiResponseHelper.error("Yetkisiz erişim.", 401);
 
-        const parsed = parseComplaintBody(await request.json().catch(() => null));
+        const parsed = await readComplaintRequest(request);
         if ('error' in parsed) return ApiResponseHelper.error(parsed.error, 400);
 
         const created = await prisma.complaint.create({
-            data: { userId, category: parsed.category, description: parsed.description, status: 'pending' },
+            data: {
+                userId,
+                category: parsed.category,
+                description: parsed.description,
+                imageUrls: parsed.images ?? [],
+                status: 'pending',
+            },
         });
 
         return ApiResponseHelper.success(serializeComplaint(created), "Talebiniz alındı.", 201);

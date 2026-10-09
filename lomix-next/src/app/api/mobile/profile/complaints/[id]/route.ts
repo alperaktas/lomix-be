@@ -1,7 +1,7 @@
 import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
-import { parseComplaintBody, serializeComplaint } from '@/lib/complaints';
+import { readComplaintRequest, serializeComplaint } from '@/lib/complaints';
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -33,7 +33,9 @@ function parseId(raw: string): number | null {
  *   post:
  *     summary: Talebi güncelle
  *     description: |
- *       category ve description güncellenir. Yalnızca kendi talebiniz ve durumu `completed`
+ *       category ve description güncellenir. Resim alanı (image_url / image_urls / dosya) gönderilirse
+ *       resimler yeni listeyle değiştirilir, hiç gönderilmezse korunur; silmek için `image_urls: []`.
+ *       Gövde JSON ya da multipart olabilir (bkz. POST /complaints). Yalnızca kendi talebiniz ve durumu `completed`
  *       olmayan talepler değiştirilebilir. Tamamlanmış talep için 409 döner. Durum kontrolü
  *       güncellemeyle aynı sorguda yapıldığından tamamlanma ile güncelleme yarışında da
  *       tamamlanmış talep değişmez.
@@ -93,14 +95,19 @@ export async function POST(request: Request, { params }: Ctx) {
         const id = parseId((await params).id);
         if (!id) return ApiResponseHelper.error("Talep bulunamadı.", 404);
 
-        const parsed = parseComplaintBody(await request.json().catch(() => null));
+        const parsed = await readComplaintRequest(request);
         if ('error' in parsed) return ApiResponseHelper.error(parsed.error, 400);
 
         // Sahiplik ve "tamamlanmamış" koşulu güncellemenin kendi WHERE'inde: kontrol ile yazma arasında
         // talep tamamlansa bile bu sorgu 0 satır günceller.
         const result = await prisma.complaint.updateMany({
             where: { id, userId, status: { not: 'completed' } },
-            data: { category: parsed.category, description: parsed.description },
+            data: {
+                category: parsed.category,
+                description: parsed.description,
+                // Resim alanı hiç gönderilmediyse mevcut resimler korunur.
+                ...(parsed.images !== null && { imageUrls: parsed.images }),
+            },
         });
 
         if (result.count === 0) {
