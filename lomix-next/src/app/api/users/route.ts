@@ -17,10 +17,17 @@ export async function GET(req: Request) {
                 role: true,
                 status: true,
                 createdAt: true,
-                // Diğer gerekli alanlar...
+                avatar: true,
+                // Avatar boşsa listede galerideki ilk fotoğraf gösterilir.
+                photos: { orderBy: { order: 'asc' }, take: 1, select: { url: true } },
+                _count: { select: { photos: true } },
             }
         });
-        return NextResponse.json(users);
+        return NextResponse.json(users.map(({ photos, _count, avatar, ...u }) => ({
+            ...u,
+            avatar: avatar?.trim() || photos[0]?.url || null,
+            photoCount: _count.photos,
+        })));
     } catch (error: any) {
         return NextResponse.json({ message: error.message }, { status: 500 });
     }

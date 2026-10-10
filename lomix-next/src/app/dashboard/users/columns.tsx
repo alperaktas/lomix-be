@@ -19,6 +19,8 @@ export type User = {
   role: string
   status: string
   createdAt: string
+  avatar?: string | null
+  photoCount?: number
 }
 
 interface ColumnsProps {
@@ -37,15 +39,33 @@ export const getColumns = ({ onEdit, onDelete, onDetail }: ColumnsProps): Column
 
       return (
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-full bg-zinc-100 flex items-center justify-center border border-zinc-200 shadow-sm shrink-0">
-            {role === 'admin' ? (
-              <ShieldCheck className="h-4 w-4 text-rose-600" />
-            ) : role === 'moderator' ? (
-              <ShieldAlert className="h-4 w-4 text-amber-600" />
-            ) : (
-              <UserIcon className="h-4 w-4 text-zinc-500" />
-            )}
-          </div>
+          {user.avatar ? (
+            <a
+              href={user.avatar}
+              target="_blank"
+              rel="noreferrer"
+              title="Fotoğrafı büyüt"
+              className="relative h-11 w-11 rounded-full overflow-hidden border border-zinc-200 shadow-sm shrink-0 bg-zinc-100 hover:ring-2 hover:ring-zinc-300"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={user.avatar} alt={user.username} className="h-full w-full object-cover" loading="lazy" />
+              {(user.photoCount ?? 0) > 1 && (
+                <span className="absolute bottom-0 right-0 rounded-tl bg-black/60 px-1 text-[9px] font-bold leading-4 text-white">
+                  {user.photoCount}
+                </span>
+              )}
+            </a>
+          ) : (
+            <div className="h-11 w-11 rounded-full bg-zinc-100 flex items-center justify-center border border-zinc-200 shadow-sm shrink-0">
+              {role === 'admin' ? (
+                <ShieldCheck className="h-4 w-4 text-rose-600" />
+              ) : role === 'moderator' ? (
+                <ShieldAlert className="h-4 w-4 text-amber-600" />
+              ) : (
+                <UserIcon className="h-4 w-4 text-zinc-500" />
+              )}
+            </div>
+          )}
           <div className="flex flex-col min-w-0">
             <span className="font-bold text-zinc-900 text-sm truncate">{user.username}</span>
             <span className="text-[11px] text-zinc-400 truncate">#{user.id}</span>
