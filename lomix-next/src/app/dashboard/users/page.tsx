@@ -91,9 +91,14 @@ export default function UsersPage() {
         } else { alert('Güncelleme başarısız'); }
     };
 
-    const filteredUsers = users.filter(user =>
-        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    const term = searchTerm.trim().toLowerCase();
+    // "13" ya da "#13" yazılınca o ID'li hesap tam eşleşmeyle bulunur ("1" yazınca 10, 11... çıkmaz);
+    // kullanıcı adı ve e-posta ise içeren eşleşmeyle aranmaya devam eder.
+    const idMatch = /^#?\d+$/.test(term) ? Number(term.replace('#', '')) : null;
+    const filteredUsers = term === '' ? users : users.filter(user =>
+        (idMatch !== null && user.id === idMatch) ||
+        user.username.toLowerCase().includes(term) ||
+        user.email.toLowerCase().includes(term)
     );
 
     const router = useRouter();
@@ -122,7 +127,7 @@ export default function UsersPage() {
                     <div className="relative w-64">
                         <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                         <Input
-                            placeholder="Ara..."
+                            placeholder="Ad, e-posta veya ID ara..."
                             className="pl-10 h-9 text-sm"
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
