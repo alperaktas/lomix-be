@@ -7,6 +7,10 @@ import { getCurrentUserId } from '@/lib/current-user';
  * /api/mobile/profile/me:
  *   get:
  *     summary: Giriş yapmış kullanıcının profil bilgilerini getirir
+ *     description: |
+ *       `data.user.user_type` her zaman şu üç değerden biridir: `kullanıcı`, `yayıncı`, `ajans`.
+ *       Kendi ajansı olan `ajans`; ajansta onaylı üye ya da yayıncı işaretli olan `yayıncı`;
+ *       diğerleri `kullanıcı`. Birden fazla koşul varsa ajans > yayıncı > kullanıcı önceliği uygulanır.
  *     tags: [Mobile Profile]
  *     security:
  *       - bearerAuth: []
@@ -23,12 +27,23 @@ export async function GET(request: Request) {
 
     const user = await prisma.user.findUnique({
         where: { id: userId },
-        include: { wallet: true }
+        include: {
+            wallet: true,
+            ownedAgency: { select: { id: true } },
+            agencyMembership: { select: { status: true } },
+        }
     });
 
     if (!user) {
         return NextResponse.json({ message: "Kullanıcı bulunamadı" }, { status: 404 });
     }
+
+    // Öncelik: ajans sahibi > yayıncı (işaretli ya da onaylı ajans üyesi) > kullanıcı.
+    const userType = user.ownedAgency
+        ? "ajans"
+        : (user.isBroadcaster || user.agencyMembership?.status === "approved")
+            ? "yayıncı"
+            : "kullanıcı";
 
     const following_count = await prisma.userFollow.count({ where: { followerId: userId } });
     const followers_count = await prisma.userFollow.count({ where: { followingId: userId } });
@@ -50,7 +65,8 @@ export async function GET(request: Request) {
                 is_verified: user.isVerified || false,
                 gender: user.gender || "unknown",
                 level: user.level ?? 0,
-                prestige_points: user.prestigePoints || 0
+                prestige_points: user.prestigePoints || 0,
+                user_type: userType
             },
             stats: {
                 following_count,

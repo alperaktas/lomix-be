@@ -2334,6 +2334,7 @@
     "/api/mobile/profile/me": {
       "get": {
         "summary": "Giriş yapmış kullanıcının profil bilgilerini getirir",
+        "description": "`data.user.user_type` her zaman şu üç değerden biridir: `kullanıcı`, `yayıncı`, `ajans`.\nKendi ajansı olan `ajans`; ajansta onaylı üye ya da yayıncı işaretli olan `yayıncı`;\ndiğerleri `kullanıcı`. Birden fazla koşul varsa ajans > yayıncı > kullanıcı önceliği uygulanır.\n",
         "tags": [
           "Mobile Profile"
         ],
