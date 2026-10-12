@@ -30,6 +30,7 @@ model User {
   isVip                 Boolean              @default(false) @map("is_vip")
   level                 Int                  @default(0)
   totalSpent            Int                  @default(0) @map("total_spent")
+  lastSeenAt            DateTime?            @map("last_seen_at")
   prestigePoints        Int                  @default(0) @map("prestige_points")
   banReason             String?              @map("ban_reason")
   bannedDeviceId        String?              @map("banned_device_id")

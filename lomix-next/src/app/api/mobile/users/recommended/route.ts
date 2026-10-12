@@ -1,12 +1,18 @@
 import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
+import { isOnline } from '@/lib/presence';
 
 /**
  * @swagger
  * /api/mobile/users/recommended:
  *   get:
  *     summary: Takip / arkadaş önerileri
+ *     description: |
+ *       Her kullanıcıda `is_online` (boolean) ve `last_seen_at` (ISO tarih ya da null) bulunur.
+ *       Kullanıcı, uygulamadan doğrulanmış son isteğini son 5 dakika içinde yaptıysa online sayılır
+ *       (sunucu, istekler üzerinden en fazla dakikada bir günceller). Uygulamayı hiç kullanmamış ya da
+ *       takip başlamadan önce görünmüş kullanıcılarda `is_online: false`, `last_seen_at: null` döner.
  *     tags: [Mobile Users]
  *     security:
  *       - bearerAuth: []
@@ -105,6 +111,8 @@ export async function GET(request: Request) {
             level: r.level,
             score: r.prestigePoints,
             hakkimda: r.description || null,
+            is_online: isOnline(r.lastSeenAt),
+            last_seen_at: r.lastSeenAt ? r.lastSeenAt.toISOString() : null,
         }));
         return ApiResponseHelper.success(responseData, "Önerilen kullanıcılar listelendi.");
     } catch (error: any) {
