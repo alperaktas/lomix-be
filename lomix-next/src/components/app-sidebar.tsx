@@ -146,6 +146,7 @@ const data = {
       children: [
         { title: "Genel", url: "/dashboard/settings" },
         { title: "Seviyeler", url: "/dashboard/settings/levels" },
+        { title: "Hi Mesajları", url: "/dashboard/settings/hi-messages" },
         { title: "Hikaye Fiyatları", url: "/dashboard/settings/story-prices" },
         { title: "Komisyon & Fiyatlar", url: "/dashboard/settings/commissions" },
         { title: "Coin Paketleri", url: "/dashboard/settings/coin-packages" },

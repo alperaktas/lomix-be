@@ -4387,6 +4387,7 @@
     "/api/mobile/users/recommended": {
       "get": {
         "summary": "Takip / arkadaş önerileri",
+        "description": "Her kullanıcıda `is_online` (boolean) ve `last_seen_at` (ISO tarih ya da null) bulunur.\nKullanıcı, uygulamadan doğrulanmış son isteğini son 5 dakika içinde yaptıysa online sayılır\n(sunucu, istekler üzerinden en fazla dakikada bir günceller). Uygulamayı hiç kullanmamış ya da\ntakip başlamadan önce görünmüş kullanıcılarda `is_online: false`, `last_seen_at: null` döner.\n",
         "tags": [
           "Mobile Users"
         ],
@@ -4443,8 +4444,8 @@
     },
     "/api/mobile/users/update-action": {
       "post": {
-        "summary": "Kullanıcı Aksiyonunu Güncelle",
-        "description": "Hi butonuna basılınca hedef kullanıcıyla action_type'ı chatRoom yapar",
+        "summary": "Kullanıcı Aksiyonunu Güncelle (Hi butonu)",
+        "description": "Hi butonuna basılınca hedef kullanıcıyla action_type'ı chatRoom yapar ve admin panelinde\ntanımlı aktif Hi mesajlarından rastgele biri hedef kullanıcıya gönderilir. Mesaj normal\nmesaj kurallarına tabidir (arkadaşlar ücretsiz, diğerlerinden `message_price` coin düşer,\ncevapsız mesaj limiti geçerli). Mesaj gönderilemezse (örn. yetersiz bakiye, 400 + `error_code`)\nbuton durumu değişmez. Aynı kişiye ikinci basışta mesaj tekrar gönderilmez. Aktif Hi mesajı\ntanımlı değilse yalnızca buton durumu güncellenir (`message_sent: false`).\n",
         "tags": [
           "Mobile Users"
         ],

@@ -1,10 +1,7 @@
 import { ApiResponseHelper } from '@/lib/api-response';
-import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
-import { getSetting } from '@/lib/app-settings';
-import { decideBilling, refundExpiredEscrows, releaseEscrowsOnReply } from '@/lib/message-billing';
 import { uploadChatMedia } from '@/lib/chat-media';
-import { spendOp, syncLevel, levelUpField } from '@/lib/level';
+import { sendDirectMessage } from '@/lib/send-message';
 
 /**
  * @swagger
@@ -142,113 +139,19 @@ export async function POST(request: Request) {
 
         const messageKind = ['hi', 'auto'].includes(String(kind)) ? String(kind) : 'user';
 
-        const [sender, receiver] = await Promise.all([
-            prisma.user.findUnique({ where: { id: userId }, select: { id: true, isBroadcaster: true } }),
-            prisma.user.findUnique({ where: { id: toId }, select: { id: true, isBroadcaster: true } }),
-        ]);
-        if (!sender) return ApiResponseHelper.error("Yetkisiz erişim.", 401);
-        if (!receiver) return ApiResponseHelper.error("Kullanıcı bulunamadı.", 404);
-
-        // Suresi dolan havuz kayitlari once iade edilir ki bakiye hesabi dogru olsun.
-        await refundExpiredEscrows({ payerId: userId });
-
-        const decision = await decideBilling({
+        const result = await sendDirectMessage({
             senderId: userId,
             receiverId: toId,
-            senderIsBroadcaster: sender.isBroadcaster,
-            receiverIsBroadcaster: receiver.isBroadcaster,
-            messageKind,
-        });
-
-        if (decision.kind === 'blocked') {
-            return ApiResponseHelper.error(decision.message, decision.status, decision.data);
-        }
-
-        let billing: string = decision.kind === 'free' ? 'free' : 'charged';
-        let coinAmount = 0;
-
-        if (decision.kind === 'charge') {
-            const wallet = await prisma.wallet.findUnique({ where: { userId } });
-            const balance = wallet?.balance ?? 0;
-
-            if (balance < decision.coinAmount) {
-                return ApiResponseHelper.error("Yetersiz coin bakiyesi.", 400, {
-                    required: decision.coinAmount,
-                    balance,
-                    missing: decision.coinAmount - balance,
-                    error_code: 'INSUFFICIENT_BALANCE',
-                });
-            }
-
-            coinAmount = decision.coinAmount;
-        }
-
-        const message = await prisma.directMessage.create({
-            data: {
-                fromId: userId,
-                toId,
-                text: text?.trim() || null,
-                imageUrl: image_url || null,
-                fileUrl: file_url || null,
-                fileType: file_url ? file_type : null,
-                kind: messageKind,
-            },
-        });
-
-        if (decision.kind === 'charge') {
-            const timeoutHours = await getSetting('message_escrow_timeout_hours');
-            const expiresAt = new Date(Date.now() + timeoutHours * 60 * 60 * 1000);
-
-            if (decision.escrow) {
-                await prisma.$transaction([
-                    prisma.wallet.update({ where: { userId }, data: { balance: { decrement: coinAmount } } }),
-                    prisma.messageEscrow.create({
-                        data: {
-                            messageId: message.id,
-                            payerId: userId,
-                            receiverId: toId,
-                            coinAmount,
-                            expiresAt,
-                        },
-                    }),
-                    spendOp(userId, coinAmount),
-                ]);
-                billing = 'escrow_held';
-            } else {
-                await prisma.$transaction([
-                    prisma.wallet.update({ where: { userId }, data: { balance: { decrement: coinAmount } } }),
-                    spendOp(userId, coinAmount),
-                ]);
-            }
-        }
-
-        const levelResult = decision.kind === 'charge' ? await syncLevel(userId) : null;
-
-        // Bu mesaj ayni zamanda karsi tarafa verilmis bir cevap: bekleyen havuz varsa elmasa cevrilir.
-        const release = await releaseEscrowsOnReply(userId, toId);
-
-        // Iki taraf icin de Conversation kaydi dursun
-        await prisma.conversation.upsert({
-            where: { userId_otherUserId: { userId, otherUserId: toId } },
-            create: { userId, otherUserId: toId, isDeleted: false },
-            update: { isDeleted: false },
-        });
-        await prisma.conversation.upsert({
-            where: { userId_otherUserId: { userId: toId, otherUserId: userId } },
-            create: { userId: toId, otherUserId: userId, isDeleted: false },
-            update: { isDeleted: false },
-        });
-
-        return ApiResponseHelper.success({
-            id: String(message.id),
+            text,
+            imageUrl: image_url,
+            fileUrl: file_url,
+            fileType: file_type,
             kind: messageKind,
-            billing,
-            coin_spent: coinAmount,
-            escrow_held: decision.kind === 'charge' && decision.escrow,
-            earned_diamonds: release.diamonds,
-            released_escrows: release.released,
-            ...levelUpField(levelResult),
-        }, "Mesaj gönderildi.");
+        });
+
+        if (!result.ok) return ApiResponseHelper.error(result.message, result.status, result.data);
+
+        return ApiResponseHelper.success(result.data, "Mesaj gönderildi.");
     } catch (error: any) {
         return ApiResponseHelper.error(error.message, 500);
     }

@@ -1005,3 +1005,13 @@ model Complaint {
   @@index([userId, createdAt])
   @@map("complaints")
 }
+
+model HiMessage {
+  id        Int      @id @default(autoincrement())
+  text      String
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("hi_messages")
+}
