@@ -2,6 +2,8 @@ import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { formatDmTime } from '@/lib/dm-time';
+import { isOnline } from '@/lib/presence';
+import { normalizeGender } from '@/lib/gender';
 
 function previewText(message: { text: string | null; imageUrl: string | null; fileType: string | null; gift: { name: string } | null } | null): string {
     if (!message) return '';
@@ -18,6 +20,10 @@ function previewText(message: { text: string | null; imageUrl: string | null; fi
  * /api/mobile/messages:
  *   get:
  *     summary: DM Gelen Kutusu
+ *     description: |
+ *       Her sohbette karşı tarafın durumu `is_online` (boolean) ve `last_seen_at` (ISO tarih ya da null)
+ *       olarak döner. Kullanıcı, uygulamadan doğrulanmış son isteğini son 5 dakika içinde yaptıysa online sayılır.
+ *       `user_gender` karşı tarafın cinsiyetidir: `male`, `female` ya da belirtilmemişse `null`.
  *     tags: [Mobile Chat]
  *     security:
  *       - bearerAuth: []
@@ -34,9 +40,11 @@ export async function GET(request: Request) {
             where: { userId, isDeleted: false },
             orderBy: [{ isPinned: 'desc' }, { updatedAt: 'desc' }],
             include: {
-                otherUser: { select: { id: true, fullName: true, username: true, avatar: true, level: true } },
+                otherUser: { select: { id: true, fullName: true, username: true, avatar: true, level: true, lastSeenAt: true, gender: true } },
             },
         });
+
+        const now = Date.now();
 
         const result = await Promise.all(conversations.map(async (conv) => {
             const otherUserId = conv.otherUserId;
@@ -73,6 +81,9 @@ export async function GET(request: Request) {
                 user_name: conv.otherUser.fullName || conv.otherUser.username,
                 user_avatar: conv.otherUser.avatar || '',
                 user_level: conv.otherUser.level,
+                user_gender: normalizeGender(conv.otherUser.gender),
+                is_online: isOnline(conv.otherUser.lastSeenAt, now),
+                last_seen_at: conv.otherUser.lastSeenAt ? conv.otherUser.lastSeenAt.toISOString() : null,
                 last_message: previewText(lastMessage),
                 message: previewText(lastMessage),
                 time: lastMessage ? formatDmTime(lastMessage.createdAt) : '',

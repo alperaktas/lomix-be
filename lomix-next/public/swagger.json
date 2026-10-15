@@ -72,6 +72,7 @@
     "/api/mobile/anlar/anlar": {
       "post": {
         "summary": "Anları Listele",
+        "description": "Her anda paylaşan kullanıcının durumu `isOnline` (boolean) ve `lastSeenAt` (ISO tarih ya da null)\nolarak döner. Kullanıcı, uygulamadan doğrulanmış son isteğini son 5 dakika içinde yaptıysa online sayılır.\n`gender` paylaşan kullanıcının cinsiyetidir: `male`, `female` ya da belirtilmemişse `null`.\n",
         "tags": [
           "Mobile Anlar"
         ],
@@ -1606,6 +1607,7 @@
     "/api/mobile/messages": {
       "get": {
         "summary": "DM Gelen Kutusu",
+        "description": "Her sohbette karşı tarafın durumu `is_online` (boolean) ve `last_seen_at` (ISO tarih ya da null)\nolarak döner. Kullanıcı, uygulamadan doğrulanmış son isteğini son 5 dakika içinde yaptıysa online sayılır.\n`user_gender` karşı tarafın cinsiyetidir: `male`, `female` ya da belirtilmemişse `null`.\n",
         "tags": [
           "Mobile Chat"
         ],
@@ -4387,7 +4389,7 @@
     "/api/mobile/users/recommended": {
       "get": {
         "summary": "Takip / arkadaş önerileri",
-        "description": "Her kullanıcıda `is_online` (boolean) ve `last_seen_at` (ISO tarih ya da null) bulunur.\nKullanıcı, uygulamadan doğrulanmış son isteğini son 5 dakika içinde yaptıysa online sayılır\n(sunucu, istekler üzerinden en fazla dakikada bir günceller). Uygulamayı hiç kullanmamış ya da\ntakip başlamadan önce görünmüş kullanıcılarda `is_online: false`, `last_seen_at: null` döner.\n",
+        "description": "Her kullanıcıda `is_online` (boolean) ve `last_seen_at` (ISO tarih ya da null) bulunur.\nKullanıcı, uygulamadan doğrulanmış son isteğini son 5 dakika içinde yaptıysa online sayılır\n(sunucu, istekler üzerinden en fazla dakikada bir günceller). Hiç görülmemiş kullanıcılarda\n`is_online: false`, `last_seen_at: null` döner. `gender` kullanıcının cinsiyetidir: `male`, `female`\nya da belirtilmemişse `null`.\n",
         "tags": [
           "Mobile Users"
         ],

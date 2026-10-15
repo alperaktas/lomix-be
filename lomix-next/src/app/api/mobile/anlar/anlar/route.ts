@@ -2,6 +2,8 @@ import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { getAnTime } from '@/lib/an-time';
+import { isOnline } from '@/lib/presence';
+import { normalizeGender } from '@/lib/gender';
 
 const VALID_CATEGORIES = ['Takip Edilen', 'Keşfet', 'Benim'] as const;
 
@@ -10,6 +12,10 @@ const VALID_CATEGORIES = ['Takip Edilen', 'Keşfet', 'Benim'] as const;
  * /api/mobile/anlar/anlar:
  *   post:
  *     summary: Anları Listele
+ *     description: |
+ *       Her anda paylaşan kullanıcının durumu `isOnline` (boolean) ve `lastSeenAt` (ISO tarih ya da null)
+ *       olarak döner. Kullanıcı, uygulamadan doğrulanmış son isteğini son 5 dakika içinde yaptıysa online sayılır.
+ *       `gender` paylaşan kullanıcının cinsiyetidir: `male`, `female` ya da belirtilmemişse `null`.
  *     tags: [Mobile Anlar]
  *     security:
  *       - bearerAuth: []
@@ -77,13 +83,15 @@ export async function POST(request: Request) {
             orderBy: { createdAt: 'desc' },
             take: 50,
             include: {
-                user: { select: { id: true, fullName: true, username: true, avatar: true, level: true } },
+                user: { select: { id: true, fullName: true, username: true, avatar: true, level: true, lastSeenAt: true, gender: true } },
                 tags: { select: { tag: true } },
                 likes: { select: { userId: true } },
                 hiLikes: { select: { userId: true } },
                 _count: { select: { comments: true } },
             },
         });
+
+        const now = Date.now();
 
         return ApiResponseHelper.success({
             anlar: anlar.map(an => ({
@@ -99,6 +107,9 @@ export async function POST(request: Request) {
                 anPictureUrl: an.imageUrl || '',
                 description: an.description || '',
                 lvl: an.user.level,
+                gender: normalizeGender(an.user.gender),
+                isOnline: isOnline(an.user.lastSeenAt, now),
+                lastSeenAt: an.user.lastSeenAt ? an.user.lastSeenAt.toISOString() : null,
                 isLiked: an.likes.some(l => l.userId === userId),
                 isHiLiked: an.hiLikes.some(l => l.userId === userId),
             })),
