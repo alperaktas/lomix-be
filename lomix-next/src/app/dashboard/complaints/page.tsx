@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { Loader2, Inbox } from 'lucide-react';
+import { Loader2, Inbox, MessageSquare, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface Complaint {
     id: number;
@@ -13,6 +14,17 @@ interface Complaint {
     status: 'pending' | 'in_progress' | 'completed';
     createdAt: string;
     user: { id: number; username: string; fullName: string | null };
+    messageCount: number;
+    awaitingSupport: boolean;
+}
+
+interface ThreadMessage {
+    id: string;
+    sender_type: 'user' | 'support';
+    sender: { name: string };
+    content: string | null;
+    image_urls: string[];
+    created_at: string;
 }
 
 const STATUS_LABELS: Record<string, string> = { pending: 'Beklemede', in_progress: 'İnceleniyor', completed: 'Tamamlandı' };
@@ -53,6 +65,40 @@ export default function ComplaintsPage() {
             if (!res.ok) { setError(data.error || 'Güncellenemedi.'); return; }
             await load();
         } finally { setBusyId(null); }
+    };
+
+    const [thread, setThread] = useState<Complaint | null>(null);
+    const [messages, setMessages] = useState<ThreadMessage[]>([]);
+    const [threadLoading, setThreadLoading] = useState(false);
+    const [reply, setReply] = useState('');
+    const [sending, setSending] = useState(false);
+    const [threadError, setThreadError] = useState('');
+
+    const loadThread = async (c: Complaint) => {
+        setThreadLoading(true); setThreadError('');
+        try {
+            const res = await fetch(`/api/admin/complaints/messages?complaintId=${c.id}`, { headers });
+            const data = await res.json();
+            if (!res.ok) { setThreadError(data.error || 'Konuşma yüklenemedi.'); return; }
+            setMessages(data.messages || []);
+        } finally { setThreadLoading(false); }
+    };
+
+    const openThread = (c: Complaint) => { setThread(c); setMessages([]); setReply(''); loadThread(c); };
+
+    const sendReply = async () => {
+        if (!thread || !reply.trim()) return;
+        setSending(true); setThreadError('');
+        try {
+            const res = await fetch('/api/admin/complaints/messages', {
+                method: 'POST', headers, body: JSON.stringify({ complaintId: thread.id, content: reply.trim() }),
+            });
+            const data = await res.json();
+            if (!res.ok) { setThreadError(data.error || 'Gönderilemedi.'); return; }
+            setReply('');
+            await loadThread(thread);
+            load();
+        } finally { setSending(false); }
     };
 
     const total = Object.values(counts).reduce((a, b) => a + b, 0);
@@ -126,6 +172,10 @@ export default function ComplaintsPage() {
                                             </select>
                                             {busyId === c.id && <Loader2 className="h-4 w-4 animate-spin" />}
                                         </div>
+                                        <Button size="sm" variant="outline" className="h-8 mt-2" onClick={() => openThread(c)}>
+                                            <MessageSquare className="h-3.5 w-3.5 mr-1" /> Konuşma ({c.messageCount})
+                                            {c.awaitingSupport && <span className="ml-2 h-2 w-2 rounded-full bg-rose-500" title="Cevap bekliyor" />}
+                                        </Button>
                                     </td>
                                 </tr>
                             ))}
@@ -141,6 +191,57 @@ export default function ComplaintsPage() {
                     <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Sonraki</Button>
                 </div>
             )}
+
+            <Dialog open={!!thread} onOpenChange={open => { if (!open) setThread(null); }}>
+                <DialogContent className="sm:max-w-xl">
+                    <DialogHeader>
+                        <DialogTitle>{thread?.category}</DialogTitle>
+                        <DialogDescription>
+                            {thread && `${thread.user.fullName || thread.user.username} (#${thread.user.id})`}
+                            {thread?.status === 'completed' && ' · Tamamlandı: kullanıcı mesaj yazamaz, siz yazabilirsiniz'}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="max-h-96 overflow-auto space-y-3 py-2">
+                        {threadLoading ? (
+                            <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+                        ) : messages.map(m => (
+                            <div key={m.id} className={`flex ${m.sender_type === 'support' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[80%] rounded-lg border px-3 py-2 text-sm ${m.sender_type === 'support' ? 'bg-primary/10 border-primary/20' : 'bg-muted/40'}`}>
+                                    <div className="text-xs text-muted-foreground mb-1">
+                                        {m.sender.name} · {new Date(m.created_at).toLocaleString('tr-TR')}
+                                    </div>
+                                    {m.content && <div className="whitespace-pre-wrap break-words">{m.content}</div>}
+                                    {m.image_urls.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mt-2">
+                                            {m.image_urls.map(url => (
+                                                <a key={url} href={url} target="_blank" rel="noreferrer">
+                                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                    <img src={url} alt="Ek" className="h-16 w-16 rounded-md border object-cover hover:opacity-80" />
+                                                </a>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {threadError && <p className="text-sm text-rose-600">{threadError}</p>}
+                    <div className="flex gap-2">
+                        <textarea
+                            className="flex-1 min-h-20 rounded-md border bg-background px-3 py-2 text-sm"
+                            placeholder="Destek ekibi olarak cevap yazın..."
+                            maxLength={1000}
+                            value={reply}
+                            onChange={e => setReply(e.target.value)}
+                        />
+                        <Button onClick={sendReply} disabled={sending || !reply.trim()} className="self-end">
+                            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

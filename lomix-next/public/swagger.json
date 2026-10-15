@@ -1925,7 +1925,7 @@
     "/api/mobile/profile/complaints/{id}": {
       "get": {
         "summary": "Talep detayı",
-        "description": "Başka kullanıcıya ait ya da olmayan talep için 404 döner.",
+        "description": "Başka kullanıcıya ait ya da olmayan talep için 404 döner. `messages` konuşma akışıdır, zamana göre\nartan: ilk kayıt her zaman talebin kendisidir (`description` + resimler, kimliği negatif talep\nnumarası), ardından kullanıcı (`sender_type: user`) ve destek ekibi (`support`) mesajları gelir.\n`reply` / `reply_at` geriye uyumluluk için en son destek cevabını verir (yoksa null).\n",
         "tags": [
           "Mobile Profile"
         ],
@@ -1954,8 +1954,8 @@
         }
       },
       "post": {
-        "summary": "Talebi güncelle",
-        "description": "category ve description güncellenir. Resim alanı (image_url / image_urls / dosya) gönderilirse\nresimler yeni listeyle değiştirilir, hiç gönderilmezse korunur; silmek için `image_urls: []`.\nGövde JSON ya da multipart olabilir (bkz. POST /complaints). Yalnızca kendi talebiniz ve durumu `completed`\nolmayan talepler değiştirilebilir. Tamamlanmış talep için 409 döner. Durum kontrolü\ngüncellemeyle aynı sorguda yapıldığından tamamlanma ile güncelleme yarışında da\ntamamlanmış talep değişmez.\n",
+        "summary": "Talebi güncelle / talebe mesaj gönder",
+        "description": "Aynı adrese iki iş gelir ve gövdeye göre ayrılır: gövdede `content` alanı varsa **yeni konuşma\nmesajı** gönderilir (JSON: `content` zorunlu, `image_urls` opsiyonel en fazla 5 yüklenmiş resim adresi).\nYanıt 201 ve oluşturulan mesaj kaydıdır (`id`, `sender_type`, `sender`, `content`, `image_url(s)`,\n`created_at`, `read_at`). Tamamlanmış talebe 422, boş metin 400, dakikada 10'dan fazla mesaj 429\ndöner; hata yanıtlarında `data: null`. `content` yoksa aşağıdaki talep güncelleme akışı çalışır.\n\nGüncelleme: category ve description güncellenir. Resim alanı (image_url / image_urls / dosya) gönderilirse\nresimler yeni listeyle değiştirilir, hiç gönderilmezse korunur; silmek için `image_urls: []`.\nGövde JSON ya da multipart olabilir (bkz. POST /complaints). Yalnızca kendi talebiniz ve durumu `completed`\nolmayan talepler değiştirilebilir. Tamamlanmış talep için 409 döner. Durum kontrolü\ngüncellemeyle aynı sorguda yapıldığından tamamlanma ile güncelleme yarışında da\ntamamlanmış talep değişmez.\n",
         "tags": [
           "Mobile Profile"
         ],

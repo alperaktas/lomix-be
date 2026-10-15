@@ -35,7 +35,7 @@ export function parseComplaintBody(body: any): { error: string } | { category: s
 }
 
 /** Yalnızca Vercel Blob'a yüklenmiş (örn. /api/mobile/upload çıktısı) https adreslerini kabul eder. */
-function isBlobUrl(raw: string): boolean {
+export function isBlobUrl(raw: string): boolean {
     try {
         const u = new URL(raw);
         return u.protocol === 'https:' && u.hostname.endsWith('.public.blob.vercel-storage.com');
@@ -44,7 +44,7 @@ function isBlobUrl(raw: string): boolean {
     }
 }
 
-function cleanUrls(values: unknown[]): string[] {
+export function cleanUrls(values: unknown[]): string[] {
     return values.filter((v): v is string => typeof v === 'string').map(v => v.trim()).filter(Boolean);
 }
 

@@ -26,7 +26,11 @@ export async function GET(request: Request) {
             orderBy: { createdAt: 'desc' },
             skip: (page - 1) * PAGE_SIZE,
             take: PAGE_SIZE,
-            include: { user: { select: { id: true, username: true, fullName: true } } },
+            include: {
+                user: { select: { id: true, username: true, fullName: true } },
+                _count: { select: { messages: true } },
+                messages: { orderBy: { createdAt: 'desc' }, take: 1, select: { senderType: true, createdAt: true } },
+            },
         }),
         prisma.complaint.count({ where }),
         prisma.complaint.groupBy({ by: ['status'], _count: { _all: true } }),
@@ -42,6 +46,9 @@ export async function GET(request: Request) {
             createdAt: c.createdAt,
             updatedAt: c.updatedAt,
             user: c.user,
+            messageCount: c._count.messages,
+            // Son mesaj kullanıcıdansa (ya da hiç destek cevabı yoksa) destek ekibinden cevap bekleniyordur.
+            awaitingSupport: c.status !== 'completed' && (c.messages[0] ? c.messages[0].senderType === 'user' : true),
         })),
         total,
         totalPages: Math.ceil(total / PAGE_SIZE) || 1,
