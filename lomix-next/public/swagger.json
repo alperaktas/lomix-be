@@ -895,7 +895,7 @@
       },
       "post": {
         "summary": "Profil Bilgilerim / Bir Kullanıcının Profili",
-        "description": "`user_id` gönderilmezse token'daki kullanıcının kendi profili döner.\n`user_id` gönderilirse o kullanıcının profili döner; bu durumda `user_info` içindeki\n`takip` (token'daki kullanıcı bu kişiyi takip ediyor mu), `arkadas` (karşılıklı takip) ve\n`engelli` (token'daki kullanıcı bu kişiyi engellemiş mi) alanları isteği yapan kullanıcıya\ngöre hesaplanır. Engeli açıp kapatmak için `/api/mobile/users/block` kullanılır.\n",
+        "description": "`user_id` gönderilmezse token'daki kullanıcının kendi profili döner.\n`user_id` gönderilirse o kullanıcının profili döner; bu durumda `user_info` içindeki\n`takip` (token'daki kullanıcı bu kişiyi takip ediyor mu), `arkadas` (karşılıklı takip) ve\n`engelli` (token'daki kullanıcı bu kişiyi engellemiş mi) alanları isteği yapan kullanıcıya\ngöre hesaplanır. Engeli açıp kapatmak için `/api/mobile/users/block` kullanılır.\n\n`user_info.level_image` (görsel adresi) ve `user_info.level_color` (`#RRGGBB`) kullanıcının\nseviyesine ait rozet görseli ve rengidir; admin panelinde (Ayarlar > Seviyeler) belirlenir,\ntanımlı değilse `null` döner.\n",
         "tags": [
           "Mobile Users"
         ],
@@ -4389,7 +4389,7 @@
     "/api/mobile/users/recommended": {
       "get": {
         "summary": "Takip / arkadaş önerileri",
-        "description": "Her kullanıcıda `is_online` (boolean) ve `last_seen_at` (ISO tarih ya da null) bulunur.\nKullanıcı, uygulamadan doğrulanmış son isteğini son 5 dakika içinde yaptıysa online sayılır\n(sunucu, istekler üzerinden en fazla dakikada bir günceller). Hiç görülmemiş kullanıcılarda\n`is_online: false`, `last_seen_at: null` döner. `gender` kullanıcının cinsiyetidir: `male`, `female`\nya da belirtilmemişse `null`.\n",
+        "description": "Her kullanıcıda `is_online` (boolean) ve `last_seen_at` (ISO tarih ya da null) bulunur.\nKullanıcı, uygulamadan doğrulanmış son isteğini son 5 dakika içinde yaptıysa online sayılır\n(sunucu, istekler üzerinden en fazla dakikada bir günceller). Hiç görülmemiş kullanıcılarda\n`is_online: false`, `last_seen_at: null` döner. `gender` kullanıcının cinsiyetidir: `male`, `female`\nya da belirtilmemişse `null`.\n`age` kullanıcının tamamlanmış yaşıdır (doğum tarihinden hesaplanır); doğum tarihi yoksa `null`.\n",
         "tags": [
           "Mobile Users"
         ],

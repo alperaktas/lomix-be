@@ -14,9 +14,11 @@ interface Threshold {
     level: number;
     requiredSpend: number;
     name: string | null;
+    imageUrl: string | null;
+    color: string | null;
 }
 
-const emptyForm = { level: '', requiredSpend: '', name: '' };
+const emptyForm = { level: '', requiredSpend: '', name: '', imageUrl: '', color: '' };
 
 export default function LevelsPage() {
     const [thresholds, setThresholds] = useState<Threshold[]>([]);
@@ -30,6 +32,7 @@ export default function LevelsPage() {
     const [recalcResult, setRecalcResult] = useState('');
     const [form, setForm] = useState(emptyForm);
     const [error, setError] = useState('');
+    const [uploading, setUploading] = useState(false);
 
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
     const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
@@ -46,18 +49,20 @@ export default function LevelsPage() {
     useEffect(() => { fetchThresholds(); }, []);
 
     const openAdd = () => {
-        const next = thresholds.length ? Math.max(...thresholds.map(t => t.level)) + 1 : 1;
+        const next = thresholds.length ? Math.max(...thresholds.map(t => t.level)) + 1 : 0;
         setForm({ ...emptyForm, level: String(next) });
         setError(''); setAddDialog(true);
     };
     const openEdit = (t: Threshold) => {
-        setForm({ level: String(t.level), requiredSpend: String(t.requiredSpend), name: t.name || '' });
+        setForm({ level: String(t.level), requiredSpend: String(t.requiredSpend), name: t.name || '', imageUrl: t.imageUrl || '', color: t.color || '' });
         setError(''); setEditTarget(t);
     };
 
     const save = async () => {
         setError('');
-        if (!form.level || !form.requiredSpend) { setError('Level ve gereken harcama zorunludur.'); return; }
+        const isZero = Number(form.level) === 0 && form.level !== '';
+        if (!form.level || (!isZero && !form.requiredSpend)) { setError('Level ve gereken harcama zorunludur.'); return; }
+        if (form.color && !/^#[0-9a-fA-F]{6}$/.test(form.color)) { setError('Renk #RRGGBB biçiminde olmalı.'); return; }
         setSaving(true);
         try {
             const isEdit = !!editTarget;
@@ -67,8 +72,10 @@ export default function LevelsPage() {
                 body: JSON.stringify({
                     ...(isEdit && { id: editTarget.id }),
                     level: Number(form.level),
-                    requiredSpend: Number(form.requiredSpend),
+                    requiredSpend: isZero ? 0 : Number(form.requiredSpend),
                     name: form.name.trim(),
+                    imageUrl: form.imageUrl,
+                    color: form.color,
                 }),
             });
             const data = await res.json();
@@ -76,6 +83,18 @@ export default function LevelsPage() {
             setAddDialog(false); setEditTarget(null);
             fetchThresholds();
         } finally { setSaving(false); }
+    };
+
+    const uploadImage = async (file: File) => {
+        setError(''); setUploading(true);
+        try {
+            const fd = new FormData();
+            fd.append('file', file);
+            const res = await fetch('/api/admin/levels/image', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: fd });
+            const data = await res.json();
+            if (!res.ok) { setError(data.error || 'Görsel yüklenemedi.'); return; }
+            setForm(f => ({ ...f, imageUrl: data.url }));
+        } finally { setUploading(false); }
     };
 
     const remove = async () => {
@@ -104,7 +123,7 @@ export default function LevelsPage() {
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">Seviyeler</h2>
                     <p className="text-muted-foreground">
-                        Kullanıcılar seviye 0'dan başlar; toplam coin harcaması eşiği geçince seviye atlar.
+                        Kullanıcılar seviye 0'dan başlar; toplam coin harcaması eşiği geçince seviye atlar. Rozet görseli ve renk mobilde profilde gösterilir.
                     </p>
                 </div>
                 <div className="flex gap-2">
@@ -131,6 +150,7 @@ export default function LevelsPage() {
                         <thead className="bg-muted/40">
                             <tr className="border-b">
                                 <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Seviye</th>
+                                <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Rozet</th>
                                 <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Ad</th>
                                 <th className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">Gereken Toplam Harcama</th>
                                 <th className="px-5 py-3" />
@@ -140,6 +160,19 @@ export default function LevelsPage() {
                             {thresholds.map(t => (
                                 <tr key={t.id} className="border-b last:border-0 hover:bg-muted/20 transition-colors">
                                     <td className="px-5 py-4 font-semibold">Seviye {t.level}</td>
+                                    <td className="px-5 py-4">
+                                        <div className="flex items-center gap-2">
+                                            {t.imageUrl
+                                                // eslint-disable-next-line @next/next/no-img-element
+                                                ? <img src={t.imageUrl} alt="" className="h-8 w-8 rounded object-contain" />
+                                                : <span className="text-muted-foreground">-</span>}
+                                            {t.color && (
+                                                <span className="flex items-center gap-1 text-xs">
+                                                    <span className="h-4 w-4 rounded-full border" style={{ backgroundColor: t.color }} /> {t.color}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </td>
                                     <td className="px-5 py-4">{t.name ? <Badge variant="secondary">{t.name}</Badge> : <span className="text-muted-foreground">-</span>}</td>
                                     <td className="px-5 py-4">
                                         <span className="flex items-center gap-1.5 font-bold text-amber-600">
@@ -172,11 +205,35 @@ export default function LevelsPage() {
                     <div className="space-y-3 py-2">
                         <div className="space-y-1">
                             <label className="text-xs font-semibold text-zinc-700">Seviye</label>
-                            <Input type="number" min="1" value={form.level} onChange={e => setForm(f => ({ ...f, level: e.target.value }))} />
+                            <Input type="number" min="0" value={form.level} onChange={e => setForm(f => ({ ...f, level: e.target.value }))} />
                         </div>
                         <div className="space-y-1">
                             <label className="text-xs font-semibold text-zinc-700">Gereken Toplam Harcama (coin)</label>
-                            <Input type="number" min="1" placeholder="ör. 1000" value={form.requiredSpend} onChange={e => setForm(f => ({ ...f, requiredSpend: e.target.value }))} />
+                            <Input type="number" min="1" placeholder="ör. 1000" disabled={form.level === '0'} value={form.level === '0' ? '0' : form.requiredSpend} onChange={e => setForm(f => ({ ...f, requiredSpend: e.target.value }))} />
+                            {form.level === '0' && <p className="text-xs text-muted-foreground">Seviye 0 herkesin başlangıcıdır; yalnızca rozet ve renk tanımlanır.</p>}
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-zinc-700">Rozet görseli (png/webp/jpeg/gif, en fazla 2MB)</label>
+                            <div className="flex items-center gap-3">
+                                {form.imageUrl
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    ? <img src={form.imageUrl} alt="" className="h-12 w-12 rounded border object-contain" />
+                                    : <div className="h-12 w-12 rounded border bg-muted/40" />}
+                                <input type="file" accept="image/png,image/webp,image/jpeg,image/gif" className="text-xs"
+                                    onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(f); e.target.value = ''; }} />
+                                {uploading && <Loader2 className="h-4 w-4 animate-spin" />}
+                                {form.imageUrl && <Button type="button" variant="ghost" size="sm" onClick={() => setForm(f => ({ ...f, imageUrl: '' }))}>Kaldır</Button>}
+                            </div>
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-semibold text-zinc-700">Renk</label>
+                            <div className="flex items-center gap-2">
+                                <input type="color" className="h-9 w-12 rounded border bg-transparent p-1"
+                                    value={/^#[0-9a-fA-F]{6}$/.test(form.color) ? form.color : '#888888'}
+                                    onChange={e => setForm(f => ({ ...f, color: e.target.value.toUpperCase() }))} />
+                                <Input className="w-32" placeholder="#RRGGBB" value={form.color} onChange={e => setForm(f => ({ ...f, color: e.target.value }))} />
+                                {form.color && <Button type="button" variant="ghost" size="sm" onClick={() => setForm(f => ({ ...f, color: '' }))}>Temizle</Button>}
+                            </div>
                         </div>
                         <div className="space-y-1">
                             <label className="text-xs font-semibold text-zinc-700">Ad (opsiyonel)</label>

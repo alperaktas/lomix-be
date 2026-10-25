@@ -23,6 +23,10 @@ import { followingIdSet, friendIdSet } from '@/lib/profile-lists';
  *       `takip` (token'daki kullanıcı bu kişiyi takip ediyor mu), `arkadas` (karşılıklı takip) ve
  *       `engelli` (token'daki kullanıcı bu kişiyi engellemiş mi) alanları isteği yapan kullanıcıya
  *       göre hesaplanır. Engeli açıp kapatmak için `/api/mobile/users/block` kullanılır.
+ *
+ *       `user_info.level_image` (görsel adresi) ve `user_info.level_color` (`#RRGGBB`) kullanıcının
+ *       seviyesine ait rozet görseli ve rengidir; admin panelinde (Ayarlar > Seviyeler) belirlenir,
+ *       tanımlı değilse `null` döner.
  *     tags: [Mobile Users]
  *     security:
  *       - bearerAuth: []
@@ -86,6 +90,14 @@ async function getUserProfile(targetUserId: number, viewerId: number, request: R
 
     const room = user.rooms[0] ?? null;
 
+    // Seviye görseli/rengi admin panelinden tanımlanır; kullanıcının seviyesine ait kayıt yoksa
+    // (eşik silinmiş olabilir) altındaki en yakın seviyenin kaydı kullanılır.
+    const levelStyle = await prisma.levelThreshold.findFirst({
+        where: { level: { lte: user.level } },
+        orderBy: { level: 'desc' },
+        select: { imageUrl: true, color: true },
+    });
+
     return ApiResponseHelper.success({
         user_info: {
             id: String(user.id),
@@ -99,6 +111,8 @@ async function getUserProfile(targetUserId: number, viewerId: number, request: R
             zodiac: user.birthDate ? getZodiac(user.birthDate) : null,
             join_date: user.createdAt.toISOString().split('T')[0],
             level: user.level,
+            level_image: levelStyle?.imageUrl ?? null,
+            level_color: levelStyle?.color ?? null,
             is_vip: user.isVip,
             takip: followingSet.has(targetUserId),
             arkadas: friendSet.has(targetUserId),
