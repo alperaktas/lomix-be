@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { isOnline } from '@/lib/presence';
 import { normalizeGender } from '@/lib/gender';
+import { calculateAge } from '@/lib/age';
 
 /**
  * @swagger
@@ -15,6 +16,7 @@ import { normalizeGender } from '@/lib/gender';
  *       (sunucu, istekler üzerinden en fazla dakikada bir günceller). Hiç görülmemiş kullanıcılarda
  *       `is_online: false`, `last_seen_at: null` döner. `gender` kullanıcının cinsiyetidir: `male`, `female`
  *       ya da belirtilmemişse `null`.
+ *       `age` kullanıcının tamamlanmış yaşıdır (doğum tarihinden hesaplanır); doğum tarihi yoksa `null`.
  *     tags: [Mobile Users]
  *     security:
  *       - bearerAuth: []
@@ -114,6 +116,7 @@ export async function GET(request: Request) {
             score: r.prestigePoints,
             hakkimda: r.description || null,
             gender: normalizeGender(r.gender),
+            age: calculateAge(r.birthDate),
             is_online: isOnline(r.lastSeenAt),
             last_seen_at: r.lastSeenAt ? r.lastSeenAt.toISOString() : null,
         }));
