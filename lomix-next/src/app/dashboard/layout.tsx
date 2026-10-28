@@ -35,6 +35,23 @@ const LABELS: Record<string, string> = {
     profile: 'Profilim',
     endpoints: 'Endpoint\'ler',
     'api-docs': 'API Dökümanları',
+    agencies: 'Ajanslar',
+    'agency-applications': 'Ajans Başvuruları',
+    'agency-prim': 'Ajans Prim Oranları',
+    anlar: 'Anlar',
+    topics: 'Sıcak Konular',
+    messages: 'Özel Mesajlar',
+    'hi-messages': 'Hi Mesajları',
+    emojis: 'Emojiler',
+    gifts: 'Hediyeler',
+    'coin-packages': 'Coin Paketleri',
+    'story-prices': 'Hikaye Fiyatları',
+    commissions: 'Komisyon & Fiyatlar',
+    levels: 'Seviyeler',
+    'room-themes': 'Oda Temaları',
+    notifications: 'Bildirimler',
+    complaints: 'Şikayet & Öneriler',
+    'auth-test': 'Auth Test',
 };
 
 function segmentLabel(seg: string) {

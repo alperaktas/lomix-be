@@ -6,20 +6,15 @@ import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   Users,
-  ShieldCheck,
-  FileText,
   Settings,
   ChevronRight,
   Radio,
-  BarChart2,
-  MessageSquare,
+  MessagesSquare,
   LogOut,
-  Gift,
-  Smile,
-  FlaskConical,
-  Bell,
-  Inbox,
+  Wallet,
+  Headset,
   Building2,
+  Code2,
 } from "lucide-react"
 
 import {
@@ -43,123 +38,114 @@ import {
 } from "@/components/ui/collapsible"
 import { cn } from "@/lib/utils"
 
-const data = {
+type NavChild = { title: string; url: string }
+type NavItem = { title: string; url: string; icon: React.ComponentType<{ className?: string }>; children?: NavChild[] }
+
+const data: { navMain: NavItem[] } = {
   navMain: [
+    { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
     {
-      title: "Dashboard",
-      url: "/dashboard",
-      icon: LayoutDashboard,
-    },
-    {
-      title: "Kullanıcı Yönetimi",
-      url: "/dashboard/users",
-      icon: Users,
-    },
-    {
-      title: "Roller & Yetkiler",
-      url: "/dashboard/roles",
-      icon: ShieldCheck,
-    },
-    {
-      title: "İçerik Yönetimi",
+      title: "Kullanıcılar",
       url: "#",
-      icon: FileText,
+      icon: Users,
       children: [
-        {
-          title: "Endpoints",
-          url: "/dashboard/endpoints",
-        },
-        {
-          title: "API Dökümantasyonu",
-          url: "/dashboard/api-docs",
-        },
-        {
-          title: "Sistem Logları",
-          url: "/dashboard/system-logs",
-        },
+        { title: "Kullanıcı Yönetimi", url: "/dashboard/users" },
+        { title: "Roller & Yetkiler", url: "/dashboard/roles" },
+        { title: "Seviyeler", url: "/dashboard/settings/levels" },
       ],
     },
     {
-      title: "Oda Yönetimi",
+      title: "Ajanslar",
+      url: "#",
+      icon: Building2,
+      children: [
+        { title: "Ajanslar", url: "/dashboard/agencies" },
+        { title: "Ajans Başvuruları", url: "/dashboard/agency-applications" },
+      ],
+    },
+    {
+      title: "Odalar",
       url: "#",
       icon: Radio,
       children: [
         { title: "Odalar", url: "/dashboard/rooms" },
         { title: "Raporlar", url: "/dashboard/rooms/reports" },
         { title: "Kelime Filtresi", url: "/dashboard/rooms/word-filters" },
-        { title: "Test İstemcisi", url: "/dashboard/rooms/client" },
-      ],
-    },
-    {
-      title: "Anlar",
-      url: "#",
-      icon: Radio,
-      children: [
-        { title: "Anlar", url: "/dashboard/anlar" },
-        { title: "Sıcak Konular", url: "/dashboard/anlar/topics" },
-      ],
-    },
-    {
-      title: "Hediyeler",
-      url: "/dashboard/gifts",
-      icon: Gift,
-    },
-    {
-      title: "Emojiler",
-      url: "/dashboard/emojis",
-      icon: Smile,
-    },
-    {
-      title: "Auth Test",
-      url: "/dashboard/auth-test",
-      icon: FlaskConical,
-    },
-    {
-      title: "Harcama Raporları",
-      url: "/dashboard/reports",
-      icon: BarChart2,
-    },
-    {
-      title: "Özel Mesajlar",
-      url: "/dashboard/messages",
-      icon: MessageSquare,
-    },
-    {
-      title: "Bildirimler",
-      url: "/dashboard/notifications",
-      icon: Bell,
-    },
-    {
-      title: "Şikayet & Öneriler",
-      url: "/dashboard/complaints",
-      icon: Inbox,
-    },
-    {
-      title: "Ajans Başvuruları",
-      url: "/dashboard/agency-applications",
-      icon: Building2,
-    },
-    {
-      title: "Ayarlar",
-      url: "#",
-      icon: Settings,
-      children: [
-        { title: "Genel", url: "/dashboard/settings" },
-        { title: "Seviyeler", url: "/dashboard/settings/levels" },
-        { title: "Hi Mesajları", url: "/dashboard/settings/hi-messages" },
-        { title: "Hikaye Fiyatları", url: "/dashboard/settings/story-prices" },
-        { title: "Komisyon & Fiyatlar", url: "/dashboard/settings/commissions" },
-        { title: "Coin Paketleri", url: "/dashboard/settings/coin-packages" },
         { title: "Oda Temaları", url: "/dashboard/settings/room-themes" },
       ],
     },
+    {
+      title: "Sosyal",
+      url: "#",
+      icon: MessagesSquare,
+      children: [
+        { title: "Anlar", url: "/dashboard/anlar" },
+        { title: "Sıcak Konular", url: "/dashboard/anlar/topics" },
+        { title: "Özel Mesajlar", url: "/dashboard/messages" },
+        { title: "Hi Mesajları", url: "/dashboard/settings/hi-messages" },
+        { title: "Emojiler", url: "/dashboard/emojis" },
+      ],
+    },
+    {
+      title: "Gelir & Ekonomi",
+      url: "#",
+      icon: Wallet,
+      children: [
+        { title: "Hediyeler", url: "/dashboard/gifts" },
+        { title: "Harcama Raporları", url: "/dashboard/reports" },
+        { title: "Coin Paketleri", url: "/dashboard/settings/coin-packages" },
+        { title: "Hikaye Fiyatları", url: "/dashboard/settings/story-prices" },
+        { title: "Komisyon & Fiyatlar", url: "/dashboard/settings/commissions" },
+        { title: "Ajans Prim Oranları", url: "/dashboard/settings/agency-prim" },
+      ],
+    },
+    {
+      title: "Destek & Bildirim",
+      url: "#",
+      icon: Headset,
+      children: [
+        { title: "Bildirimler", url: "/dashboard/notifications" },
+        { title: "Şikayet & Öneriler", url: "/dashboard/complaints" },
+      ],
+    },
+    {
+      title: "Geliştirici",
+      url: "#",
+      icon: Code2,
+      children: [
+        { title: "Endpoints", url: "/dashboard/endpoints" },
+        { title: "API Dökümantasyonu", url: "/dashboard/api-docs" },
+        { title: "Sistem Logları", url: "/dashboard/system-logs" },
+        { title: "Auth Test", url: "/dashboard/auth-test" },
+        { title: "Test İstemcisi", url: "/dashboard/rooms/client" },
+      ],
+    },
+    { title: "Ayarlar", url: "/dashboard/settings", icon: Settings },
   ],
+}
+
+/** Sayfa, menü adresiyle birebir ya da onun alt yolu (örn. /dashboard/users/12) ise eşleşir. */
+function matches(pathname: string, url: string): boolean {
+  if (url === "#") return false
+  return pathname === url || (url !== "/dashboard" && pathname.startsWith(url + "/"))
+}
+
+/** Tüm menüde en uzun eşleşen adres vurgulanır; böylece /rooms/reports'ta /rooms de yanmaz. */
+function findActiveUrl(pathname: string): string | null {
+  let best: string | null = null
+  for (const item of data.navMain) {
+    for (const url of [item.url, ...(item.children?.map(c => c.url) ?? [])]) {
+      if (matches(pathname, url) && (best === null || url.length > best.length)) best = url
+    }
+  }
+  return best
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
   const router = useRouter()
   const { state, setOpen, open } = useSidebar()
+  const activeUrl = findActiveUrl(pathname)
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -225,7 +211,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent className="no-scrollbar overflow-x-hidden bg-card">
         <SidebarMenu className="px-2 py-4">
           {data.navMain.map((item) => {
-            const active = pathname === item.url || item.children?.some(child => pathname === child.url)
+            const active = activeUrl !== null && (item.url === activeUrl || !!item.children?.some(child => child.url === activeUrl))
 
             if (item.children) {
               return (
@@ -254,8 +240,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       <SidebarMenuSub>
                         {item.children?.map((subItem) => (
                           <SidebarMenuSubItem key={subItem.title}>
-                            <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
-                              <Link href={subItem.url} className={cn("whitespace-nowrap transition-colors", pathname === subItem.url && "text-primary font-bold")}>
+                            <SidebarMenuSubButton asChild isActive={subItem.url === activeUrl}>
+                              <Link href={subItem.url} className={cn("whitespace-nowrap transition-colors", subItem.url === activeUrl && "text-primary font-bold")}>
                                 <span>{subItem.title}</span>
                               </Link>
                             </SidebarMenuSubButton>
@@ -273,15 +259,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <SidebarMenuButton
                   asChild
                   tooltip={!open ? item.title : undefined}
-                  isActive={pathname === item.url}
+                  isActive={item.url === activeUrl}
                   className={cn(
                     "transition-all duration-200",
-                    pathname === item.url && "bg-primary/5 text-primary border-r-2 border-r-primary rounded-none"
+                    item.url === activeUrl && "bg-primary/5 text-primary border-r-2 border-r-primary rounded-none"
                   )}
                 >
                   <Link href={item.url}>
-                    {item.icon && <item.icon className={cn(pathname === item.url && "text-primary")} />}
-                    <span className={cn("text-black", pathname === item.url && "font-bold text-primary")}>
+                    {item.icon && <item.icon className={cn(item.url === activeUrl && "text-primary")} />}
+                    <span className={cn("text-black", item.url === activeUrl && "font-bold text-primary")}>
                       {item.title}
                     </span>
                   </Link>
