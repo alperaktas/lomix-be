@@ -140,7 +140,7 @@ export default function CoinPackagesPage() {
     useEffect(() => { load(); }, []);
 
     const openCreate = () => setDialog({ open: true, mode: 'create', pkg: { ...EMPTY } });
-    const openEdit = (p: CoinPackage) => setDialog({ open: true, mode: 'edit', pkg: { ...p } });
+    const openEdit = (p: CoinPackage) => setDialog({ open: true, mode: 'edit', pkg: { ...p, badgeText: p.badgeText ?? '' } });
 
     const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
