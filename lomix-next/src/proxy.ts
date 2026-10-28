@@ -101,7 +101,9 @@ export async function proxy(request: NextRequest) {
         '/swagger.json',
         '/img',
         '/libs',
-        '/uploads'
+        '/uploads',
+        // Vercel zamanlanmış işleri JWT taşımaz; route kendi CRON_SECRET kontrolünü yapar.
+        '/api/cron'
     ];
 
     if (pathname === '/' || publicPaths.some(p => pathname.startsWith(p))) {

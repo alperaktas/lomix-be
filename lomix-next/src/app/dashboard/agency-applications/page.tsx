@@ -12,19 +12,26 @@ interface Application {
     contactValue: string;
     note: string | null;
     kvkkAcceptedAt: string;
-    status: 'pending' | 'approved' | 'rejected';
+    status: 'pending' | 'owner_approved' | 'approved' | 'rejected';
+    rejectedBy: string | null;
     createdAt: string;
-    user: { id: number; username: string; fullName: string | null };
+    user: { id: number; username: string; fullName: string | null; gender: string | null };
     agency: { id: number; name: string };
 }
 
-const STATUS_LABELS: Record<string, string> = { pending: 'Bekliyor', approved: 'Onaylandı', rejected: 'Reddedildi' };
-const FILTERS = [{ key: '', label: 'Tümü' }, { key: 'pending', label: 'Bekleyen' }, { key: 'approved', label: 'Onaylanan' }, { key: 'rejected', label: 'Reddedilen' }];
+const STATUS_LABELS: Record<string, string> = { pending: 'Ajans sahibi bekleniyor', owner_approved: 'Admin onayı bekliyor', approved: 'Onaylandı', rejected: 'Reddedildi' };
+const FILTERS = [
+    { key: '', label: 'Tümü' },
+    { key: 'owner_approved', label: 'Admin onayı bekleyen' },
+    { key: 'pending', label: 'Ajans sahibi bekleyen' },
+    { key: 'approved', label: 'Onaylanan' },
+    { key: 'rejected', label: 'Reddedilen' },
+];
 
 export default function AgencyApplicationsPage() {
     const [items, setItems] = useState<Application[]>([]);
     const [counts, setCounts] = useState<Record<string, number>>({});
-    const [status, setStatus] = useState('pending');
+    const [status, setStatus] = useState('owner_approved');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(true);
@@ -51,7 +58,7 @@ export default function AgencyApplicationsPage() {
     const act = async (a: Application, action: 'approve' | 'reject') => {
         const who = a.user.fullName || a.user.username;
         const msg = action === 'approve'
-            ? `${who}, "${a.agency.name}" ajansına onaylı üye olarak eklensin mi?`
+            ? `${who} (ajans sahibi onayladı), "${a.agency.name}" ajansına yayıncı olarak eklensin mi?`
             : `${who} kullanıcısının "${a.agency.name}" başvurusu reddedilsin mi?`;
         if (!confirm(msg)) return;
         setError(''); setBusyId(a.id);
@@ -69,7 +76,7 @@ export default function AgencyApplicationsPage() {
         <div className="space-y-6 animate-in fade-in duration-500">
             <div>
                 <h2 className="text-3xl font-bold tracking-tight">Ajans Başvuruları</h2>
-                <p className="text-muted-foreground">Onay, başvuranı ajansa üye yapar ve kullanıcıya bildirim gönderir.</p>
+                <p className="text-muted-foreground">Önce ajans sahibi (uygulamadan), sonra siz onaylarsınız. Son onay, başvuranı ajansın yayıncı listesine ekler ve kullanıcıya bildirim gönderir.</p>
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -105,6 +112,7 @@ export default function AgencyApplicationsPage() {
                                     <td className="px-4 py-4 whitespace-nowrap">
                                         <div className="font-semibold">{a.user.fullName || a.user.username}</div>
                                         <div className="text-xs text-muted-foreground">#{a.user.id} @{a.user.username}</div>
+                                        {a.user.gender === 'female' && <Badge variant="outline" className="mt-1">Kadın: yüz doğrulama</Badge>}
                                     </td>
                                     <td className="px-4 py-4">{a.agency.name}</td>
                                     <td className="px-4 py-4"><Badge variant="secondary">{a.applicationType}</Badge></td>
@@ -117,13 +125,18 @@ export default function AgencyApplicationsPage() {
                                         <div>{new Date(a.createdAt).toLocaleString('tr-TR')}</div>
                                         <div className="text-xs text-muted-foreground">KVKK: {new Date(a.kvkkAcceptedAt).toLocaleDateString('tr-TR')}</div>
                                     </td>
-                                    <td className="px-4 py-4"><Badge variant={a.status === 'pending' ? 'default' : 'secondary'}>{STATUS_LABELS[a.status]}</Badge></td>
                                     <td className="px-4 py-4">
-                                        {a.status === 'pending' && (
+                                        <Badge variant={a.status === 'owner_approved' ? 'default' : 'secondary'}>{STATUS_LABELS[a.status]}</Badge>
+                                        {a.status === 'rejected' && a.rejectedBy && <div className="text-xs text-muted-foreground mt-1">{a.rejectedBy === 'owner' ? 'Ajans sahibi' : 'Admin'} reddetti</div>}
+                                    </td>
+                                    <td className="px-4 py-4">
+                                        {(a.status === 'pending' || a.status === 'owner_approved') && (
                                             <div className="flex gap-1 justify-end">
-                                                <Button size="sm" variant="ghost" className="h-8 px-2 text-emerald-700 hover:bg-emerald-50" disabled={busyId === a.id} onClick={() => act(a, 'approve')}>
-                                                    <Check className="h-3.5 w-3.5 mr-1" /> Onayla
-                                                </Button>
+                                                {a.status === 'owner_approved' && (
+                                                    <Button size="sm" variant="ghost" className="h-8 px-2 text-emerald-700 hover:bg-emerald-50" disabled={busyId === a.id} onClick={() => act(a, 'approve')}>
+                                                        <Check className="h-3.5 w-3.5 mr-1" /> Onayla
+                                                    </Button>
+                                                )}
                                                 <Button size="sm" variant="ghost" className="h-8 px-2 text-rose-600 hover:bg-rose-50" disabled={busyId === a.id} onClick={() => act(a, 'reject')}>
                                                     <X className="h-3.5 w-3.5 mr-1" /> Reddet
                                                 </Button>

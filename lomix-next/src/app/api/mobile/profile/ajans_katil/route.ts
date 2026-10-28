@@ -1,6 +1,7 @@
 import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
+import { createNotification } from '@/lib/notifications';
 
 const APPLICATION_TYPES = ['third_party', 'management'];
 const CONTACT_METHODS = ['phone', 'email'];
@@ -26,6 +27,9 @@ function normalizePhone(raw: string): string | null {
  *       `contact_method` email olduğunda da e-posta adresi bu alanda gönderilir; içerik seçilen
  *       türe göre doğrulanır. Aynı ajansa ikinci başvuru reddedilir; reddedilmiş bir başvuru
  *       yeniden gönderilebilir.
+ *
+ *       Onay iki aşamalıdır: önce ajans sahibi (mobil, `ajans/yayici_onayla`), sonra admin (panel).
+ *       Başvuru gelince ajans sahibine bildirim gider. Pasif ajansa başvuru yapılamaz.
  *     tags: [Mobile Agency]
  *     security:
  *       - bearerAuth: []
@@ -114,8 +118,9 @@ export async function POST(request: Request) {
             return ApiResponseHelper.error("Başvuru için KVKK onayı gereklidir.", 400);
         }
 
-        const agency = await prisma.agency.findUnique({ where: { id: agencyId }, select: { id: true, ownerId: true } });
+        const agency = await prisma.agency.findUnique({ where: { id: agencyId }, select: { id: true, ownerId: true, name: true, isActive: true } });
         if (!agency) return ApiResponseHelper.error("Ajans bulunamadı.", 404);
+        if (!agency.isActive) return ApiResponseHelper.error("Bu ajans şu an başvuru almıyor.", 409);
         if (agency.ownerId === userId) return ApiResponseHelper.error("Kendi ajansınıza başvuru yapamazsınız.", 400);
 
         const membership = await prisma.agencyMember.findUnique({ where: { userId }, select: { status: true } });
@@ -133,6 +138,8 @@ export async function POST(request: Request) {
             note: cleanNote || null,
             kvkkAcceptedAt: new Date(),
             status: 'pending',
+            ownerApprovedAt: null,
+            rejectedBy: null,
         };
 
         const existing = await prisma.agencyApplication.findUnique({
@@ -143,6 +150,7 @@ export async function POST(request: Request) {
         let applicationId: number;
         if (existing) {
             if (existing.status === 'pending') return ApiResponseHelper.error("Bu ajansa başvurunuz zaten mevcut.", 409);
+            if (existing.status === 'owner_approved') return ApiResponseHelper.error("Başvurunuz ajans tarafından onaylandı, admin onayı bekleniyor.", 409);
             if (existing.status === 'approved') return ApiResponseHelper.error("Bu ajansa başvurunuz zaten onaylanmış.", 409);
             // reddedilmiş başvuru yeniden gönderilebilir
             const updated = await prisma.agencyApplication.update({ where: { id: existing.id }, data });
@@ -156,6 +164,17 @@ export async function POST(request: Request) {
                 throw e;
             }
         }
+
+        // Ajans sahibine haber ver: onay onun mobil ekranından verilir.
+        const applicant = await prisma.user.findUnique({ where: { id: userId }, select: { fullName: true, username: true } });
+        await createNotification({
+            audience: 'user',
+            targetUserId: agency.ownerId,
+            type: 'agency_application_new',
+            title: 'Yeni yayıncı başvurusu',
+            body: `${applicant?.fullName || applicant?.username || 'Bir kullanıcı'} ajansınıza katılmak istiyor.`,
+            data: { application_id: String(applicationId), user_id: String(userId) },
+        }).catch(() => {});
 
         return ApiResponseHelper.success(
             { application_id: String(applicationId), status: 'pending' },

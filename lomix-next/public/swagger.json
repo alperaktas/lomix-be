@@ -25,6 +25,101 @@
     }
   },
   "paths": {
+    "/api/mobile/ajans/yayici_onay": {
+      "get": {
+        "summary": "Ajans sahibinin onayını bekleyen yayıncı başvuruları",
+        "description": "Kullanıcıların `profile/ajans_katil` ile yaptığı başvurulardan, ajans sahibinin henüz onaylamadığı\n(`pending`) olanları listeler. Onay iki aşamalıdır: ajans sahibi (`yayici_onayla`), sonra admin.\nBaşvuranın iletişim bilgisi (telefon/e-posta) ajans sahibine gösterilmez.\n",
+        "tags": [
+          "Mobile Agency"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Yayıncı onay listesi yüklendi"
+          },
+          "404": {
+            "description": "Ajans bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/ajans/yayici_onayla": {
+      "get": {
+        "summary": "Yayıncı başvurusunu ajans sahibi olarak onayla",
+        "description": "`userId` ile belirtilen kullanıcının, token'daki ajans sahibinin ajansına yaptığı bekleyen başvurusunu\nonaylar. Onay iki aşamalıdır: bu adımdan sonra başvuru **admin onayına** düşer; kullanıcı admin de\nonaylayınca ajansın yayıncı listesine girer. Aynı başvuruyu tekrar onaylamak hata değildir.\n",
+        "tags": [
+          "Mobile Agency"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Başvuru onaylandı, admin onayı bekleniyor"
+          },
+          "403": {
+            "description": "Ajans sahibi değilsiniz"
+          },
+          "404": {
+            "description": "Bu kullanıcının ajansınıza bekleyen başvurusu yok"
+          },
+          "409": {
+            "description": "Ajans pasif"
+          }
+        }
+      }
+    },
+    "/api/mobile/ajans/yayici_reddet": {
+      "get": {
+        "summary": "Yayıncı başvurusunu ajans sahibi olarak reddet",
+        "description": "`userId` ile belirtilen kullanıcının, token'daki ajans sahibinin ajansına yaptığı henüz admine\ngeçmemiş (`pending`) başvurusunu reddeder; kullanıcıya bildirim gider ve isterse yeniden başvurabilir.\nAjans sahibi onaylamış, admin onayı bekleyen başvuruyu artık reddedemez.\n",
+        "tags": [
+          "Mobile Agency"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "userId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Başvuru reddedildi"
+          },
+          "403": {
+            "description": "Ajans sahibi değilsiniz"
+          },
+          "404": {
+            "description": "Bu kullanıcının ajansınıza bekleyen başvurusu yok"
+          }
+        }
+      }
+    },
     "/api/mobile/anlar/add-comment": {
       "post": {
         "summary": "Yorum Ekle",
@@ -1720,7 +1815,7 @@
     "/api/mobile/profile/ajans_katil": {
       "post": {
         "summary": "Ajansa katılım başvurusu",
-        "description": "Başvuran kullanıcı token'dan belirlenir. `phone_number` alanı istemcide sabit olduğu için\n`contact_method` email olduğunda da e-posta adresi bu alanda gönderilir; içerik seçilen\ntüre göre doğrulanır. Aynı ajansa ikinci başvuru reddedilir; reddedilmiş bir başvuru\nyeniden gönderilebilir.\n",
+        "description": "Başvuran kullanıcı token'dan belirlenir. `phone_number` alanı istemcide sabit olduğu için\n`contact_method` email olduğunda da e-posta adresi bu alanda gönderilir; içerik seçilen\ntüre göre doğrulanır. Aynı ajansa ikinci başvuru reddedilir; reddedilmiş bir başvuru\nyeniden gönderilebilir.\n\nOnay iki aşamalıdır: önce ajans sahibi (mobil, `ajans/yayici_onayla`), sonra admin (panel).\nBaşvuru gelince ajans sahibine bildirim gider. Pasif ajansa başvuru yapılamaz.\n",
         "tags": [
           "Mobile Agency"
         ],

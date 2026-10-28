@@ -27,10 +27,15 @@ export async function GET(request: Request) {
             });
         }
 
+        // Ajans sahibinin onayını bekleyen başvurular (yayici_onay listesiyle aynı kaynak).
+        const pendingApplications = await prisma.agencyApplication.count({
+            where: { agencyId: agency.id, status: 'pending' },
+        });
+
         const stats = {
             totalMembers: agency.members.length,
             activeMembers: agency.members.filter((m: any) => m.status === 'approved').length,
-            pendingMembers: agency.members.filter((m: any) => m.status === 'pending').length,
+            pendingMembers: pendingApplications,
             newMembers: agency.members.filter((m: any) => {
                 const oneWeekAgo = new Date();
                 oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);

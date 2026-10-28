@@ -2,9 +2,10 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { requireAdmin } from '@/lib/admin-auth';
 import { createNotification } from '@/lib/notifications';
+import { joinAgency } from '@/lib/agency';
 
 const forbidden = () => NextResponse.json({ error: 'Admin yetkisi gerekli.' }, { status: 403 });
-const STATUSES = ['pending', 'approved', 'rejected'];
+const STATUSES = ['pending', 'owner_approved', 'approved', 'rejected'];
 const PAGE_SIZE = 50;
 
 export async function GET(request: Request) {
@@ -22,7 +23,7 @@ export async function GET(request: Request) {
             skip: (page - 1) * PAGE_SIZE,
             take: PAGE_SIZE,
             include: {
-                user: { select: { id: true, username: true, fullName: true } },
+                user: { select: { id: true, username: true, fullName: true, gender: true } },
                 agency: { select: { id: true, name: true } },
             },
         }),
@@ -39,6 +40,8 @@ export async function GET(request: Request) {
             note: a.note,
             kvkkAcceptedAt: a.kvkkAcceptedAt,
             status: a.status,
+            ownerApprovedAt: a.ownerApprovedAt,
+            rejectedBy: a.rejectedBy,
             createdAt: a.createdAt,
             user: a.user,
             agency: a.agency,
@@ -50,8 +53,10 @@ export async function GET(request: Request) {
 }
 
 /**
- * Bekleyen başvuruyu onaylar ya da reddeder. Onay, başvuranı ajansa onaylı üye olarak ekler
- * (bir kullanıcı tek ajansta olabilir; zaten üyeyse 409). Sonuç kullanıcıya bildirilir.
+ * İkinci (son) onay aşaması: ajans sahibinin onayladığı (`owner_approved`) başvuruyu admin onaylar ya da
+ * reddeder. Ajans sahibi henüz onaylamamışsa onaylanamaz; reddetmek her iki aşamada da mümkündür.
+ * Onay, başvuranı ajansa onaylı üye olarak ekler (bir kullanıcı tek ajansta olabilir; zaten üyeyse 409)
+ * ve sonuç kullanıcıya bildirilir.
  */
 export async function PUT(request: Request) {
     if (!(await requireAdmin(request))) return forbidden();
@@ -64,14 +69,20 @@ export async function PUT(request: Request) {
 
         const application = await prisma.agencyApplication.findUnique({
             where: { id: Number(id) },
-            include: { agency: { select: { name: true } } },
+            include: { agency: { select: { name: true, isActive: true } } },
         });
         if (!application) return NextResponse.json({ error: 'Başvuru bulunamadı.' }, { status: 404 });
-        if (application.status !== 'pending') {
-            return NextResponse.json({ error: 'Yalnızca bekleyen başvurular işlenebilir.' }, { status: 409 });
+        if (application.status !== 'pending' && application.status !== 'owner_approved') {
+            return NextResponse.json({ error: 'Bu başvuru zaten sonuçlanmış.' }, { status: 409 });
+        }
+        if (action === 'approve' && application.status !== 'owner_approved') {
+            return NextResponse.json({ error: 'Önce ajans sahibinin başvuruyu onaylaması gerekir.' }, { status: 409 });
         }
 
         if (action === 'approve') {
+            if (!application.agency.isActive) {
+                return NextResponse.json({ error: 'Ajans pasif, başvuru onaylanamaz. Önce ajansı aktif edin.' }, { status: 409 });
+            }
             const membership = await prisma.agencyMember.findUnique({ where: { userId: application.userId } });
             if (membership) {
                 return NextResponse.json({ error: 'Kullanıcı zaten bir ajansa bağlı, başvuru onaylanamaz.' }, { status: 409 });
@@ -79,20 +90,18 @@ export async function PUT(request: Request) {
             // Eşzamanlı çift işlemde ikinci istek 0 satır günceller ve üyelik oluşmaz.
             const result = await prisma.$transaction(async tx => {
                 const flipped = await tx.agencyApplication.updateMany({
-                    where: { id: application.id, status: 'pending' },
+                    where: { id: application.id, status: 'owner_approved' },
                     data: { status: 'approved' },
                 });
                 if (flipped.count === 0) return false;
-                await tx.agencyMember.create({
-                    data: { agencyId: application.agencyId, userId: application.userId, status: 'approved' },
-                });
+                await joinAgency(tx, application.agencyId, application.userId);
                 return true;
             });
             if (!result) return NextResponse.json({ error: 'Başvuru zaten işlenmiş.' }, { status: 409 });
         } else {
             const flipped = await prisma.agencyApplication.updateMany({
-                where: { id: application.id, status: 'pending' },
-                data: { status: 'rejected' },
+                where: { id: application.id, status: { in: ['pending', 'owner_approved'] } },
+                data: { status: 'rejected', rejectedBy: 'admin' },
             });
             if (flipped.count === 0) return NextResponse.json({ error: 'Başvuru zaten işlenmiş.' }, { status: 409 });
         }

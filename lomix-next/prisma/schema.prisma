@@ -99,6 +99,7 @@ model User {
   notificationReads     NotificationRead[]
   agencyApplications    AgencyApplication[]
   complaints            Complaint[]
+  agencyMemberships     AgencyMembership[]
   notificationsTargeted Notification[]        @relation("NotificationTarget")
   storyViews            StoryView[]          @relation("StoryViewer")
   escrowsPaid           MessageEscrow[]      @relation("EscrowPayer")
@@ -337,6 +338,10 @@ model Agency {
   ownerId     Int            @unique @map("owner_id")
   logo        String?
   description String?
+  whatsappNumber String?     @map("whatsapp_number")
+  isActive    Boolean        @default(true) @map("is_active")
+  primPeriod  String?        @map("prim_period")
+  primPaidThrough DateTime?  @map("prim_paid_through")
   createdAt   DateTime       @default(now()) @map("created_at")
   updatedAt   DateTime       @updatedAt @map("updated_at")
   owner       User           @relation("AgencyOwner", fields: [ownerId], references: [id])
@@ -344,6 +349,8 @@ model Agency {
   members     AgencyMember[]
   notifications Notification[]
   applications  AgencyApplication[]
+  memberships   AgencyMembership[]
+  primPayouts   AgencyPrimPayout[]
 
   @@map("agencies")
 }
@@ -984,6 +991,8 @@ model AgencyApplication {
   note            String?
   kvkkAcceptedAt  DateTime @map("kvkk_accepted_at")
   status          String   @default("pending")
+  ownerApprovedAt DateTime? @map("owner_approved_at")
+  rejectedBy      String?  @map("rejected_by")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1033,4 +1042,45 @@ model HiMessage {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("hi_messages")
+}
+
+model AgencyMembership {
+  id        Int       @id @default(autoincrement())
+  agencyId  Int       @map("agency_id")
+  userId    Int       @map("user_id")
+  joinedAt  DateTime  @default(now()) @map("joined_at")
+  leftAt    DateTime? @map("left_at")
+  agency    Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([agencyId])
+  @@index([userId])
+  @@map("agency_memberships")
+}
+
+model AgencyPrimTier {
+  id           Int      @id @default(autoincrement())
+  fromDiamonds Int      @unique @map("from_diamonds")
+  ratePercent  Int      @map("rate_percent")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("agency_prim_tiers")
+}
+
+model AgencyPrimPayout {
+  id          Int      @id @default(autoincrement())
+  agencyId    Int      @map("agency_id")
+  ownerId     Int      @map("owner_id")
+  period      String
+  periodStart DateTime @map("period_start")
+  periodEnd   DateTime @map("period_end")
+  turnover    Int
+  ratePercent Int      @map("rate_percent")
+  amount      Int
+  createdAt   DateTime @default(now()) @map("created_at")
+  agency      Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@unique([agencyId, periodStart])
+  @@index([agencyId, periodStart])
+  @@map("agency_prim_payouts")
 }
