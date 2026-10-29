@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { RoleSelect } from '@/components/role-select';
 
 // Action dialogs (Adım 4'te ayrı bileşen olarak refactor edilecek)
 import {
@@ -713,15 +714,7 @@ export default function UserDetailPage() {
                         <DialogDescription>Mevcut rol: <strong>{user.role.toUpperCase()}</strong></DialogDescription>
                     </DialogHeader>
                     <div className="space-y-3 pt-2">
-                        <select
-                            className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-950"
-                            value={roleValue}
-                            onChange={e => setRoleValue(e.target.value)}
-                        >
-                            <option value="user">user</option>
-                            <option value="moderator">moderator</option>
-                            <option value="admin">admin</option>
-                        </select>
+                        <RoleSelect value={roleValue} onChange={setRoleValue} />
                         <DialogFooter>
                             <Button variant="ghost" size="sm" onClick={() => setRoleDialog(false)}>İptal</Button>
                             <Button size="sm" className="bg-zinc-900 text-white hover:bg-zinc-800 font-semibold" disabled={actionLoading}

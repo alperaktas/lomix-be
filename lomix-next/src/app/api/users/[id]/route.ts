@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { roleExists } from '@/lib/roles';
 
 // GET: Tekil kullanıcı detay (tüm ilişkiler dahil)
 export async function GET(req: Request, { params }: any) {
@@ -51,6 +52,14 @@ export async function PUT(req: Request, { params }: any) {
         const userId = Number(id);
         const body = await req.json();
         const { username, email, role, status, password } = body;
+
+        // Rol yalnızca tanımlı rollerden biri olabilir; tabloda olmayan eski bir rolü olan kullanıcı, rolünü değiştirmeden düzenlenebilir.
+        if (role !== undefined && !(await roleExists(role))) {
+            const current = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+            if (current?.role !== role) {
+                return NextResponse.json({ message: 'Geçersiz rol. Rol, roller listesinde tanımlı olmalıdır.' }, { status: 400 });
+            }
+        }
 
         const updateData: any = {
             username,

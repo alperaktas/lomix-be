@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { roleExists } from '@/lib/roles';
 
 // GET: Tüm kullanıcıları listele
 export async function GET(req: Request) {
@@ -41,6 +42,10 @@ export async function POST(req: Request) {
 
         if (!username || !email || !password) {
             return NextResponse.json({ message: 'Tüm alanları doldurun.' }, { status: 400 });
+        }
+
+        if (role && !(await roleExists(role))) {
+            return NextResponse.json({ message: 'Geçersiz rol. Rol, roller listesinde tanımlı olmalıdır.' }, { status: 400 });
         }
 
         // Benzersizlik kontrolü

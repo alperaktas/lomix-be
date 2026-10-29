@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/ui/data-table';
 import { getColumns, User } from './columns';
 import { cn } from '@/lib/utils';
+import { RoleSelect } from '@/components/role-select';
 import {
     Dialog,
     DialogContent,
@@ -184,11 +185,7 @@ export default function UsersPage() {
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-xs font-semibold text-zinc-700">Rol</label>
-                            <select className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-950" value={newUser.role} onChange={e => setNewUser({ ...newUser, role: e.target.value })}>
-                                <option value="user">User</option>
-                                <option value="admin">Admin</option>
-                                <option value="moderator">Moderator</option>
-                            </select>
+                            <RoleSelect value={newUser.role} onChange={role => setNewUser({ ...newUser, role })} />
                         </div>
                         <div className="space-y-1.5 sm:col-span-2">
                             <label className="text-xs font-semibold text-zinc-700">Durum</label>
@@ -224,11 +221,7 @@ export default function UsersPage() {
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-xs font-semibold text-zinc-700">Rol</label>
-                            <select className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-950" value={editForm.role} onChange={e => setEditForm({ ...editForm, role: e.target.value })}>
-                                <option value="user">User</option>
-                                <option value="admin">Admin</option>
-                                <option value="moderator">Moderator</option>
-                            </select>
+                            <RoleSelect value={editForm.role} onChange={role => setEditForm({ ...editForm, role })} />
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-xs font-semibold text-zinc-700">Durum</label>
