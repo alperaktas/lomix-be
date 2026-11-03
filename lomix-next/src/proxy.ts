@@ -1,10 +1,38 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
+import { checkUserBanStatus } from '@/lib/ban-check';
 
 const SECRET_KEY = new TextEncoder().encode(
     process.env.JWT_SECRET || 'gizli_anahtar_degistirilmeli'
 );
+
+/** Loglanacak en büyük istek gövdesi. */
+const MAX_LOGGED_BODY_BYTES = 64 * 1024;
+
+/**
+ * Yasaklı mı kontrolü her kimlikli API isteğinde yapılır. Eskiden bunun için proxy kendi sunucusuna bir HTTP isteği
+ * (/api/auth/check-ban) atıyordu: her istekte ikinci bir fonksiyon çağrısı + sorgu. Artık süreç içinde kontrol edilir
+ * ve "yasaklı değil" sonucu kısa süre hatırlanır; yasak en geç bu sürede (aynı sunucu örneğinde) devreye girer.
+ * Yasaklı sonuç hiç önbelleğe alınmaz, yasak kaldırılınca hemen geçerli olur.
+ */
+const NOT_BANNED_TTL_MS = 30_000;
+const NOT_BANNED_CACHE_MAX = 5000;
+const notBannedUntil = new Map<number, number>();
+
+async function banStatusFor(userId: number) {
+    const now = Date.now();
+    if ((notBannedUntil.get(userId) ?? 0) > now) return { banned: false } as const;
+
+    const status = await checkUserBanStatus(userId);
+    if (status.banned) {
+        notBannedUntil.delete(userId);
+    } else {
+        if (notBannedUntil.size >= NOT_BANNED_CACHE_MAX) notBannedUntil.clear();
+        notBannedUntil.set(userId, now + NOT_BANNED_TTL_MS);
+    }
+    return status;
+}
 
 export async function proxy(request: NextRequest) {
     const originalPathname = request.nextUrl.pathname;
@@ -22,19 +50,20 @@ export async function proxy(request: NextRequest) {
     // Debug: gelen tüm istekleri logla
     console.log(`[${request.method}] ${pathname}`);
 
-    // POST/PUT/PATCH body'lerini logla
+    // POST/PUT/PATCH body'lerini logla. Yüklemeler (multipart, 50MB'a kadar) ve büyük gövdeler okunmaz:
+    // gövdeyi proxy'de metne çevirmek her yüklemede bellek ve süre harcar.
     if (['POST', 'PUT', 'PATCH'].includes(request.method)) {
-        try {
-            const cloned = request.clone();
-            const text = await cloned.text();
-            if (text) {
-                // Content-Type kontrolü: multipart/form-data ise sadece keys göster
-                const contentType = request.headers.get('content-type') || '';
-                if (contentType.includes('multipart/form-data')) {
-                    const boundary = contentType.split('boundary=')[1]?.split(';')[0]?.trim();
-                    const fieldCount = (text.match(/--{1,2}[\w-]+/g) || []).length / 2 - 1;
-                    console.log(`  Body: (multipart, ~${Math.max(0, fieldCount)} fields)`);
-                } else {
+        const contentType = request.headers.get('content-type') || '';
+        const contentLength = Number(request.headers.get('content-length') || 0);
+        if (contentType.includes('multipart/form-data')) {
+            console.log('  Body: (multipart, okunmadı)');
+        } else if (contentLength > MAX_LOGGED_BODY_BYTES) {
+            console.log(`  Body: (${contentLength} bayt, okunmadı)`);
+        } else {
+            try {
+                const cloned = request.clone();
+                const text = await cloned.text();
+                if (text) {
                     try {
                         const json = JSON.parse(text);
                         const redactKeys = new Set([
@@ -65,9 +94,9 @@ export async function proxy(request: NextRequest) {
                         console.log(`  Body: ${text.length > 500 ? text.substring(0, 500) + '...' : text}`);
                     }
                 }
+            } catch (e: any) {
+                console.log(`  Body: (okunamadı - ${e.message})`);
             }
-        } catch (e: any) {
-            console.log(`  Body: (okunamadı - ${e.message})`);
         }
     }
 
@@ -140,9 +169,7 @@ export async function proxy(request: NextRequest) {
             const { payload } = await jwtVerify(token, SECRET_KEY);
 
             try {
-                const origin = request.nextUrl.origin;
-                const banRes = await fetch(`${origin}/api/auth/check-ban?userId=${payload.id}`);
-                const banStatus = await banRes.json();
+                const banStatus = await banStatusFor(Number(payload.id));
                 if (banStatus.banned) {
                     return addCors(NextResponse.json({
                         message: banStatus.message || 'Hesabınız askıya alınmıştır.',
