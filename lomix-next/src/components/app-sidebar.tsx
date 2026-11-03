@@ -115,6 +115,7 @@ const data: { navMain: NavItem[] } = {
       children: [
         { title: "Endpoints", url: "/dashboard/endpoints" },
         { title: "API Dökümantasyonu", url: "/dashboard/api-docs" },
+        { title: "Ajans Dökümanı", url: "/dashboard/ajans-dokumani" },
         { title: "Sistem Logları", url: "/dashboard/system-logs" },
         { title: "Auth Test", url: "/dashboard/auth-test" },
         { title: "Test İstemcisi", url: "/dashboard/rooms/client" },
