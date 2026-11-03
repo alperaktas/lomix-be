@@ -20,3 +20,20 @@ export function normalizeGender(raw: string | null | undefined): Gender | null {
     const v = raw?.trim().toLowerCase();
     return v === 'male' || v === 'female' ? v : null;
 }
+
+export type AgencyApplyBlock = { code: 'AGENCY_MALE_NOT_ALLOWED' | 'AGENCY_GENDER_REQUIRED' | 'AGENCY_FEMALE_ONLY'; message: string };
+
+/**
+ * Ajansa yalnızca kadın kullanıcılar katılabilir. Başvuru yapamayacaksa nedenini döndürür, yapabilirse null:
+ * erkek, cinsiyeti seçilmemiş (boş ya da örnek değer) ve diğer.
+ */
+export function agencyApplyBlock(rawGender: string | null | undefined): AgencyApplyBlock | null {
+    const g = chosenGender(rawGender);
+    if (g === 'female') return null;
+    if (g === 'male') return { code: 'AGENCY_MALE_NOT_ALLOWED', message: 'Erkek kullanıcılar ajansa katılma başvurusu yapamaz.' };
+    if (g === null) return { code: 'AGENCY_GENDER_REQUIRED', message: 'Ajansa başvurmak için önce profilinizden cinsiyetinizi seçmelisiniz.' };
+    return { code: 'AGENCY_FEMALE_ONLY', message: 'Ajansa yalnızca kadın kullanıcılar başvurabilir.' };
+}
+
+/** Başvuru sahibinin onaylanamayacağı durumda (kural sonradan geldiği için eski başvurular) gösterilen ortak mesaj. */
+export const AGENCY_APPLICANT_NOT_ELIGIBLE = 'Bu başvuru onaylanamaz: yalnızca kadın kullanıcılar ajansa katılabilir.';

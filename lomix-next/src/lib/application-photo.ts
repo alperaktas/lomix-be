@@ -16,7 +16,7 @@ export function photoFileError(file: File): string | null {
 export type ApplicationPhotoResult = { ok: true; url: string } | { ok: false; message: string };
 
 /**
- * Ajans başvurusundaki yüz/cinsiyet doğrulama fotoğrafı. Yalnızca admin panelinde gösterilir; ajans sahibine
+ * Ajans başvurusundaki cinsiyet doğrulama fotoğrafı. Yalnızca admin panelinde gösterilir; ajans sahibine
  * hiçbir uçta dönmez. Adres tahmin edilemesin diye rastgele son ek eklenir.
  */
 export async function uploadApplicationPhoto(file: File, userId: number): Promise<ApplicationPhotoResult> {

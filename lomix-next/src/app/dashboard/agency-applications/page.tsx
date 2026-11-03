@@ -113,7 +113,7 @@ export default function AgencyApplicationsPage() {
                                     <td className="px-4 py-4 whitespace-nowrap">
                                         <div className="font-semibold">{a.user.fullName || a.user.username}</div>
                                         <div className="text-xs text-muted-foreground">#{a.user.id} @{a.user.username}</div>
-                                        {a.user.gender === 'female' && <Badge variant="outline" className="mt-1">Kadın: yüz doğrulama</Badge>}
+                                        {!a.user.genderVerified && <Badge variant="outline" className="mt-1">Cinsiyet doğrulaması bekliyor</Badge>}
                                         {a.user.genderVerified && <Badge className="mt-1 ml-1 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-50">Cinsiyet doğrulandı</Badge>}
                                     </td>
                                     <td className="px-4 py-4">{a.agency.name}</td>

@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { createNotification } from '@/lib/notifications';
 import { isTrustedPhotoUrl, photoFileError, uploadApplicationPhoto } from '@/lib/application-photo';
+import { agencyApplyBlock } from '@/lib/gender';
 
 const APPLICATION_TYPES = ['third_party', 'management'];
 const CONTACT_METHODS = ['phone', 'email'];
@@ -32,7 +33,10 @@ function normalizePhone(raw: string): string | null {
  *       Onay iki aşamalıdır: önce ajans sahibi (mobil, `agency/accept_streamer`), sonra admin (panel).
  *       Başvuru gelince ajans sahibine bildirim gider. Pasif ajansa başvuru yapılamaz.
  *
- *       **Fotoğraf (opsiyonel):** yüz/cinsiyet doğrulaması içindir. İki yoldan biriyle gönderilir: istek
+ *       **Yalnızca kadın kullanıcılar başvurabilir.** Aksi halde 403 döner, `data.error_code`: `AGENCY_MALE_NOT_ALLOWED`
+ *       (erkek), `AGENCY_GENDER_REQUIRED` (cinsiyet seçilmemiş: önce profilden seçilmeli), `AGENCY_FEMALE_ONLY` (diğer).
+ *
+ *       **Fotoğraf (opsiyonel):** cinsiyet doğrulaması içindir. İki yoldan biriyle gönderilir: istek
  *       `multipart/form-data` ise `photo` dosyası (jpeg/png/webp, en fazla 5MB), JSON ise daha önce
  *       `/api/mobile/upload` ile yüklenmiş fotoğrafın `photo_url` adresi. Fotoğraf yalnızca admin panelinde
  *       görünür, ajans sahibine hiçbir uçta dönmez. Admin başvuruyu onaylayınca kullanıcı yayıncı olur ve
@@ -85,6 +89,8 @@ function normalizePhone(raw: string): string | null {
  *         description: Ajans başvurusu alındı (data.application_id, data.status)
  *       400:
  *         description: Doğrulama hatası
+ *       403:
+ *         description: Yalnızca kadın kullanıcılar başvurabilir (AGENCY_MALE_NOT_ALLOWED, AGENCY_GENDER_REQUIRED, AGENCY_FEMALE_ONLY)
  *       404:
  *         description: Ajans bulunamadı
  *       409:
@@ -94,6 +100,10 @@ export async function POST(request: Request) {
     try {
         const userId = await getCurrentUserId(request);
         if (!userId) return ApiResponseHelper.error("Yetkisiz erişim.", 401);
+
+        const self = await prisma.user.findUnique({ where: { id: userId }, select: { gender: true } });
+        const blocked = agencyApplyBlock(self?.gender);
+        if (blocked) return ApiResponseHelper.error(blocked.message, 403, { error_code: blocked.code });
 
         // İstek JSON ya da (fotoğraf dosyalı) multipart olabilir; alanlar aynı.
         let body: any = null;

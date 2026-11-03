@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { createNotification } from '@/lib/notifications';
+import { agencyApplyBlock, AGENCY_APPLICANT_NOT_ELIGIBLE } from '@/lib/gender';
 
 /**
  * @swagger
@@ -53,10 +54,15 @@ export async function GET(request: Request) {
 
         const application = await prisma.agencyApplication.findUnique({
             where: { userId_agencyId: { userId: targetUserId, agencyId: agency.id } },
-            select: { id: true, status: true },
+            select: { id: true, status: true, user: { select: { gender: true } } },
         });
         if (!application || (application.status !== 'pending' && application.status !== 'owner_approved')) {
             return NextResponse.json({ status: false, message: "Bu kullanıcının ajansınıza bekleyen başvurusu yok" }, { status: 404 });
+        }
+
+        // Kural sonradan geldiği için kadın olmayan bir kullanıcının eski başvurusu ilerletilemez (reddedilebilir).
+        if (agencyApplyBlock(application.user.gender)) {
+            return NextResponse.json({ status: false, message: AGENCY_APPLICANT_NOT_ELIGIBLE }, { status: 409 });
         }
 
         // Koşul güncellemenin kendi WHERE'inde: eşzamanlı çift onay ya da ret/admin ile yarışta tek işlem kazanır.

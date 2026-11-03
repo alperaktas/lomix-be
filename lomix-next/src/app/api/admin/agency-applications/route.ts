@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { requireAdmin } from '@/lib/admin-auth';
 import { createNotification } from '@/lib/notifications';
 import { joinAgency } from '@/lib/agency';
+import { agencyApplyBlock, AGENCY_APPLICANT_NOT_ELIGIBLE } from '@/lib/gender';
 
 const forbidden = () => NextResponse.json({ error: 'Admin yetkisi gerekli.' }, { status: 403 });
 const STATUSES = ['pending', 'owner_approved', 'approved', 'rejected'];
@@ -71,7 +72,7 @@ export async function PUT(request: Request) {
 
         const application = await prisma.agencyApplication.findUnique({
             where: { id: Number(id) },
-            include: { agency: { select: { name: true, isActive: true } } },
+            include: { agency: { select: { name: true, isActive: true } }, user: { select: { gender: true } } },
         });
         if (!application) return NextResponse.json({ error: 'Başvuru bulunamadı.' }, { status: 404 });
         if (application.status !== 'pending' && application.status !== 'owner_approved') {
@@ -82,6 +83,9 @@ export async function PUT(request: Request) {
         }
 
         if (action === 'approve') {
+            if (agencyApplyBlock(application.user.gender)) {
+                return NextResponse.json({ error: `${AGENCY_APPLICANT_NOT_ELIGIBLE} Reddedebilirsiniz.` }, { status: 409 });
+            }
             if (!application.agency.isActive) {
                 return NextResponse.json({ error: 'Ajans pasif, başvuru onaylanamaz. Önce ajansı aktif edin.' }, { status: 409 });
             }
