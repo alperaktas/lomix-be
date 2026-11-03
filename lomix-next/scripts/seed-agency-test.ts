@@ -3,6 +3,8 @@
  *
  *   npx tsx --env-file=.env --env-file=.env.local --tsconfig tsconfig.json scripts/seed-agency-test.ts --creds <hesaplar.md>
  *
+ * Not: ajansa yalnızca kadın kullanıcılar başvurabilir; başvuran ya da başvurusu onaylı yayıncıların hepsi kadındır
+ * (başvuru olmadan eklenen yayıncılar erkek olabilir).
  * Her test hesabı `testajans_` önekiyle, ajanslar `[TEST]` önekiyle açılır; `scripts/clean-agency-test.ts` hepsini siler.
  * Şifre her çalıştırmada rastgele üretilir ve yalnızca `--creds` ile verilen dosyaya yazılır (koda gömülmez).
  */
@@ -62,7 +64,7 @@ const monthStart = periodStart('monthly', now);
     const y2 = await bro('yayinci2', 'Test Yayıncı İki', 'female', joins.y2);
     const y3 = await bro('yayinci3', 'Test Yayıncı Üç', 'male', joins.y3);
     const y4 = await bro('yayinci4', 'Test Yayıncı Dört', 'female', joins.y4);
-    const y5 = await bro('yayinci5', 'Test Yayıncı Beş', 'male', joins.y5);
+    const y5 = await bro('yayinci5', 'Test Yayıncı Beş', 'female', joins.y5);
     const y6 = await bro('yayinci6', 'Test Yayıncı Altı', 'female', joins.y6);
     const eski = await bro('eski', 'Test Eski Yayıncı (10 gün önce ayrıldı)', 'male', joins.eski);
     const gecis = await bro('gecis', 'Test Geçiş Yayıncı (Beta → Alfa)', 'female', joins.gecis);
@@ -70,11 +72,11 @@ const monthStart = periodStart('monthly', now);
     const beta2 = await bro('beta2', 'Test Beta Yayıncı İki', 'female', ago(12));
 
     const b1 = await mkUser('basvuru1', 'Başvuran: ajans sahibi onayı bekliyor (kadın, fotoğraflı)', { fullName: 'Test Başvuran Bir', gender: 'female' });
-    const b2 = await mkUser('basvuru2', 'Başvuran: ajans sahibi onayı bekliyor (erkek, fotoğrafsız)', { fullName: 'Test Başvuran İki', gender: 'male' });
+    const b2 = await mkUser('basvuru2', 'Başvuran: ajans sahibi onayı bekliyor (kadın, fotoğrafsız)', { fullName: 'Test Başvuran İki', gender: 'female' });
     const b3 = await mkUser('basvuru3', 'Başvuran: admin onayı bekliyor (kadın, fotoğraflı)', { fullName: 'Test Başvuran Üç', gender: 'female' });
-    const b4 = await mkUser('basvuru4', 'Başvuran: admin onayı bekliyor, Gama (erkek, fotoğraflı)', { fullName: 'Test Başvuran Dört', gender: 'male' });
+    const b4 = await mkUser('basvuru4', 'Başvuran: admin onayı bekliyor, Gama (kadın, fotoğraflı)', { fullName: 'Test Başvuran Dört', gender: 'female' });
     const b5 = await mkUser('basvuru5', 'Başvuran: ajans sahibi reddetti', { fullName: 'Test Başvuran Beş', gender: 'female' });
-    const b6 = await mkUser('basvuru6', 'Başvuran: admin reddetti', { fullName: 'Test Başvuran Altı', gender: 'male' });
+    const b6 = await mkUser('basvuru6', 'Başvuran: admin reddetti', { fullName: 'Test Başvuran Altı', gender: 'female' });
 
     // ---- ajanslar
     const mkAgency = (data: { name: string; ownerId: number; whatsapp: string; isActive: boolean; primPeriod: 'monthly' | 'weekly' | null }) =>
