@@ -88,7 +88,7 @@
     "/api/mobile/agency/apply": {
       "post": {
         "summary": "Ajansa katılım başvurusu",
-        "description": "Başvuran kullanıcı token'dan belirlenir. `phone_number` alanı istemcide sabit olduğu için\n`contact_method` email olduğunda da e-posta adresi bu alanda gönderilir; içerik seçilen\ntüre göre doğrulanır. Aynı ajansa ikinci başvuru reddedilir; reddedilmiş bir başvuru\nyeniden gönderilebilir.\n\nOnay iki aşamalıdır: önce ajans sahibi (mobil, `agency/accept_streamer`), sonra admin (panel).\nBaşvuru gelince ajans sahibine bildirim gider. Pasif ajansa başvuru yapılamaz.\n\n**Fotoğraf (opsiyonel):** yüz/cinsiyet doğrulaması içindir. İki yoldan biriyle gönderilir: istek\n`multipart/form-data` ise `photo` dosyası (jpeg/png/webp, en fazla 5MB), JSON ise daha önce\n`/api/mobile/upload` ile yüklenmiş fotoğrafın `photo_url` adresi. Fotoğraf yalnızca admin panelinde\ngörünür, ajans sahibine hiçbir uçta dönmez. Admin başvuruyu onaylayınca kullanıcı yayıncı olur ve\ncinsiyeti doğrulanmış (`gender_verified`) sayılır.\n",
+        "description": "Başvuran kullanıcı token'dan belirlenir. `phone_number` alanı istemcide sabit olduğu için\n`contact_method` email olduğunda da e-posta adresi bu alanda gönderilir; içerik seçilen\ntüre göre doğrulanır. Aynı ajansa ikinci başvuru reddedilir; reddedilmiş bir başvuru\nyeniden gönderilebilir.\n\nOnay iki aşamalıdır: önce ajans sahibi (mobil, `agency/accept_streamer`), sonra admin (panel).\nBaşvuru gelince ajans sahibine bildirim gider. Pasif ajansa başvuru yapılamaz.\n\n**Yalnızca kadın kullanıcılar başvurabilir.** Aksi halde 403 döner, `data.error_code`: `AGENCY_MALE_NOT_ALLOWED`\n(erkek), `AGENCY_GENDER_REQUIRED` (cinsiyet seçilmemiş: önce profilden seçilmeli), `AGENCY_FEMALE_ONLY` (diğer).\n\n**Fotoğraf (opsiyonel):** cinsiyet doğrulaması içindir. İki yoldan biriyle gönderilir: istek\n`multipart/form-data` ise `photo` dosyası (jpeg/png/webp, en fazla 5MB), JSON ise daha önce\n`/api/mobile/upload` ile yüklenmiş fotoğrafın `photo_url` adresi. Fotoğraf yalnızca admin panelinde\ngörünür, ajans sahibine hiçbir uçta dönmez. Admin başvuruyu onaylayınca kullanıcı yayıncı olur ve\ncinsiyeti doğrulanmış (`gender_verified`) sayılır.\n",
         "tags": [
           "Mobile Agency"
         ],
@@ -199,6 +199,9 @@
           },
           "400": {
             "description": "Doğrulama hatası"
+          },
+          "403": {
+            "description": "Yalnızca kadın kullanıcılar başvurabilir (AGENCY_MALE_NOT_ALLOWED, AGENCY_GENDER_REQUIRED, AGENCY_FEMALE_ONLY)"
           },
           "404": {
             "description": "Ajans bulunamadı"
