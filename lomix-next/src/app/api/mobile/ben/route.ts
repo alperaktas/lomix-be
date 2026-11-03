@@ -107,6 +107,7 @@ async function getUserProfile(targetUserId: number, viewerId: number, request: R
             description: user.description || '',
             country: user.country || '',
             gender: user.gender || null,
+            gender_verified: user.genderVerified,
             birth_date: user.birthDate ? user.birthDate.toISOString().split('T')[0] : null,
             zodiac: user.birthDate ? getZodiac(user.birthDate) : null,
             join_date: user.createdAt.toISOString().split('T')[0],

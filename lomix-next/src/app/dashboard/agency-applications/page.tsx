@@ -14,8 +14,9 @@ interface Application {
     kvkkAcceptedAt: string;
     status: 'pending' | 'owner_approved' | 'approved' | 'rejected';
     rejectedBy: string | null;
+    photoUrl: string | null;
     createdAt: string;
-    user: { id: number; username: string; fullName: string | null; gender: string | null };
+    user: { id: number; username: string; fullName: string | null; gender: string | null; genderVerified: boolean; isBroadcaster: boolean };
     agency: { id: number; name: string };
 }
 
@@ -58,7 +59,7 @@ export default function AgencyApplicationsPage() {
     const act = async (a: Application, action: 'approve' | 'reject') => {
         const who = a.user.fullName || a.user.username;
         const msg = action === 'approve'
-            ? `${who} (ajans sahibi onayladı), "${a.agency.name}" ajansına yayıncı olarak eklensin mi?`
+            ? `${who} (ajans sahibi onayladı), "${a.agency.name}" ajansına eklensin mi? Onaylanınca kullanıcı yayıncı olur ve cinsiyeti doğrulanmış sayılır.`
             : `${who} kullanıcısının "${a.agency.name}" başvurusu reddedilsin mi?`;
         if (!confirm(msg)) return;
         setError(''); setBusyId(a.id);
@@ -101,7 +102,7 @@ export default function AgencyApplicationsPage() {
                     <table className="w-full text-sm">
                         <thead className="bg-muted/40">
                             <tr className="border-b">
-                                {['Başvuran', 'Ajans', 'Tür', 'İletişim', 'Not', 'Tarih', 'Durum', ''].map(h => (
+                                {['Başvuran', 'Ajans', 'Tür', 'İletişim', 'Fotoğraf', 'Not', 'Tarih', 'Durum', ''].map(h => (
                                     <th key={h} className="text-left px-4 py-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">{h}</th>
                                 ))}
                             </tr>
@@ -113,12 +114,21 @@ export default function AgencyApplicationsPage() {
                                         <div className="font-semibold">{a.user.fullName || a.user.username}</div>
                                         <div className="text-xs text-muted-foreground">#{a.user.id} @{a.user.username}</div>
                                         {a.user.gender === 'female' && <Badge variant="outline" className="mt-1">Kadın: yüz doğrulama</Badge>}
+                                        {a.user.genderVerified && <Badge className="mt-1 ml-1 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-50">Cinsiyet doğrulandı</Badge>}
                                     </td>
                                     <td className="px-4 py-4">{a.agency.name}</td>
                                     <td className="px-4 py-4"><Badge variant="secondary">{a.applicationType}</Badge></td>
                                     <td className="px-4 py-4 whitespace-nowrap">
                                         <div>{a.contactValue}</div>
                                         <div className="text-xs text-muted-foreground">{a.contactMethod === 'phone' ? 'Telefon' : 'E-posta'}</div>
+                                    </td>
+                                    <td className="px-4 py-4">
+                                        {a.photoUrl ? (
+                                            <a href={a.photoUrl} target="_blank" rel="noreferrer" title="Tam boyutta aç">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img src={a.photoUrl} alt={`${a.user.username} doğrulama fotoğrafı`} className="h-16 w-16 rounded-md border object-cover hover:opacity-80" />
+                                            </a>
+                                        ) : <span className="text-muted-foreground">-</span>}
                                     </td>
                                     <td className="px-4 py-4 max-w-xs break-words">{a.note || <span className="text-muted-foreground">-</span>}</td>
                                     <td className="px-4 py-4 whitespace-nowrap">

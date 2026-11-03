@@ -40,8 +40,10 @@ export async function GET(request: Request, { params }: Ctx) {
             orderBy: { joinedAt: 'desc' },
             include: { user: { select: USER_SELECT } },
         }),
-        prisma.agencyMember.findMany({
-            where: { agencyId: id, status: 'pending' },
+        // Onay bekleyenler: ajans sahibi (pending) ya da admin (owner_approved) onayını bekleyen başvurular.
+        prisma.agencyApplication.findMany({
+            where: { agencyId: id, status: { in: ['pending', 'owner_approved'] } },
+            orderBy: { createdAt: 'asc' },
             include: { user: { select: USER_SELECT } },
         }),
         membershipEarnings({ agencyIds: [id] }),
@@ -89,7 +91,7 @@ export async function GET(request: Request, { params }: Ctx) {
         totalEarnings: rows.reduce((sum, r) => sum + r.earnings, 0),
         members: rows.filter(r => r.leftAt === null),
         pastMembers: rows.filter(r => r.leftAt !== null),
-        pending: pending.map(p => ({ user: p.user, requestedAt: p.createdAt })),
+        pending: pending.map(p => ({ user: p.user, requestedAt: p.createdAt, status: p.status })),
     });
 }
 

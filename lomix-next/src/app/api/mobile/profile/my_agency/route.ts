@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
+import { expectedPrimThisMonth } from '@/lib/agency-prim';
+import { fmtDiamonds, isActiveMember, isNewMember, loadRoster, monthTurnover } from '@/lib/agency-mobile';
 
 export async function GET(request: Request) {
     try {
@@ -9,15 +11,7 @@ export async function GET(request: Request) {
             return NextResponse.json({ status: false, message: "Unauthorized" }, { status: 401 });
         }
 
-        // @ts-ignore - Prisma client may need a moment to sync new models
-        const agency = await prisma.agency.findUnique({
-            where: { ownerId: userId },
-            include: {
-                members: {
-                    include: { user: true }
-                }
-            }
-        });
+        const agency = await prisma.agency.findUnique({ where: { ownerId: userId }, select: { id: true } });
 
         if (!agency) {
             return NextResponse.json({ 
@@ -27,20 +21,23 @@ export async function GET(request: Request) {
             });
         }
 
-        // Ajans sahibinin onayını bekleyen başvurular (yayici_onay listesiyle aynı kaynak).
+        // Ajans sahibinin onayını bekleyen başvurular (pending_streamers listesiyle aynı kaynak).
         const pendingApplications = await prisma.agencyApplication.count({
             where: { agencyId: agency.id, status: 'pending' },
         });
 
+        // Yayıncı sayıları total_streamers / active_streamers / new_streamers listeleriyle aynı kaynaktan gelir.
+        const now = new Date();
+        const [roster, income, expectedShare] = await Promise.all([
+            loadRoster(agency.id, now),
+            monthTurnover(agency.id, now),
+            expectedPrimThisMonth(agency.id, now),
+        ]);
         const stats = {
-            totalMembers: agency.members.length,
-            activeMembers: agency.members.filter((m: any) => m.status === 'approved').length,
+            totalMembers: roster.length,
+            activeMembers: roster.filter(isActiveMember).length,
             pendingMembers: pendingApplications,
-            newMembers: agency.members.filter((m: any) => {
-                const oneWeekAgo = new Date();
-                oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-                return m.createdAt > oneWeekAgo;
-            }).length
+            newMembers: roster.filter(m => isNewMember(m, now)).length,
         };
 
         return NextResponse.json({
@@ -58,8 +55,15 @@ export async function GET(request: Request) {
                         id: 1,
                         icon: "business",
                         iconColor: "#FF9800",
-                        title: "0", // Transaction tablosu henüz yok, 0 döndürüyoruz
+                        title: fmtDiamonds(income),
                         subtitle: "Bu ayki Ajans Toplam Geliri"
+                    },
+                    {
+                        id: 2,
+                        icon: "monetization_on",
+                        iconColor: "#9C27B0",
+                        title: fmtDiamonds(expectedShare),
+                        subtitle: "Bu ay için beklenen ajans payı"
                     },
                     {
                         id: 3,

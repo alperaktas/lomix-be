@@ -166,3 +166,27 @@ export async function settleAll(now: Date = new Date()): Promise<{ agencies: num
     }
     return total;
 }
+
+/**
+ * Bu ay (Türkiye saati) için ajans sahibinin beklenen payı: bu ay ödenmiş prim kayıtları + süren dönemin
+ * anlık tahmini. Prim kapalıysa 0. Süren dönem ay sınırını aşıyorsa (haftalık) tahmin tüm dönemi kapsar.
+ */
+export async function expectedPrimThisMonth(agencyId: number, now: Date = new Date()): Promise<number> {
+    const agency = await prisma.agency.findUnique({ where: { id: agencyId }, select: { primPeriod: true, primPaidThrough: true } });
+    if (!agency?.primPeriod || !agency.primPaidThrough || !PRIM_PERIODS.includes(agency.primPeriod as PrimPeriod)) return 0;
+
+    const monthStart = periodStart('monthly', now);
+    const monthEnd = nextPeriodStart('monthly', monthStart);
+    const paid = await prisma.agencyPrimPayout.aggregate({
+        _sum: { amount: true },
+        where: { agencyId, periodStart: { gte: monthStart, lt: monthEnd } },
+    });
+
+    let open = 0;
+    const start = agency.primPaidThrough;
+    if (start < monthEnd) {
+        const turnover = await agencyTurnover(agencyId, start, chunkEnd(agency.primPeriod as PrimPeriod, start));
+        open = primFor(turnover, await loadTiers()).amount;
+    }
+    return (paid._sum.amount ?? 0) + open;
+}

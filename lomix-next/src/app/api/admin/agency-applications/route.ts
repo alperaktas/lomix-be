@@ -23,7 +23,7 @@ export async function GET(request: Request) {
             skip: (page - 1) * PAGE_SIZE,
             take: PAGE_SIZE,
             include: {
-                user: { select: { id: true, username: true, fullName: true, gender: true } },
+                user: { select: { id: true, username: true, fullName: true, gender: true, genderVerified: true, isBroadcaster: true } },
                 agency: { select: { id: true, name: true } },
             },
         }),
@@ -42,6 +42,8 @@ export async function GET(request: Request) {
             status: a.status,
             ownerApprovedAt: a.ownerApprovedAt,
             rejectedBy: a.rejectedBy,
+            // Doğrulama fotoğrafı yalnızca admin panelinde görünür; ajans sahibine hiçbir mobil uçta dönmez.
+            photoUrl: a.photoUrl,
             createdAt: a.createdAt,
             user: a.user,
             agency: a.agency,
@@ -55,8 +57,8 @@ export async function GET(request: Request) {
 /**
  * İkinci (son) onay aşaması: ajans sahibinin onayladığı (`owner_approved`) başvuruyu admin onaylar ya da
  * reddeder. Ajans sahibi henüz onaylamamışsa onaylanamaz; reddetmek her iki aşamada da mümkündür.
- * Onay, başvuranı ajansa onaylı üye olarak ekler (bir kullanıcı tek ajansta olabilir; zaten üyeyse 409)
- * ve sonuç kullanıcıya bildirilir.
+ * Onay, başvuranı ajansa onaylı üye olarak ekler (bir kullanıcı tek ajansta olabilir; zaten üyeyse 409),
+ * kullanıcıyı yayıncı yapar ve cinsiyetini doğrulanmış (`genderVerified`) işaretler; sonuç kullanıcıya bildirilir.
  */
 export async function PUT(request: Request) {
     if (!(await requireAdmin(request))) return forbidden();
@@ -95,6 +97,10 @@ export async function PUT(request: Request) {
                 });
                 if (flipped.count === 0) return false;
                 await joinAgency(tx, application.agencyId, application.userId);
+                await tx.user.update({
+                    where: { id: application.userId },
+                    data: { isBroadcaster: true, broadcasterApprovedAt: new Date(), genderVerified: true },
+                });
                 return true;
             });
             if (!result) return NextResponse.json({ error: 'Başvuru zaten işlenmiş.' }, { status: 409 });

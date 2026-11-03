@@ -27,7 +27,7 @@ interface Detail {
     totalEarnings: number;
     members: MemberRow[];
     pastMembers: MemberRow[];
-    pending: { user: Person; requestedAt: string }[];
+    pending: { user: Person; requestedAt: string; status: 'pending' | 'owner_approved' }[];
 }
 interface AgencyOption { id: number; name: string; isActive: boolean }
 
@@ -315,10 +315,12 @@ export default function AgencyDetailPage({ params }: { params: Promise<{ id: str
             {data.pending.length > 0 && (
                 <div className="space-y-2">
                     <h3 className="text-lg font-semibold">Onay Bekleyenler</h3>
+                    <p className="text-sm text-muted-foreground">Onaylamak ya da reddetmek için <Link href="/dashboard/agency-applications" className="underline">Ajans Başvuruları</Link> sayfasını kullanın.</p>
                     <div className="flex flex-wrap gap-2">
                         {data.pending.map(p => (
                             <Link key={p.user.id} href={`/dashboard/users/${p.user.id}`} className="flex items-center gap-2 rounded-full border px-3 py-1 text-sm hover:bg-muted/30">
                                 <PersonAvatar person={p.user} className="h-6 w-6" /> {personName(p.user)}
+                                <Badge variant={p.status === 'owner_approved' ? 'default' : 'secondary'}>{p.status === 'owner_approved' ? 'Admin onayı bekliyor' : 'Ajans sahibi bekleniyor'}</Badge>
                             </Link>
                         ))}
                     </div>
