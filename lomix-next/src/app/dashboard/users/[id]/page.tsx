@@ -7,7 +7,7 @@ import {
     Shield,
     Crown, Coins, Users, Heart,
     Ban, UserX, Smartphone, Gift, TrendingUp, Eye,
-    Venus, Pencil, Trash2, UserCog,
+    Venus, Pencil, Trash2, UserCog, Diamond, Receipt,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { RoleSelect } from '@/components/role-select';
+import { WalletRestrictionsCard, DiamondDialog } from '@/components/wallet-controls';
 
 // Action dialogs (Adım 4'te ayrı bileşen olarak refactor edilecek)
 import {
@@ -46,7 +47,12 @@ interface UserDetail {
     phone: string | null;
     followersCount: number;
     followingCount: number;
-    wallet: { balance: number } | null;
+    wallet: { balance: number; diamonds: number } | null;
+    withdrawBlocked: boolean;
+    exchangeBlocked: boolean;
+    spendBlocked: boolean;
+    isBroadcaster: boolean;
+    genderVerified: boolean;
     agencyMembership: { agency: { id: number; name: string; logo: string | null } } | null;
     bans: Array<{
         id: number; type: string; reason: string | null; duration: string | null;
@@ -73,6 +79,7 @@ export default function UserDetailPage() {
     const [coinsAmount, setCoinsAmount] = useState('');
     const [coinsAction, setCoinsAction] = useState<'add' | 'remove'>('add');
     const [coinsReason, setCoinsReason] = useState('');
+    const [diamondDialog, setDiamondDialog] = useState(false);
     const [levelDialog, setLevelDialog] = useState(false);
     const [levelValue, setLevelValue] = useState('');
     const [vipDialog, setVipDialog] = useState(false);
@@ -325,6 +332,8 @@ export default function UserDetailPage() {
                         <DetailCard label="IP Adresi" value={user.ipAddress || '—'} />
                         <DetailCard label="Cihaz" value={user.deviceModel || '—'} />
                         <DetailCard label="Durum" value={user.status} badge badgeClass={user.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'} />
+                        <DetailCard label="Yayıncı" value={user.isBroadcaster ? 'Evet' : 'Hayır'} badge badgeClass={user.isBroadcaster ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-zinc-50 text-zinc-500 border-zinc-200'} />
+                        <DetailCard label="Cinsiyet Doğrulama" value={user.genderVerified ? 'Doğrulandı' : 'Doğrulanmadı'} badge badgeClass={user.genderVerified ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-zinc-50 text-zinc-500 border-zinc-200'} />
                         <DetailCard label="Kayıt Tarihi" value={new Date(user.createdAt).toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' })} />
                     </div>
                 </TabsContent>
@@ -335,6 +344,16 @@ export default function UserDetailPage() {
                         <DetailCard label="Coins Bakiye" value={user.wallet?.balance ?? 0} className="text-lg font-bold"
                             action={<Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setCoinsDialog(true)}>Ekle / Sil</Button>}
                         />
+                        <DetailCard label="Elmas Bakiye" value={(user.wallet?.diamonds ?? 0).toLocaleString('tr-TR')} className="text-lg font-bold"
+                            action={<Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setDiamondDialog(true)}>Yönet</Button>}
+                        />
+                        <DetailCard label="Coin Raporu" value="Yükleme ve harcama hareketleri"
+                            action={<Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => router.push(`/dashboard/reports?user_id=${userId}`)}>Aç</Button>}
+                        />
+                        <div className="md:col-span-2 lg:col-span-3">
+                            <WalletRestrictionsCard userId={userId}
+                                initial={{ withdrawBlocked: user.withdrawBlocked, exchangeBlocked: user.exchangeBlocked, spendBlocked: user.spendBlocked }} />
+                        </div>
                         <DetailCard label="VIP Durumu" value={user.isVip ? `VIP Level ${user.vipLevel}` : 'VIP Değil'}
                             badge badgeClass={user.isVip ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-zinc-50 text-zinc-500 border-zinc-200'}
                             action={<Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setVipDialog(true)}>Düzenle</Button>}
@@ -461,6 +480,8 @@ export default function UserDetailPage() {
                         <ActionButton icon={<Smartphone className="h-4 w-4" />} label="Cihaz Ban" onClick={() => setBanDialog('device')} variant="danger" />
                         {isBanned && <ActionButton icon={<Shield className="h-4 w-4" />} label="Ban Kaldır" onClick={() => handleAction(`/api/users/${userId}/unban`, 'POST', {})} variant="success" />}
                         <ActionButton icon={<Coins className="h-4 w-4" />} label="Coins Ekle/Sil" onClick={() => setCoinsDialog(true)} />
+                        <ActionButton icon={<Diamond className="h-4 w-4" />} label="Elmas Yönetimi" onClick={() => setDiamondDialog(true)} />
+                        <ActionButton icon={<Receipt className="h-4 w-4" />} label="Coin Raporu" onClick={() => router.push(`/dashboard/reports?user_id=${userId}`)} />
                         <ActionButton icon={<Gift className="h-4 w-4" />} label="Story Ödülü" onClick={() => setStoryDialog(true)} />
                         <ActionButton icon={<TrendingUp className="h-4 w-4" />} label="Level Değiştir" onClick={() => { setLevelValue(String(user.level)); setLevelDialog(true); }} />
                         <ActionButton icon={<Crown className="h-4 w-4" />} label="VIP Tanımla" onClick={() => setVipDialog(true)} />
@@ -595,6 +616,8 @@ export default function UserDetailPage() {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            <DiamondDialog open={diamondDialog} onOpenChange={setDiamondDialog} userId={userId} balance={user.wallet?.diamonds ?? 0} onDone={fetchUser} />
 
             {/* Coins Dialog */}
             <Dialog open={coinsDialog} onOpenChange={setCoinsDialog}>

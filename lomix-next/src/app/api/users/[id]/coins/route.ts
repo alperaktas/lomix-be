@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getCurrentUserId } from '@/lib/current-user';
+import { requireAdmin } from '@/lib/admin-auth';
 
 // POST: Coins ekle veya sil
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
+        const admin = await requireAdmin(req);
+        if (!admin) return NextResponse.json({ message: 'Admin yetkisi gerekli.' }, { status: 403 });
+
         const { id } = await params;
         const userId = Number(id);
-        const adminId = await getCurrentUserId(req) ?? userId;
+        const adminId = admin.adminId;
         const { amount, action, reason } = await req.json();
 
         if (!amount || typeof amount !== 'number' || amount <= 0) {
@@ -36,7 +39,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
             prisma.walletTransaction.create({
                 data: {
                     fromUserId: adminId,
-                    toUserId: action === 'add' ? userId : null,
+                    // Etkilenen kullanıcı her iki yönde de kaydedilir (coin raporu kullanıcıya göre okur).
+                    toUserId: userId,
                     amount,
                     type: action === 'add' ? 'admin_coin_add' : 'admin_coin_remove',
                     description: reason || 'Admin işlemi',

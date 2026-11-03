@@ -92,7 +92,7 @@ const data: { navMain: NavItem[] } = {
       icon: Wallet,
       children: [
         { title: "Hediyeler", url: "/dashboard/gifts" },
-        { title: "Harcama Raporları", url: "/dashboard/reports" },
+        { title: "Coin Raporları", url: "/dashboard/reports" },
         { title: "Coin Paketleri", url: "/dashboard/settings/coin-packages" },
         { title: "Hikaye Fiyatları", url: "/dashboard/settings/story-prices" },
         { title: "Komisyon & Fiyatlar", url: "/dashboard/settings/commissions" },

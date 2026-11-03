@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
+import { isGenderLocked } from '@/lib/gender';
 
 /**
  * @swagger
@@ -64,6 +65,9 @@ export async function GET(request: Request) {
                 avatar_url: user.avatar?.trim() || `${new URL(request.url).origin}/img/default-avatar.svg`,
                 is_verified: user.isVerified || false,
                 gender: user.gender || "unknown",
+                gender_verified: user.genderVerified,
+                // true ise cinsiyet seçilmiş: profil düzenlemede cinsiyet alanı kilitli gösterilmeli.
+                gender_locked: isGenderLocked(user.gender),
                 level: user.level ?? 0,
                 prestige_points: user.prestigePoints || 0,
                 user_type: userType
@@ -78,6 +82,10 @@ export async function GET(request: Request) {
                 currency: user.wallet?.currency || "USD",
                 currency_symbol: user.wallet?.currencySymbol || "$",
                 has_deposit_reward: user.wallet?.hasDepositReward || false,
+                // Admin kapattıysa true: uygulama ilgili düğmeyi pasif gösterebilir.
+                withdraw_blocked: user.withdrawBlocked,
+                exchange_blocked: user.exchangeBlocked,
+                spend_blocked: user.spendBlocked,
                 vip_status: {
                     is_vip: user.isVip || false,
                     text: user.isVip ? "LÜX AYRICALIKLAR" : "STANDART"

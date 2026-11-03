@@ -54,6 +54,11 @@ const LABELS: Record<string, string> = {
     'auth-test': 'Auth Test',
 };
 
+/** Aynı parça birden çok sayfada geçiyorsa (reports) adres bazlı ad. */
+const PATH_LABELS: Record<string, string> = {
+    '/dashboard/reports': 'Coin Raporları',
+};
+
 function segmentLabel(seg: string) {
     if (LABELS[seg]) return LABELS[seg];
     if (/^\d+$/.test(seg)) return `#${seg}`;
@@ -64,10 +69,10 @@ function DynamicBreadcrumb() {
     const pathname = usePathname();
     const segments = pathname.split('/').filter(Boolean);
 
-    const crumbs = segments.map((seg, i) => ({
-        label: segmentLabel(seg),
-        href: '/' + segments.slice(0, i + 1).join('/'),
-    }));
+    const crumbs = segments.map((seg, i) => {
+        const href = '/' + segments.slice(0, i + 1).join('/');
+        return { label: PATH_LABELS[href] ?? segmentLabel(seg), href };
+    });
 
     return (
         <Breadcrumb>

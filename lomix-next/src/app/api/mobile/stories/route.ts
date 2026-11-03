@@ -4,6 +4,7 @@ import { getCurrentUserId } from '@/lib/current-user';
 import { put } from '@vercel/blob';
 import { storyThumbnail } from '@/lib/story-media';
 import { spendOp, syncLevel, levelUpField } from '@/lib/level';
+import { isWalletBlocked, WALLET_BLOCK_MESSAGES } from '@/lib/wallet-guard';
 
 /**
  * @swagger
@@ -103,6 +104,10 @@ export async function POST(request: Request) {
             cost = defaultPrices[durationHours] ?? 2000;
         }
 
+        if (cost > 0 && await isWalletBlocked(userId, 'spend')) {
+            return ApiResponseHelper.error(WALLET_BLOCK_MESSAGES.spend.message, 403, { error_code: WALLET_BLOCK_MESSAGES.spend.errorCode });
+        }
+
         const wallet = await prisma.wallet.findUnique({ where: { userId } });
         const balance = wallet?.balance ?? 0;
 
@@ -146,6 +151,9 @@ export async function POST(request: Request) {
                 data: { balance: { decrement: cost } },
             }),
             spendOp(userId, cost),
+            prisma.walletTransaction.create({
+                data: { fromUserId: userId, toUserId: null, amount: cost, type: 'story_purchase', description: `Hikaye (${durationHours} saat)` },
+            }),
         ]);
 
         const levelResult = await syncLevel(userId);

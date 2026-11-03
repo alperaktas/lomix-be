@@ -2,6 +2,7 @@ import prisma from '@/lib/prisma';
 import { getSetting } from '@/lib/app-settings';
 import { decideBilling, refundExpiredEscrows, releaseEscrowsOnReply } from '@/lib/message-billing';
 import { spendOp, syncLevel, levelUpField } from '@/lib/level';
+import { isWalletBlocked, WALLET_BLOCK_MESSAGES } from '@/lib/wallet-guard';
 
 export type SendMessageInput = {
     senderId: number;
@@ -52,6 +53,9 @@ export async function sendDirectMessage(input: SendMessageInput): Promise<SendMe
     let coinAmount = 0;
 
     if (decision.kind === 'charge') {
+        if (await isWalletBlocked(userId, 'spend')) {
+            return { ok: false, message: WALLET_BLOCK_MESSAGES.spend.message, status: 403, data: { error_code: WALLET_BLOCK_MESSAGES.spend.errorCode } };
+        }
         const wallet = await prisma.wallet.findUnique({ where: { userId } });
         const balance = wallet?.balance ?? 0;
 
@@ -101,12 +105,18 @@ export async function sendDirectMessage(input: SendMessageInput): Promise<SendMe
                     },
                 }),
                 spendOp(userId, coinAmount),
+                prisma.walletTransaction.create({
+                    data: { fromUserId: userId, toUserId: toId, amount: coinAmount, type: 'message', description: 'Mesaj ücreti (havuzda)' },
+                }),
             ]);
             billing = 'escrow_held';
         } else {
             await prisma.$transaction([
                 prisma.wallet.update({ where: { userId }, data: { balance: { decrement: coinAmount } } }),
                 spendOp(userId, coinAmount),
+                prisma.walletTransaction.create({
+                    data: { fromUserId: userId, toUserId: toId, amount: coinAmount, type: 'message', description: 'Mesaj ücreti' },
+                }),
             ]);
         }
     }

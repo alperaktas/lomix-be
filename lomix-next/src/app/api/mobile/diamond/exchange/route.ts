@@ -1,5 +1,7 @@
 import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
+import { getCurrentUserId } from '@/lib/current-user';
+import { isWalletBlocked, WALLET_BLOCK_MESSAGES } from '@/lib/wallet-guard';
 
 /**
  * @swagger
@@ -29,9 +31,18 @@ import prisma from '@/lib/prisma';
  */
 export async function POST(request: Request) {
     try {
+        const authId = await getCurrentUserId(request);
+        if (!authId) return ApiResponseHelper.error("Yetkisiz erişim.", 401);
+
         const body = await request.json();
-        const userId = Number(body.user_id);
+        // İşlem yalnızca token'daki kullanıcı için yapılır; gövdedeki user_id başkasını işaret edemez.
+        const userId = Number(body.user_id ?? authId);
+        if (userId !== authId) return ApiResponseHelper.error("Bu işlem için yetkiniz yok.", 403);
         const diamondAmount = Number(body.diamond_amount);
+
+        if (await isWalletBlocked(userId, 'exchange')) {
+            return ApiResponseHelper.error(WALLET_BLOCK_MESSAGES.exchange.message, 403, { error_code: WALLET_BLOCK_MESSAGES.exchange.errorCode });
+        }
 
         if (!userId || !diamondAmount || diamondAmount <= 0) {
             return ApiResponseHelper.error("Kullanıcı ID ve elmas miktarı gerekli", 400);
@@ -69,6 +80,9 @@ export async function POST(request: Request) {
                     diamondAmount,
                     coinValue,
                 },
+            }),
+            prisma.walletTransaction.create({
+                data: { fromUserId: userId, toUserId: userId, amount: coinValue, type: 'exchange', description: `${diamondAmount} elmas bozduruldu` },
             }),
         ]);
 

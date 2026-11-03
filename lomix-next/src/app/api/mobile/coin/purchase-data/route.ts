@@ -1,5 +1,6 @@
 import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
+import { getCurrentUserId } from '@/lib/current-user';
 
 const PAYMENT_METHODS = [
     { type: 'credit_card', label: 'Kredi Kartı ile Ödeme' },
@@ -20,30 +21,32 @@ function formatPrice(price: number, currency: string): string {
  * /api/mobile/coin/purchase-data:
  *   post:
  *     summary: Coin bakiyesi ve satın alınabilir coin paketleri
+ *     description: Kullanıcı token'dan belirlenir; gövdedeki `user_id` verilirse token'daki kullanıcıyla aynı olmalıdır (aksi halde 403).
  *     tags: [Mobile Coin]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
- *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - user_id
  *             properties:
  *               user_id:
  *                 type: integer
+ *                 description: Opsiyonel; verilirse token'daki kullanıcı olmalıdır
  *     responses:
  *       200:
  *         description: Coin satın alma verisi gönderildi
  */
 export async function POST(request: Request) {
     try {
-        const body = await request.json();
-        const userId = Number(body.user_id);
+        const authId = await getCurrentUserId(request);
+        if (!authId) return ApiResponseHelper.error("Yetkisiz erişim.", 401);
 
-        if (!userId) {
-            return ApiResponseHelper.error("Kullanıcı ID gerekli", 400);
-        }
+        const body = await request.json().catch(() => ({}));
+        // Yalnızca token'daki kullanıcının bakiyesi döner; gövdedeki user_id başkasını işaret edemez.
+        const userId = Number(body.user_id ?? authId);
+        if (userId !== authId) return ApiResponseHelper.error("Bu veriye erişim yetkiniz yok.", 403);
 
         const [wallet, packages] = await Promise.all([
             prisma.wallet.findUnique({ where: { userId } }),

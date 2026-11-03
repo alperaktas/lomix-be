@@ -54,6 +54,9 @@ export async function refundExpiredEscrows(scope?: { payerId?: number; receiverI
             }),
             // Iade edilen coin harcama sayilmaz.
             spendOp(escrow.payerId, -escrow.coinAmount),
+            prisma.walletTransaction.create({
+                data: { fromUserId: escrow.payerId, toUserId: escrow.payerId, amount: escrow.coinAmount, type: 'message_refund', description: 'Cevaplanmayan mesaj ücreti iadesi' },
+            }),
         ]);
     }
 

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { getSetting } from '@/lib/app-settings';
+import { isWalletBlocked, WALLET_BLOCK_MESSAGES } from '@/lib/wallet-guard';
 import { spendOp, syncLevel, levelUpField } from '@/lib/level';
 
 /**
@@ -38,6 +39,9 @@ export async function POST(request: Request) {
         const userId = await getCurrentUserId(request);
         if (!userId) {
             return NextResponse.json({ status: false, message: 'Unauthorized' }, { status: 401 });
+        }
+        if (await isWalletBlocked(userId, 'spend')) {
+            return NextResponse.json({ status: false, message: WALLET_BLOCK_MESSAGES.spend.message, error_code: WALLET_BLOCK_MESSAGES.spend.errorCode }, { status: 403 });
         }
 
         const body = await request.json();

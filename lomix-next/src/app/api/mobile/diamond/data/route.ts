@@ -1,5 +1,6 @@
 import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
+import { getCurrentUserId } from '@/lib/current-user';
 
 /**
  * @swagger
@@ -24,19 +25,21 @@ import prisma from '@/lib/prisma';
  */
 export async function POST(request: Request) {
     try {
+        const authId = await getCurrentUserId(request);
+        if (!authId) return ApiResponseHelper.error("Yetkisiz erişim.", 401);
+
         const body = await request.json();
-        const userId = Number(body.user_id);
+        // Yalnızca token'daki kullanıcının verisi döner; gövdedeki user_id başkasını işaret edemez.
+        const userId = Number(body.user_id ?? authId);
+        if (userId !== authId) return ApiResponseHelper.error("Bu veriye erişim yetkiniz yok.", 403);
 
-        if (!userId) {
-            return ApiResponseHelper.error("Kullanıcı ID gerekli", 400);
-        }
-
-        const [wallet, transactions] = await Promise.all([
+        const [wallet, transactions, restrictions] = await Promise.all([
             prisma.wallet.findUnique({ where: { userId } }),
             prisma.diamondTransaction.findMany({
                 where: { userId },
                 orderBy: { createdAt: 'desc' },
             }),
+            prisma.user.findUnique({ where: { id: userId }, select: { withdrawBlocked: true, exchangeBlocked: true } }),
         ]);
 
         const balance = wallet?.diamonds ?? 0;
@@ -60,6 +63,8 @@ export async function POST(request: Request) {
             balance,
             exchanges,
             withdrawals,
+            withdraw_blocked: restrictions?.withdrawBlocked ?? false,
+            exchange_blocked: restrictions?.exchangeBlocked ?? false,
         }, "Elmas verisi gönderildi.");
     } catch (error: any) {
         return ApiResponseHelper.error(error.message, 500);

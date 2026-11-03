@@ -44,6 +44,10 @@ model User {
   isBroadcaster         Boolean              @default(false) @map("is_broadcaster")
   broadcasterApprovedAt DateTime?            @map("broadcaster_approved_at")
   isFirstLogin          Boolean              @default(false) @map("is_first_login")
+  withdrawBlocked       Boolean              @default(false) @map("withdraw_blocked")
+  exchangeBlocked       Boolean              @default(false) @map("exchange_blocked")
+  spendBlocked          Boolean              @default(false) @map("spend_blocked")
+  genderVerified        Boolean              @default(false) @map("gender_verified")
   description           String?
   country               String?
   birthDate             DateTime?            @map("birth_date")
@@ -993,6 +997,7 @@ model AgencyApplication {
   status          String   @default("pending")
   ownerApprovedAt DateTime? @map("owner_approved_at")
   rejectedBy      String?  @map("rejected_by")
+  photoUrl        String?  @map("photo_url")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
