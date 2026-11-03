@@ -1,54 +1,35 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
-import dynamic from 'next/dynamic';
+import React, { useEffect, useState } from 'react';
 import 'swagger-ui-react/swagger-ui.css';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileCode } from "lucide-react";
 
-// SwaggerUI must be rendered on the client
-const SwaggerUI = dynamic(() => import('swagger-ui-react'), {
-    ssr: false,
-    loading: () => (
-        <div className="flex items-center justify-center p-12 border-2 border-dashed rounded-xl bg-muted/20">
-            <div className="flex flex-col items-center gap-2">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                <p className="text-sm font-medium text-muted-foreground">API dökümantasyonu yükleniyor...</p>
-            </div>
-        </div>
-    )
-});
+// swagger-ui-react arayüzü bizim React kopyamızla çalıştırıyor ve eski yaşam döngüsü yöntemleri yüzünden
+// (ParameterRow: UNSAFE_componentWillReceiveProps) strict modda uyarı veriyor. Kendi React'ini taşıyan
+// bağımsız paket /api/docs sayfasındaki gibi yüklenir; sürüm swagger-ui-react ile aynı.
+const SWAGGER_BUNDLE_URL = 'https://unpkg.com/swagger-ui-dist@5.31.0/swagger-ui-bundle.js';
+
+function loadSwaggerBundle(): Promise<void> {
+    const w = window as any;
+    if (w.SwaggerUIBundle) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        const existing = document.querySelector<HTMLScriptElement>(`script[src="${SWAGGER_BUNDLE_URL}"]`);
+        const script = existing ?? document.createElement('script');
+        script.addEventListener('load', () => resolve());
+        script.addEventListener('error', () => reject(new Error('Swagger arayüzü yüklenemedi. İnternet bağlantınızı kontrol edin.')));
+        if (!existing) {
+            script.src = SWAGGER_BUNDLE_URL;
+            document.head.appendChild(script);
+        }
+    });
+}
 
 export default function ApiDocsPage() {
-    const [spec, setSpec] = useState(null);
+    const [spec, setSpec] = useState<object | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [token, setToken] = useState<string | null>(null);
-    const uiRef = useRef<any>(null);
 
     useEffect(() => {
-        if (token && uiRef.current) {
-            uiRef.current.preauthorizeApiKey("bearerAuth", token);
-            console.log("Token applied to SwaggerUI instance");
-        }
-    }, [token]);
-
-    useEffect(() => {
-        // First fetch the token
-        fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: 'admin', password: '123' })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.token) {
-                setToken(data.token);
-                console.log("Admin token automatically fetched for Swagger");
-            }
-        })
-        .catch(err => console.error("Admin auto-login failed:", err));
-
-        // Then fetch the spec
         fetch('/swagger.json')
             .then((res) => {
                 if (!res.ok) throw new Error('Swagger dosyası bulunamadı. Lütfen /public/swagger.json dosyasını kontrol edin.');
@@ -60,6 +41,21 @@ export default function ApiDocsPage() {
                 setError(err.message);
             });
     }, []);
+
+    useEffect(() => {
+        if (!spec) return;
+        let cancelled = false;
+        loadSwaggerBundle()
+            .then(() => {
+                if (cancelled) return;
+                const ui = (window as any).SwaggerUIBundle({ spec, dom_id: '#swagger-ui-root' });
+                // "Try it out" istekleri giriş yapmış yöneticinin jetonuyla gider.
+                const token = localStorage.getItem('token');
+                if (token) ui.preauthorizeApiKey('bearerAuth', token);
+            })
+            .catch((err) => { if (!cancelled) setError(err.message); });
+        return () => { cancelled = true; };
+    }, [spec]);
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -90,15 +86,7 @@ export default function ApiDocsPage() {
                         </div>
                     ) : spec ? (
                         <div className="swagger-custom-wrapper">
-                            <SwaggerUI 
-                                spec={spec} 
-                                onComplete={(ui: any) => {
-                                    uiRef.current = ui;
-                                    if (token) {
-                                        ui.preauthorizeApiKey("bearerAuth", token);
-                                    }
-                                }}
-                            />
+                            <div id="swagger-ui-root" />
                         </div>
                     ) : (
                         <div className="flex flex-col items-center justify-center p-24 text-muted-foreground">
