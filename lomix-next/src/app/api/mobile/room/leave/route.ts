@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { syncViewerCount } from '@/lib/room-viewers';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { logRoomEvent } from '@/lib/room-log';
@@ -60,13 +61,8 @@ export async function POST(request: Request) {
             data: { userId: null, isMuted: false },
         });
 
-        // Görüntüleyici sayısını düşür (0'ın altına inmesin)
-        if (room.viewerCount > 0) {
-            await prisma.room.update({
-                where: { id: room.id },
-                data: { viewerCount: { decrement: 1 } },
-            });
-        }
+        // Görüntüleyici sayısı katılımcı sayısından hesaplanır.
+        await syncViewerCount(room.id);
 
         logRoomEvent(room.id, userId, 'ROOM_LEFT');
 

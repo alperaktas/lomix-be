@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { syncViewerCount } from '@/lib/room-viewers';
 import prisma from '@/lib/prisma';
 import { sendAdminSignalEvent } from '@/lib/agora';
 
@@ -25,6 +26,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
                     where: { roomId: roomDbId, userId: targetUserId },
                     data: { userId: null },
                 });
+                await syncViewerCount(roomDbId);
                 await sendAdminSignalEvent(room.roomId, { type: 'KICKED', targetUserId: String(targetUserId) });
                 result = { message: 'Kullanıcı odadan atıldı' };
                 break;

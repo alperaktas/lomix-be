@@ -36,6 +36,8 @@ import { logRoomEvent } from '@/lib/room-log';
  *       404:
  *         description: Oda veya slot bulunamadı
  */
+class SlotTakenError extends Error {}
+
 export async function POST(request: Request) {
     try {
         const userId = await getCurrentUserId(request);
@@ -82,25 +84,43 @@ export async function POST(request: Request) {
             return ApiResponseHelper.error("Bu mic slotu başkası tarafından kullanılıyor.", 409);
         }
 
-        // Kullanıcının başka bir slotta olup olmadığını kontrol et
-        await prisma.roomMicSlot.updateMany({
-            where: { roomId: room.id, userId },
-            data: { userId: null },
-        });
+        // Aynı kullanıcının eşzamanlı istekleri (çift dokunma, aynı hesabın iki cihazı) sıraya girer; yoksa ikisi de
+        // "eski yuvam yok" görüp kullanıcı iki yuvada kalıyordu. Kullanıcı başka bir slottaysa oradan alınır ve eski
+        // yuvanın numarası döner (yoksa yuva değiştirenler eski yuvada "hayalet" olarak görünüyordu).
+        const taken = await prisma.$transaction(async tx => {
+            await tx.$executeRaw`SELECT pg_advisory_xact_lock(${room.id}::int, ${userId}::int)`;
 
-        await prisma.roomMicSlot.update({
-            where: { id: slot.id },
-            data: { userId },
+            const previous = await tx.roomMicSlot.findFirst({
+                where: { roomId: room.id, userId, NOT: { id: slot.id } },
+                select: { slotIndex: true },
+            });
+            await tx.roomMicSlot.updateMany({ where: { roomId: room.id, userId, NOT: { id: slot.id } }, data: { userId: null } });
+
+            // Yuva hâlâ boş (ya da zaten bu kullanıcının) ise alınır; başkası arada aldıysa hiçbir şey değişmez.
+            const claimed = await tx.roomMicSlot.updateMany({
+                where: { id: slot.id, isLocked: false, OR: [{ userId: null }, { userId }] },
+                data: { userId },
+            });
+            if (claimed.count === 0) throw new SlotTakenError();
+            return { previousSlotIndex: previous ? previous.slotIndex : null };
+        }).catch(e => {
+            if (e instanceof SlotTakenError) return null;
+            throw e;
         });
+        if (!taken) return ApiResponseHelper.error("Bu mic slotu başkası tarafından kullanılıyor.", 409);
+        const { previousSlotIndex } = taken;
 
         logRoomEvent(room.id, userId, 'MIC_TAKEN', null, String(slotIndex));
 
         return ApiResponseHelper.success({
             slotIndex: Number(slotIndex),
+            previousSlotIndex,
             userId: String(userId),
             rtm_event: {
                 type: 'MIC_TAKEN',
                 slotIndex: Number(slotIndex),
+                // Doluysa kullanıcı bu yuvadan taşındı: istemci eski yuvayı boşaltmalı.
+                previousSlotIndex,
                 userId: String(userId),
                 username: userInfo?.fullName || userInfo?.username || '',
                 avatarUrl: userInfo?.avatar || '',

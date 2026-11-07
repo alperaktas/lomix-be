@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { syncViewerCount } from '@/lib/room-viewers';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { generateAgoraToken, registerAgoraChatUser, createAgoraChatRoom } from '@/lib/agora';
@@ -80,11 +81,8 @@ export async function POST(request: Request) {
             update: {},
         });
 
-        // Görüntüleyici sayısını güncelle
-        await prisma.room.update({
-            where: { id: room.id },
-            data: { viewerCount: { increment: 1 } },
-        });
+        // Görüntüleyici sayısı katılımcı sayısından hesaplanır (tekrar join sayacı şişirmez).
+        await syncViewerCount(room.id);
 
         // Kullanıcıyı Agora Chat'e kaydet
         await registerAgoraChatUser(String(userId));

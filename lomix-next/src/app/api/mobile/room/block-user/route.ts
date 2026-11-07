@@ -1,4 +1,5 @@
 import { ApiResponseHelper } from '@/lib/api-response';
+import { syncViewerCount } from '@/lib/room-viewers';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { getRoomRole, canKick } from '@/lib/room-permissions';
@@ -82,6 +83,7 @@ export async function POST(request: Request) {
             // Odadan da çıkar
             await prisma.roomParticipant.deleteMany({ where: { roomId: room.id, userId: targetId } });
             await prisma.roomMicSlot.updateMany({ where: { roomId: room.id, userId: targetId }, data: { userId: null } });
+            await syncViewerCount(room.id);
 
             logRoomEvent(room.id, actorId, 'USER_BLOCKED', targetId);
 
