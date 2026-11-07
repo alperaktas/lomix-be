@@ -1,14 +1,20 @@
 import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
+import { getCurrentUserId } from '@/lib/current-user';
 
 /**
  * @swagger
  * /api/mobile/diamond/shop:
  *   post:
  *     summary: Elmas shop verilerini döndürür
+ *     description: |
+ *       Elmas bakiyesi ve admin panelinde tanımlı **aktif** paketler (`exchange_items`: elmas → coin bozdurma,
+ *       `withdraw_items`: elmas çekim). Kullanıcı token'dan belirlenir; gövdedeki `user_id` verilirse token'daki
+ *       kullanıcı olmalıdır (aksi halde 403). Paket yoksa listeler boş döner ve ilgili işlem yapılamaz.
  *     tags: [Mobile Diamond]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
- *       required: true
  *       content:
  *         application/json:
  *           schema:
@@ -16,18 +22,20 @@ import prisma from '@/lib/prisma';
  *             properties:
  *               user_id:
  *                 type: integer
+ *                 description: Opsiyonel; verilirse token'daki kullanıcı olmalıdır
  *     responses:
  *       200:
  *         description: Elmas verisi gönderildi
  */
 export async function POST(request: Request) {
     try {
-        const body = await request.json();
-        const userId = Number(body.user_id);
+        const authId = await getCurrentUserId(request);
+        if (!authId) return ApiResponseHelper.error("Yetkisiz erişim.", 401);
 
-        if (!userId) {
-            return ApiResponseHelper.error("Kullanıcı ID gerekli", 400);
-        }
+        const body = await request.json().catch(() => ({}));
+        // Yalnızca token'daki kullanıcının bakiyesi döner; gövdedeki user_id başkasını işaret edemez.
+        const userId = Number(body.user_id ?? authId);
+        if (userId !== authId) return ApiResponseHelper.error("Bu veriye erişim yetkiniz yok.", 403);
 
         const wallet = await prisma.wallet.findUnique({
             where: { userId },

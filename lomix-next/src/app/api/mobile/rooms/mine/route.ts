@@ -17,6 +17,7 @@ function mapRoom(room: any, origin: string) {
         owner_name: room.owner?.fullName || room.owner?.username,
         avatar_url: room.owner?.avatar?.trim() || `${origin}/img/default-avatar.svg`,
         viewer_count: room.viewerCount,
+        level: room.level ?? null,
         is_pk: room.mode === 'pk',
         badges,
     };

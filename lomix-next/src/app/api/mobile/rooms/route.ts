@@ -6,6 +6,7 @@ import prisma from '@/lib/prisma';
  * /api/mobile/rooms:
  *   get:
  *     summary: Canlı sesli odalar + bannerlar
+ *     description: Her odada `level` (admin elle verir) bulunur; verilmemişse null döner, mobil bu durumda rozette "X" gösterir.
  *     tags: [Mobile Rooms]
  *     security:
  *       - bearerAuth: []
@@ -80,6 +81,7 @@ export async function GET(request: Request) {
                 mode: room.mode,
                 type: room.type,
                 locked: room.isLocked,
+                level: room.level ?? null,
                 tags: room.tags.map(tag => ({
                     text: tag.text,
                     color_hex: tag.colorHex || "#000000"

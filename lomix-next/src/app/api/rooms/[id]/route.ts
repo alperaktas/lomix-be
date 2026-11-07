@@ -59,6 +59,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         if (password !== undefined) data.password = password || null;
         if (isLive !== undefined) data.isLive = isLive;
         if (isClosed !== undefined) data.isClosed = isClosed;
+        // Oda seviyesi elle verilmez: odada kişilere gönderilen hediyelere göre otomatik yükselir (Oda Seviyeleri sayfası).
 
         const room = await prisma.room.update({
             where: { id: parseInt(id) },

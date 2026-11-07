@@ -243,6 +243,8 @@ model Room {
   mode              String              @default("pk")
   type              String              @default("voice")
   minLevel          Int                 @default(0) @map("min_level")
+  level             Int?                @map("level")
+  giftTotal         Int                 @default(0) @map("gift_total")
   description       String?
   thumbnailUrl      String?             @map("thumbnail_url")
   viewerCount       Int                 @default(0) @map("viewer_count")
@@ -951,6 +953,16 @@ model LevelThreshold {
   createdAt     DateTime @default(now()) @map("created_at")
 
   @@map("level_thresholds")
+}
+
+model RoomLevelThreshold {
+  id            Int      @id @default(autoincrement())
+  level         Int      @unique
+  requiredGifts Int      @map("required_gifts")
+  name          String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("room_level_thresholds")
 }
 
 model Notification {

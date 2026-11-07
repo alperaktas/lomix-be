@@ -4,12 +4,17 @@ import { getCurrentUserId } from '@/lib/current-user';
 import { getSetting } from '@/lib/app-settings';
 import { isWalletBlocked, WALLET_BLOCK_MESSAGES } from '@/lib/wallet-guard';
 import { spendOp, syncLevel, levelUpField } from '@/lib/level';
+import { addRoomGift } from '@/lib/room-level';
 
 /**
  * @swagger
  * /api/mobile/gift/send-room:
  *   post:
- *     summary: Odaya hediye gönder
+ *     summary: Odadaki bir kişiye hediye gönder
+ *     description: |
+ *       Odada hediye her zaman bir kişiye gönderilir (`toUserId` zorunlu); kişi kendine hediye gönderemez.
+ *       Alıcı odanın sahibi, mikrofondaki biri ya da odadaki bir katılımcı olmalıdır. Elmas alıcıya yazılır.
+ *       Hata kodları: 400 (toUserId yok / kendine gönderim), 404 (oda yok), 422 (alıcı odada değil).
  *     tags: [Mobile Gifts]
  *     security:
  *       - bearerAuth: []
@@ -22,11 +27,15 @@ import { spendOp, syncLevel, levelUpField } from '@/lib/level';
  *             required:
  *               - giftId
  *               - roomId
+ *               - toUserId
  *             properties:
  *               giftId:
  *                 type: integer
  *               roomId:
  *                 type: string
+ *               toUserId:
+ *                 type: integer
+ *                 description: Hediyeyi alacak kişi (odada olmalı, kendisi olamaz)
  *               amount:
  *                 type: integer
  *                 default: 1
@@ -45,19 +54,30 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json();
-        const { giftId, roomId, amount = 1 } = body;
+        const { giftId, roomId, toUserId, amount = 1 } = body;
 
         if (!giftId || !roomId) {
             return NextResponse.json({ status: false, message: 'giftId ve roomId zorunludur' }, { status: 400 });
         }
+        if (toUserId === undefined || toUserId === null || toUserId === '') {
+            return NextResponse.json({ status: false, message: 'Hediye göndermek için bir kişi seçmelisiniz (toUserId zorunludur)' }, { status: 400 });
+        }
+        const toId = parseInt(String(toUserId), 10);
+        if (!Number.isInteger(toId) || toId < 1) {
+            return NextResponse.json({ status: false, message: 'toUserId geçersiz' }, { status: 400 });
+        }
+        if (toId === userId) {
+            return NextResponse.json({ status: false, message: 'Kendinize hediye gönderemezsiniz' }, { status: 400 });
+        }
 
         const qty = Math.max(1, parseInt(String(amount), 10));
 
-        const [gift, room, sender, wallet] = await Promise.all([
+        const [gift, room, sender, wallet, receiver] = await Promise.all([
             prisma.gift.findUnique({ where: { id: parseInt(String(giftId), 10) } }),
             prisma.room.findUnique({ where: { roomId: String(roomId) }, select: { id: true, roomId: true, ownerId: true, isLive: true } }),
             prisma.user.findUnique({ where: { id: userId }, select: { id: true, username: true, fullName: true, avatar: true, level: true, isVip: true } }),
             prisma.wallet.findUnique({ where: { userId } }),
+            prisma.user.findUnique({ where: { id: toId }, select: { id: true, username: true, fullName: true } }),
         ]);
 
         if (!gift || !gift.isVisible) {
@@ -65,6 +85,20 @@ export async function POST(request: Request) {
         }
         if (!room || !room.isLive) {
             return NextResponse.json({ status: false, message: 'Oda bulunamadı veya aktif değil' }, { status: 404 });
+        }
+
+        if (!receiver) {
+            return NextResponse.json({ status: false, message: 'Kullanıcı bulunamadı' }, { status: 404 });
+        }
+        // Alıcı odada olmalı: sahip, mikrofondaki ya da katılımcı.
+        if (toId !== room.ownerId) {
+            const [onMic, present] = await Promise.all([
+                prisma.roomMicSlot.findFirst({ where: { roomId: room.id, userId: toId }, select: { id: true } }),
+                prisma.roomParticipant.findFirst({ where: { roomId: room.id, userId: toId }, select: { id: true } }),
+            ]);
+            if (!onMic && !present) {
+                return NextResponse.json({ status: false, message: 'Seçilen kişi bu odada değil' }, { status: 422 });
+            }
         }
 
         const totalCost = gift.price * qty;
@@ -86,14 +120,15 @@ export async function POST(request: Request) {
                 data: { balance: { decrement: totalCost } },
             }),
             prisma.wallet.upsert({
-                where: { userId: room.ownerId },
+                where: { userId: toId },
                 update: { diamonds: { increment: diamondAmount } },
-                create: { userId: room.ownerId, balance: 0, diamonds: diamondAmount },
+                create: { userId: toId, balance: 0, diamonds: diamondAmount },
             }),
             prisma.giftLog.create({
                 data: {
                     giftId: gift.id,
                     senderId: userId,
+                    receiverId: toId,
                     roomId: room.id,
                     amount: qty,
                     totalPrice: totalCost,
@@ -105,6 +140,7 @@ export async function POST(request: Request) {
         ]);
 
         const levelResult = await syncLevel(userId);
+        const roomLevel = await addRoomGift(room.id, totalCost).catch(() => null);
 
         return NextResponse.json({
             status: true,
@@ -126,6 +162,9 @@ export async function POST(request: Request) {
                     sender_level: sender?.level ?? 1,
                     sender_is_vip: sender?.isVip ?? false,
                     room_id: room.roomId,
+                    room_level: roomLevel,
+                    receiver_id: String(toId),
+                    receiver_name: receiver.fullName || receiver.username || '',
                     diamond_amount: diamondAmount,
                     commission,
                 },

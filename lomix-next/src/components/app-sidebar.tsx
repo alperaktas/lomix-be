@@ -71,6 +71,7 @@ const data: { navMain: NavItem[] } = {
         { title: "Odalar", url: "/dashboard/rooms" },
         { title: "Raporlar", url: "/dashboard/rooms/reports" },
         { title: "Kelime Filtresi", url: "/dashboard/rooms/word-filters" },
+        { title: "Oda Seviyeleri", url: "/dashboard/settings/room-levels" },
         { title: "Oda Temaları", url: "/dashboard/settings/room-themes" },
       ],
     },
@@ -97,6 +98,7 @@ const data: { navMain: NavItem[] } = {
         { title: "Hikaye Fiyatları", url: "/dashboard/settings/story-prices" },
         { title: "Komisyon & Fiyatlar", url: "/dashboard/settings/commissions" },
         { title: "Ajans Prim Oranları", url: "/dashboard/settings/agency-prim" },
+        { title: "Elmas Değişimi", url: "/dashboard/settings/diamond-exchange" },
       ],
     },
     {

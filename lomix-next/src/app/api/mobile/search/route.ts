@@ -126,6 +126,7 @@ export async function POST(request: Request) {
                     room_id: room.roomId,
                     owner_id: String(room.ownerId),
                     viewer_count: room.viewerCount,
+                    level: room.level ?? null,
                     is_live: room.isLive,
                     mode: room.mode
                 }];

@@ -23,6 +23,7 @@ export type Room = {
     isVip: boolean
     isLocked: boolean
     micCount: number
+    level: number | null
     viewerCount: number
     createdAt: string
     owner: { id: number; username: string; avatar: string | null }
@@ -113,6 +114,14 @@ export const getColumns = ({ onEdit, onDelete, onDetail, onClose }: ColumnsProps
                     )}
                 </div>
             )
+        },
+    },
+    {
+        accessorKey: "level",
+        header: "Seviye",
+        cell: ({ row }) => {
+            const level = row.original.level
+            return <span className="text-xs font-medium text-zinc-500">{level === null || level === undefined ? "—" : level}</span>
         },
     },
     {

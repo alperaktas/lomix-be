@@ -53,6 +53,8 @@ const LABELS: Record<string, string> = {
     complaints: 'Şikayet & Öneriler',
     'auth-test': 'Auth Test',
     'ajans-dokumani': 'Ajans Dökümanı',
+    'diamond-exchange': 'Elmas Değişimi',
+    'room-levels': 'Oda Seviyeleri',
 };
 
 /** Aynı parça birden çok sayfada geçiyorsa (reports) adres bazlı ad. */

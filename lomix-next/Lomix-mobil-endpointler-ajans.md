@@ -6,6 +6,12 @@ Cevaplar genelde şu şekilde: `{ "status": true, "message": "...", "data": ... 
 
 ## Ajans
 
+**Ajans ekranlarına yalnızca rolü `ajans` olan kullanıcı girebiliyor.** Ajans sahibi olsa bile rolü `user` ise (panelden düşürülmüşse) ajans sahibi uçları (`my_agency`, `pending_streamers`, `accept_streamer`, `reject_streamer`, `new_streamers`, `active_streamers`, `total_streamers`) HTTP 403 döner:
+```json
+{ "status": false, "success": false, "message": "Ajans bölümüne erişim yetkiniz yok.", "data": { "error_code": "AGENCY_ROLE_REQUIRED" } }
+```
+Ajans oluşturulunca sahibine `ajans`, ajansa yayıncı eklenince ya da başvurusu onaylanınca `yayıncı` rolü otomatik verilir. Ajansı olmayan kullanıcı `my_agency` çağırırsa eskisi gibi `data: null` gelir.
+
 ### GET /profile/my_agency
 Ajans sahibinin ana ekranı. Ajansı yoksa `data` null geliyor. Rakamlar elmas, "bu ay" Türkiye saatine göre.
 
@@ -117,6 +123,8 @@ Active listesinde liste adı `active_publishers`, her satırda ek olarak `rank` 
 ## Profil
 
 ### GET /profile/me
+**`data.user.user_type` artık kullanıcının rolünden geliyor** (veriden değil): rolü `ajans` ise `ajans`, rolü `yayıncı` ise `yayıncı`, diğer her rol `kullanıcı`. Admin panelinden rol değişince tür de değişir. Ajans ekranlarını göstermek için bu alana bakın.
+
 Üç yeni alan geldi:
 - `data.user.gender_verified`: cinsiyet doğrulandı mı
 - `data.user.gender_locked`: true ise cinsiyet seçilmiş, düzenleme ekranında kilitli gösterin
@@ -180,6 +188,54 @@ Aylık coin geçmişi. Artık varsayılan olarak hepsini veriyor: yüklemeler ve
 }
 ```
 `direction` in ise yükleme, out ise harcama. `amount` her zaman pozitif. Satın alma satırlarında `unit_price`, `total_price`, `tl_amount` dolu geliyor, diğerlerinde null. Hikaye ve mesaj harcamaları sadece bu sürümden sonrası için görünür, öncesi kayıtlı değil. Gerçek coin satın alma kaydı da şu an yazılmıyor (ödeme tarafı bağlı değil), o yüzden satın alma satırları boş kalabilir.
+
+## Odalar
+
+### GET /rooms
+Oda listesinde her odada artık `level` alanı var (tamsayı). Oda seviyesi otomatik: odada kişilere gönderilen hediyelerin toplam coin değerine göre yükseliyor ve düşmüyor. Seviye basamaklarını admin panelinden (Odalar > Oda Seviyeleri) tanımlıyoruz. Hiç seviye tanımlı değilse `null` geliyor, bu durumda rozette "X" gösterin. `0` geçerli bir seviye, null ile karıştırmayın.
+
+```json
+{
+  "status": true,
+  "data": {
+    "rooms": [
+      { "id": "r_104", "name": "Sohbet & Müzik", "viewer_count": 12, "locked": false, "level": 5 },
+      { "id": "r_105", "name": "Yeni oda", "viewer_count": 3, "locked": false, "level": null }
+    ]
+  }
+}
+```
+(Diğer oda alanları eskisi gibi, kısalttım.) `level` aynı şekilde `/rooms/mine` ve `/search` sonuçlarındaki odalarda da geliyor.
+
+## Hediye
+
+### POST /gift/send-room
+Odada hediye artık her zaman bir kişiye gönderiliyor, odaya hediye yok. Gövdeye **`toUserId` zorunlu** eklendi: `{ "giftId": 3, "roomId": "r_104", "toUserId": 21, "amount": 1 }`.
+
+- Kişi seçilmezse 400, kişi kendine gönderirse 400 (`Kendinize hediye gönderemezsiniz`).
+- Alıcı odada değilse 422. Alıcı oda sahibi, mikrofondaki biri ya da odadaki bir katılımcı olabilir.
+- Elmas seçilen kişiye yazılıyor. Odada bir kişiye hediye gönderilince odanın seviyesi de ilerliyor.
+- `rtm_event` içinde `receiver_id`, `receiver_name` ve `room_level` (hediyeden sonraki oda seviyesi, seviye tanımlı değilse `null`) geliyor.
+
+Mikrofonda olmayan birinin profilindeki hediye kutusu da bu uçla, kişi önceden seçili olarak çalışmalı.
+
+## Sıralama
+
+### GET /leaderboard
+Yayıncı, destekçi ve oda sıralaması. Parametreler: `type` (`anchor` yayıncılar, `supporter` destekçiler, `rooms` odalar) ve `period`.
+
+`period` değerleri: `daily` (son 24 saat), `weekly` (son 7 gün, verilmezse bu), `monthly` (son 30 gün), `all` (**tüm zamanlar**, tarih sınırı yok). "Tüm zamanlar" için `all` gönderin. `all_time`, `alltime`, `total` da kabul edilir. **Tanınmayan bir değer artık 400 döner** (eskiden sessizce haftalığa düşüyordu, "tüm zamanlar" bu yüzden aylıktan küçük görünebiliyordu).
+
+Cevapta `period` normalleştirilmiş değerdir, `since` pencerenin başlangıcıdır (`all` için `null`). Puan: yayıncı (`anchor`) için tüm elmas kazançları (hediyeler ve mesaj kazancı), bonus ve görev kazançları hariç. Destekçi ve oda için hediyeye harcanan coin.
+
+```json
+{ "status": true, "data": { "type": "supporter", "period": "all", "since": null,
+  "top_three": [ { "rank": 1, "owner_name": "Ayşe", "score": "1.2m", "viewer_count": 1160998, "user_id": "21" } ],
+  "others": [] } }
+```
+
+### Odadaki kişi sayısı
+`viewer_count` artık her zaman odadaki gerçek katılımcı sayısı. `room/join`'i tekrar çağırmak (örneğin oda sahibi oda oluşturduktan sonra, yeniden bağlanırken) sayacı artırmıyor. Kullanıcı atılınca ya da engellenince de sayaç düşüyor.
 
 ## Not
 Eski Türkçe adlar (`ajans/yayici_onay`, `ajans/yayici_onayla`, `ajans/yayici_reddet`, `profile/ajans_katil`) şimdilik çalışıyor, ileride kaldıracağız. Davet linki ucu henüz yok.

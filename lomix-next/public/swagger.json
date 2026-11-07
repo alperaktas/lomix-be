@@ -1556,18 +1556,24 @@
     "/api/mobile/diamond/shop": {
       "post": {
         "summary": "Elmas shop verilerini döndürür",
+        "description": "Elmas bakiyesi ve admin panelinde tanımlı **aktif** paketler (`exchange_items`: elmas → coin bozdurma,\n`withdraw_items`: elmas çekim). Kullanıcı token'dan belirlenir; gövdedeki `user_id` verilirse token'daki\nkullanıcı olmalıdır (aksi halde 403). Paket yoksa listeler boş döner ve ilgili işlem yapılamaz.\n",
         "tags": [
           "Mobile Diamond"
         ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
                   "user_id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "description": "Opsiyonel; verilirse token'daki kullanıcı olmalıdır"
                   }
                 }
               }
@@ -1691,7 +1697,8 @@
     },
     "/api/mobile/gift/send-room": {
       "post": {
-        "summary": "Odaya hediye gönder",
+        "summary": "Odadaki bir kişiye hediye gönder",
+        "description": "Odada hediye her zaman bir kişiye gönderilir (`toUserId` zorunlu); kişi kendine hediye gönderemez.\nAlıcı odanın sahibi, mikrofondaki biri ya da odadaki bir katılımcı olmalıdır. Elmas alıcıya yazılır.\nHata kodları: 400 (toUserId yok / kendine gönderim), 404 (oda yok), 422 (alıcı odada değil).\n",
         "tags": [
           "Mobile Gifts"
         ],
@@ -1708,7 +1715,8 @@
                 "type": "object",
                 "required": [
                   "giftId",
-                  "roomId"
+                  "roomId",
+                  "toUserId"
                 ],
                 "properties": {
                   "giftId": {
@@ -1716,6 +1724,10 @@
                   },
                   "roomId": {
                     "type": "string"
+                  },
+                  "toUserId": {
+                    "type": "integer",
+                    "description": "Hediyeyi alacak kişi (odada olmalı, kendisi olamaz)"
                   },
                   "amount": {
                     "type": "integer",
@@ -1791,6 +1803,55 @@
         "responses": {
           "200": {
             "description": "Hediyeler başarıyla getirildi"
+          }
+        }
+      }
+    },
+    "/api/mobile/leaderboard": {
+      "get": {
+        "summary": "Sıralama listesi (yayıncılar, destekçiler, odalar)",
+        "description": "`type`: `anchor` (en çok elmas kazanan yayıncılar, varsayılan), `supporter` (en çok coin harcayan destekçiler),\n`rooms` (en çok hediye alan odalar). `period`: `daily` (son 24 saat), `weekly` (son 7 gün, varsayılan),\n`monthly` (son 30 gün), `all` (tüm zamanlar, tarih sınırı yok). `all` için `all_time`, `alltime`, `total` da kabul edilir.\nTanınmayan `period` 400 döner. Cevaptaki `period` normalleştirilmiş değerdir, `since` pencerenin başlangıcıdır\n(`all` için null). Puan: yayıncı = tüm elmas kazançları (hediyeler, oda hediyeleri, mesaj kazancı; bonus/görev kazançları HARİÇ),\ndestekçi ve oda = hediyeye harcanan coin.\n",
+        "tags": [
+          "Mobile Leaderboard"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "anchor",
+                "supporter",
+                "rooms"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "period",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "daily",
+                "weekly",
+                "monthly",
+                "all"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "data.type, data.period, data.since, data.top_three, data.others"
+          },
+          "400": {
+            "description": "Geçersiz period"
           }
         }
       }
@@ -2604,7 +2665,7 @@
     "/api/mobile/profile/me": {
       "get": {
         "summary": "Giriş yapmış kullanıcının profil bilgilerini getirir",
-        "description": "`data.user.user_type` her zaman şu üç değerden biridir: `kullanıcı`, `yayıncı`, `ajans`.\nKendi ajansı olan `ajans`; ajansta onaylı üye ya da yayıncı işaretli olan `yayıncı`;\ndiğerleri `kullanıcı`. Birden fazla koşul varsa ajans > yayıncı > kullanıcı önceliği uygulanır.\n",
+        "description": "`data.user.user_type` her zaman şu üç değerden biridir: `kullanıcı`, `yayıncı`, `ajans`. Tür kullanıcının\n**rolünden** gelir (admin panelinden değiştirilir): rolü `ajans` olan `ajans`, rolü `yayıncı` olan `yayıncı`,\ndiğer her rol `kullanıcı`. Ajans sahibi olsa bile rolü `user` ise `kullanıcı` döner ve ajans ekranlarına girilemez.\nAjans/yayıncı olarak eklenen kullanıcıların rolü otomatik güncellenir.\n",
         "tags": [
           "Mobile Profile"
         ],
@@ -4181,6 +4242,7 @@
     "/api/mobile/rooms": {
       "get": {
         "summary": "Canlı sesli odalar + bannerlar",
+        "description": "Her odada `level` (admin elle verir) bulunur; verilmemişse null döner, mobil bu durumda rozette \"X\" gösterir.",
         "tags": [
           "Mobile Rooms"
         ],
