@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { isGenderLocked } from '@/lib/gender';
 import { userTypeFromRole } from '@/lib/roles';
+import { latestApplicationSummary } from '@/lib/agency-application';
 
 /**
  * @swagger
@@ -14,6 +15,10 @@ import { userTypeFromRole } from '@/lib/roles';
  *       **rolünden** gelir (admin panelinden değiştirilir): rolü `ajans` olan `ajans`, rolü `yayıncı` olan `yayıncı`,
  *       diğer her rol `kullanıcı`. Ajans sahibi olsa bile rolü `user` ise `kullanıcı` döner ve ajans ekranlarına girilemez.
  *       Ajans/yayıncı olarak eklenen kullanıcıların rolü otomatik güncellenir.
+ *
+ *       `data.user.agency_application`: kullanıcının **en son** ajans başvurusunun özeti (`application_id`, `status`,
+ *       `status_text`, `rejected_by`, `agency`, `updated_at`), başvuru yoksa `null`. `status`: `pending`, `owner_approved`,
+ *       `approved`, `rejected`. Fotoğraf ve iletişim bilgisi bu özette yoktur, ayrıntı için `agency/my_application`.
  *     tags: [Mobile Profile]
  *     security:
  *       - bearerAuth: []
@@ -42,6 +47,7 @@ export async function GET(request: Request) {
     // Tür rolden gelir; rol ajans/yayıncı atanırken otomatik, istenirse panelden elle güncellenir.
     const userType = userTypeFromRole(user.role);
 
+    const agency_application = await latestApplicationSummary(userId);
     const following_count = await prisma.userFollow.count({ where: { followerId: userId } });
     const followers_count = await prisma.userFollow.count({ where: { followingId: userId } });
     const friends_count = await prisma.userFriend.count({
@@ -66,7 +72,8 @@ export async function GET(request: Request) {
                 gender_locked: isGenderLocked(user.gender),
                 level: user.level ?? 0,
                 prestige_points: user.prestigePoints || 0,
-                user_type: userType
+                user_type: userType,
+                agency_application,
             },
             stats: {
                 following_count,

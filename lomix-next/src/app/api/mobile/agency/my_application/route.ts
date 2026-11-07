@@ -1,13 +1,8 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
+import { APPLICATION_STATUS_TEXT as STATUS_TEXT } from '@/lib/agency-application';
 
-const STATUS_TEXT: Record<string, string> = {
-    pending: 'Ajans sahibinin onayı bekleniyor',
-    owner_approved: 'Ajans sahibi onayladı, admin onayı bekleniyor',
-    approved: 'Onaylandı',
-    rejected: 'Reddedildi',
-};
 
 /**
  * @swagger

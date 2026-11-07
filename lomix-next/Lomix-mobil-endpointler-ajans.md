@@ -130,6 +130,21 @@ Active listesinde liste adı `active_publishers`, her satırda ek olarak `rank` 
 - `data.user.gender_locked`: true ise cinsiyet seçilmiş, düzenleme ekranında kilitli gösterin
 - `data.wallet.withdraw_blocked`, `exchange_blocked`, `spend_blocked`: bu kullanıcı için elmas çekme, bozdurma veya coin harcama kapatıldıysa true
 
+### Ajans başvurusu özeti: `data.user.agency_application`
+`profile/me` artık kullanıcının **en son** ajans başvurusunun özetini de döndürüyor. Böylece uygulama açılışta ayrıca `agency/my_application` çağırmadan "Başvurun inceleniyor" ya da "Başvurun reddedildi" gösterebilir. Başvuru yoksa `null`. `user_type` değişmiyor, başvuru durumunu taşımıyor.
+
+```json
+"agency_application": {
+  "application_id": "50",
+  "status": "owner_approved",
+  "status_text": "Ajans sahibi onayladı, admin onayı bekleniyor",
+  "rejected_by": null,
+  "agency": { "id": "39", "name": "Alfa Ajans" },
+  "updated_at": "2026-11-07T13:43:05.509Z"
+}
+```
+`status`: `pending` (ajans sahibi bekleniyor), `owner_approved` (admin onayı bekleniyor), `approved`, `rejected`. Reddedildiyse `rejected_by` içinde `owner` ya da `admin` yazıyor. Önerilen davranış: `pending` ve `owner_approved` iken "Ajansa Katıl" formunu açmayıp durumu göster, `rejected` iken sebebi göster ve yeniden başvuruya izin ver. Onaylanınca kullanıcı yayıncı oluyor ve `user_type` `yayıncı` oluyor. Fotoğraf ve iletişim bilgisi bu özette yok, tüm başvuru geçmişi için `agency/my_application`.
+
 ### GET /ben
 `data.user_info` içine `gender_verified` eklendi.
 

@@ -2665,7 +2665,7 @@
     "/api/mobile/profile/me": {
       "get": {
         "summary": "Giriş yapmış kullanıcının profil bilgilerini getirir",
-        "description": "`data.user.user_type` her zaman şu üç değerden biridir: `kullanıcı`, `yayıncı`, `ajans`. Tür kullanıcının\n**rolünden** gelir (admin panelinden değiştirilir): rolü `ajans` olan `ajans`, rolü `yayıncı` olan `yayıncı`,\ndiğer her rol `kullanıcı`. Ajans sahibi olsa bile rolü `user` ise `kullanıcı` döner ve ajans ekranlarına girilemez.\nAjans/yayıncı olarak eklenen kullanıcıların rolü otomatik güncellenir.\n",
+        "description": "`data.user.user_type` her zaman şu üç değerden biridir: `kullanıcı`, `yayıncı`, `ajans`. Tür kullanıcının\n**rolünden** gelir (admin panelinden değiştirilir): rolü `ajans` olan `ajans`, rolü `yayıncı` olan `yayıncı`,\ndiğer her rol `kullanıcı`. Ajans sahibi olsa bile rolü `user` ise `kullanıcı` döner ve ajans ekranlarına girilemez.\nAjans/yayıncı olarak eklenen kullanıcıların rolü otomatik güncellenir.\n\n`data.user.agency_application`: kullanıcının **en son** ajans başvurusunun özeti (`application_id`, `status`,\n`status_text`, `rejected_by`, `agency`, `updated_at`), başvuru yoksa `null`. `status`: `pending`, `owner_approved`,\n`approved`, `rejected`. Fotoğraf ve iletişim bilgisi bu özette yoktur, ayrıntı için `agency/my_application`.\n",
         "tags": [
           "Mobile Profile"
         ],
