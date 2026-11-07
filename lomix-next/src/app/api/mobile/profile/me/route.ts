@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { isGenderLocked } from '@/lib/gender';
+import { userTypeFromRole } from '@/lib/roles';
 
 /**
  * @swagger
@@ -9,9 +10,10 @@ import { isGenderLocked } from '@/lib/gender';
  *   get:
  *     summary: Giriş yapmış kullanıcının profil bilgilerini getirir
  *     description: |
- *       `data.user.user_type` her zaman şu üç değerden biridir: `kullanıcı`, `yayıncı`, `ajans`.
- *       Kendi ajansı olan `ajans`; ajansta onaylı üye ya da yayıncı işaretli olan `yayıncı`;
- *       diğerleri `kullanıcı`. Birden fazla koşul varsa ajans > yayıncı > kullanıcı önceliği uygulanır.
+ *       `data.user.user_type` her zaman şu üç değerden biridir: `kullanıcı`, `yayıncı`, `ajans`. Tür kullanıcının
+ *       **rolünden** gelir (admin panelinden değiştirilir): rolü `ajans` olan `ajans`, rolü `yayıncı` olan `yayıncı`,
+ *       diğer her rol `kullanıcı`. Ajans sahibi olsa bile rolü `user` ise `kullanıcı` döner ve ajans ekranlarına girilemez.
+ *       Ajans/yayıncı olarak eklenen kullanıcıların rolü otomatik güncellenir.
  *     tags: [Mobile Profile]
  *     security:
  *       - bearerAuth: []
@@ -30,8 +32,6 @@ export async function GET(request: Request) {
         where: { id: userId },
         include: {
             wallet: true,
-            ownedAgency: { select: { id: true } },
-            agencyMembership: { select: { status: true } },
         }
     });
 
@@ -39,12 +39,8 @@ export async function GET(request: Request) {
         return NextResponse.json({ message: "Kullanıcı bulunamadı" }, { status: 404 });
     }
 
-    // Öncelik: ajans sahibi > yayıncı (işaretli ya da onaylı ajans üyesi) > kullanıcı.
-    const userType = user.ownedAgency
-        ? "ajans"
-        : (user.isBroadcaster || user.agencyMembership?.status === "approved")
-            ? "yayıncı"
-            : "kullanıcı";
+    // Tür rolden gelir; rol ajans/yayıncı atanırken otomatik, istenirse panelden elle güncellenir.
+    const userType = userTypeFromRole(user.role);
 
     const following_count = await prisma.userFollow.count({ where: { followerId: userId } });
     const followers_count = await prisma.userFollow.count({ where: { followingId: userId } });

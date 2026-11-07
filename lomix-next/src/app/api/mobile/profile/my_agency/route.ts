@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { expectedPrimThisMonth } from '@/lib/agency-prim';
-import { fmtDiamonds, isActiveMember, isNewMember, loadRoster, monthTurnover } from '@/lib/agency-mobile';
+import { agencyRoleGuard, fmtDiamonds, isActiveMember, isNewMember, loadRoster, monthTurnover } from '@/lib/agency-mobile';
 
 export async function GET(request: Request) {
     try {
@@ -20,6 +20,10 @@ export async function GET(request: Request) {
                 data: null 
             });
         }
+
+        // Ajansı var ama rolü `ajans` değilse (panelden düşürülmüş) ajans ekranına girilemez.
+        const denied = await agencyRoleGuard(userId);
+        if (denied) return denied;
 
         // Ajans sahibinin onayını bekleyen başvurular (pending_streamers listesiyle aynı kaynak).
         const pendingApplications = await prisma.agencyApplication.count({

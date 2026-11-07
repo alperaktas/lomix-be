@@ -4,6 +4,7 @@ import { getCurrentUserId } from '@/lib/current-user';
 import { avatarUrl } from '@/lib/default-avatar';
 import { agencyTurnover, nextPeriodStart, periodStart } from '@/lib/agency-prim';
 import { membershipEarnings } from '@/lib/agency';
+import { ROLE_AGENCY } from '@/lib/roles';
 
 const NEW_MEMBER_DAYS = 7;
 
@@ -18,10 +19,27 @@ export type RosterMember = {
     monthDiamonds: number;
 };
 
+/**
+ * Ajans sahibi ekranlarına yalnızca rolü `ajans` olan kullanıcı girebilir; ajansı olsa bile rolü `user` ise (panelden
+ * düşürülmüşse) 403 döner. Erişim varsa null.
+ */
+export async function agencyRoleGuard(userId: number): Promise<NextResponse | null> {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+    if (user?.role === ROLE_AGENCY) return null;
+    return NextResponse.json({
+        status: false,
+        success: false,
+        message: 'Ajans bölümüne erişim yetkiniz yok.',
+        data: { error_code: 'AGENCY_ROLE_REQUIRED' },
+    }, { status: 403 });
+}
+
 /** Token'daki kullanıcının ajansı; kullanıcı yok ya da ajans sahibi değilse hazır hata cevabı döner. */
 export async function requireOwnerAgency(request: Request): Promise<{ agency: { id: number; name: string } } | { error: NextResponse }> {
     const userId = await getCurrentUserId(request);
     if (!userId) return { error: NextResponse.json({ status: false, message: 'Unauthorized' }, { status: 401 }) };
+    const denied = await agencyRoleGuard(userId);
+    if (denied) return { error: denied };
     const agency = await prisma.agency.findUnique({ where: { ownerId: userId }, select: { id: true, name: true } });
     if (!agency) return { error: NextResponse.json({ status: false, message: 'Ajans bulunamadı' }, { status: 404 }) };
     return { agency };

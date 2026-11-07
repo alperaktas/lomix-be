@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
+import { agencyRoleGuard } from '@/lib/agency-mobile';
 
 export async function GET(request: Request) {
     try {
@@ -8,6 +9,8 @@ export async function GET(request: Request) {
         if (!userId) {
             return NextResponse.json({ status: false, message: "Unauthorized" }, { status: 401 });
         }
+        const denied = await agencyRoleGuard(userId);
+        if (denied) return denied;
 
         const agency = await prisma.agency.findUnique({
             where: { ownerId: userId }

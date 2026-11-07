@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { ROLE_AGENCY, promoteUserRole } from '@/lib/roles';
 import { requireAdmin } from '@/lib/admin-auth';
 import { membershipEarnings, normalizePhone } from '@/lib/agency';
 
@@ -104,6 +105,7 @@ export async function POST(request: Request) {
             const agency = await prisma.agency.create({
                 data: { ownerId, name, description: description || null, whatsappNumber },
             });
+            await promoteUserRole(prisma, ownerId, ROLE_AGENCY);
             return NextResponse.json({ agency: { id: agency.id } }, { status: 201 });
         } catch (e: any) {
             if (e?.code === 'P2002') return NextResponse.json({ error: 'Bu kullanıcı zaten bir ajansın sahibi.' }, { status: 409 });

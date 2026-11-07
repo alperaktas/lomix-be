@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { requireAdmin } from '@/lib/admin-auth';
 import { membershipEarnings, normalizePhone } from '@/lib/agency';
 import { createNotification } from '@/lib/notifications';
+import { ROLE_AGENCY, demoteUserRole, promoteUserRole } from '@/lib/roles';
 import { PRIM_PERIODS, agencyTurnover, chunkEnd, loadTiers, nextTrMidnight, primFor, settleAgency, type PrimPeriod } from '@/lib/agency-prim';
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -172,6 +173,11 @@ export async function PUT(request: Request, { params }: Ctx) {
             if (e?.code === 'P2002') return NextResponse.json({ error: 'Bu kullanıcı zaten bir ajansın sahibi.' }, { status: 409 });
             throw e;
         }
+        // Sahip değiştiyse roller de el değiştirir: eski sahip sıradan kullanıcı olur, yenisi ajans.
+        if (typeof data.ownerId === 'number') {
+            await demoteUserRole(prisma, current.ownerId, ROLE_AGENCY);
+            await promoteUserRole(prisma, data.ownerId, ROLE_AGENCY);
+        }
         return NextResponse.json({ success: true });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
@@ -192,7 +198,7 @@ export async function DELETE(request: Request, { params }: Ctx) {
         const id = parseId((await params).id);
         if (!id) return NextResponse.json({ error: 'Ajans bulunamadı.' }, { status: 404 });
 
-        const agency = await prisma.agency.findUnique({ where: { id }, select: { id: true, name: true, primPeriod: true } });
+        const agency = await prisma.agency.findUnique({ where: { id }, select: { id: true, name: true, ownerId: true, primPeriod: true } });
         if (!agency) return NextResponse.json({ error: 'Ajans bulunamadı.' }, { status: 404 });
 
         const blocked = (count: number) => NextResponse.json(
@@ -218,6 +224,9 @@ export async function DELETE(request: Request, { params }: Ctx) {
             return 0;
         });
         if (deleted > 0) return blocked(deleted);
+
+        // Ajans kapandı: sahibinin rolü ajanstan sıradan kullanıcıya döner.
+        await demoteUserRole(prisma, agency.ownerId, ROLE_AGENCY);
 
         // Ajans bildirimleri ajansla birlikte silindiği için bu bildirim ajansa bağlanmaz.
         await Promise.all(waiting.map(w => createNotification({

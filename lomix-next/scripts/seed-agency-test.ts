@@ -3,7 +3,8 @@
  *
  *   npx tsx --env-file=.env --env-file=.env.local --tsconfig tsconfig.json scripts/seed-agency-test.ts --creds <hesaplar.md>
  *
- * Not: ajansa yalnızca kadın kullanıcılar başvurabilir; başvuran ya da başvurusu onaylı yayıncıların hepsi kadındır
+ * Not: ajans sahiplerinin rolü `ajans`, ajansa katılan yayıncılarınki `yayıncı` olur (uygulamadaki tür rolden gelir).
+ * Ajansa yalnızca kadın kullanıcılar başvurabilir; başvuran ya da başvurusu onaylı yayıncıların hepsi kadındır
  * (başvuru olmadan eklenen yayıncılar erkek olabilir).
  * Her test hesabı `testajans_` önekiyle, ajanslar `[TEST]` önekiyle açılır; `scripts/clean-agency-test.ts` hepsini siler.
  * Şifre her çalıştırmada rastgele üretilir ve yalnızca `--creds` ile verilen dosyaya yazılır (koda gömülmez).
@@ -36,12 +37,12 @@ const monthStart = periodStart('monthly', now);
     await cleanAgencyTestData();
 
     const accounts: { username: string; role: string }[] = [];
-    const mkUser = async (name: string, role: string, extra: { fullName: string; gender: 'male' | 'female'; broadcaster?: boolean; since?: Date; balance?: number }) => {
+    const mkUser = async (name: string, role: string, extra: { fullName: string; gender: 'male' | 'female'; broadcaster?: boolean; since?: Date; balance?: number; role?: string }) => {
         const username = `${PREFIX}${name}`;
         const u = await prisma.user.create({
             data: {
                 username, email: `${username}@example.invalid`, password: hash, status: 'active', isVerified: true, isFirstLogin: false,
-                fullName: extra.fullName, gender: extra.gender,
+                fullName: extra.fullName, gender: extra.gender, ...(extra.role ? { role: extra.role } : {}),
                 ...(extra.broadcaster ? { isBroadcaster: true, genderVerified: true, broadcasterApprovedAt: extra.since ?? now } : {}),
             },
         });
@@ -51,9 +52,9 @@ const monthStart = periodStart('monthly', now);
     };
 
     // ---- kullanıcılar
-    const sahip1 = await mkUser('sahip1', 'Alfa Ajans sahibi (aktif, aylık prim)', { fullName: 'Test Sahip Bir', gender: 'male', balance: 1000 });
-    const sahip2 = await mkUser('sahip2', 'Beta Ajans sahibi (pasif ajans)', { fullName: 'Test Sahip İki', gender: 'female', balance: 1000 });
-    const sahip3 = await mkUser('sahip3', 'Gama Ajans sahibi (aktif, haftalık prim, yayıncısız)', { fullName: 'Test Sahip Üç', gender: 'male', balance: 1000 });
+    const sahip1 = await mkUser('sahip1', 'Alfa Ajans sahibi (aktif, aylık prim)', { fullName: 'Test Sahip Bir', gender: 'male', balance: 1000, role: 'ajans' });
+    const sahip2 = await mkUser('sahip2', 'Beta Ajans sahibi (pasif ajans)', { fullName: 'Test Sahip İki', gender: 'female', balance: 1000, role: 'ajans' });
+    const sahip3 = await mkUser('sahip3', 'Gama Ajans sahibi (aktif, haftalık prim, yayıncısız)', { fullName: 'Test Sahip Üç', gender: 'male', balance: 1000, role: 'ajans' });
     const hayran = await mkUser('hayran', 'Hediye gönderen hesap (kazanç verisi için)', { fullName: 'Test Hayran', gender: 'male', balance: 5_000_000 });
 
     const bro = (name: string, fullName: string, gender: 'male' | 'female', joined: Date) =>

@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
+import { ROLE_STREAMER, demoteUserRole, promoteUserRole } from '@/lib/roles';
 
 type Tx = Prisma.TransactionClient;
 
@@ -15,6 +16,7 @@ export async function joinAgency(tx: Tx, agencyId: number, userId: number, when:
         update: { agencyId, status: 'approved' },
     });
     await tx.agencyMembership.create({ data: { agencyId, userId, joinedAt: when } });
+    await promoteUserRole(tx, userId, ROLE_STREAMER);
 }
 
 /** Açık üyelik dönemini kapatır (ajanstan çıkış ya da transfer). */
@@ -29,6 +31,7 @@ export async function closeOpenMembership(tx: Tx, userId: number, when: Date = n
 export async function leaveAgency(tx: Tx, userId: number, when: Date = new Date()) {
     await closeOpenMembership(tx, userId, when);
     await tx.agencyMember.deleteMany({ where: { userId } });
+    await demoteUserRole(tx, userId, ROLE_STREAMER);
 }
 
 /** Yayıncıyı başka ajansa aktarır: eski ajanstaki dönem kapanır, yenisinde yeni dönem açılır. */

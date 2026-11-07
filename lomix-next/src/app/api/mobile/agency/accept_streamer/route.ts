@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
+import { agencyRoleGuard } from '@/lib/agency-mobile';
 import { createNotification } from '@/lib/notifications';
 import { agencyApplyBlock, AGENCY_APPLICANT_NOT_ELIGIBLE } from '@/lib/gender';
 
@@ -38,6 +39,8 @@ export async function GET(request: Request) {
         if (!agencyOwnerId) {
             return NextResponse.json({ status: false, message: "Unauthorized" }, { status: 401 });
         }
+        const denied = await agencyRoleGuard(agencyOwnerId);
+        if (denied) return denied;
 
         const targetUserId = Number(new URL(request.url).searchParams.get('userId'));
         if (!Number.isInteger(targetUserId) || targetUserId < 1) {
