@@ -22,6 +22,7 @@ import {
 export default function UsersPage() {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
 
     // Modal states
@@ -36,9 +37,18 @@ export default function UsersPage() {
         try {
             const token = localStorage.getItem('token');
             const res = await fetch('/api/users', { headers: { 'Authorization': 'Bearer ' + token } });
-            if (res.ok) setUsers(await res.json());
+            if (res.ok) {
+                setUsers(await res.json());
+                setLoadError('');
+            } else if (res.status === 401 || res.status === 403) {
+                setLoadError('Oturumun süresi dolmuş olabilir. Çıkış yapıp tekrar giriş yap.');
+            } else {
+                const body = await res.json().catch(() => null);
+                setLoadError(`Kullanıcılar yüklenemedi (${res.status})${body?.message ? ': ' + body.message : ''}`);
+            }
         } catch (err) {
             console.error(err);
+            setLoadError('Sunucuya ulaşılamadı.');
         } finally {
             setLoading(false);
         }
@@ -120,7 +130,7 @@ export default function UsersPage() {
                 <div>
                     <h1 className="text-2xl font-semibold text-zinc-900 tracking-tight">Kullanıcı Yönetimi</h1>
                     <p className="text-sm text-zinc-500 mt-1">
-                        Toplam {users.length} kayıtlı kullanıcı
+                        {loadError ? <span className="text-rose-600">{loadError}</span> : <>Toplam {users.length} kayıtlı kullanıcı</>}
                     </p>
                 </div>
 
