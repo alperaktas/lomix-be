@@ -213,8 +213,8 @@ export async function POST(request: Request) {
         if (existing) {
             if (existing.status === 'pending') return ApiResponseHelper.error("Bu ajansa başvurunuz zaten mevcut.", 409);
             if (existing.status === 'owner_approved') return ApiResponseHelper.error("Başvurunuz ajans tarafından onaylandı, admin onayı bekleniyor.", 409);
-            if (existing.status === 'approved') return ApiResponseHelper.error("Bu ajansa başvurunuz zaten onaylanmış.", 409);
-            // reddedilmiş başvuru yeniden gönderilebilir
+            // Buraya gelindiyse kullanıcı şu an hiçbir ajansın üyesi değil (yukarıdaki üyelik kontrolü); onaylı kalmış
+            // eski başvuru (üyelikten çıkarılmış) da dahil, reddedilmiş/ayrılmış başvuru yeniden gönderilebilir.
             const updated = await prisma.agencyApplication.update({ where: { id: existing.id }, data });
             applicationId = updated.id;
         } else {

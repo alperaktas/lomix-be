@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { Loader2, Building2, Check, X } from 'lucide-react';
+import { Loader2, Building2, Check, X, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -12,7 +12,7 @@ interface Application {
     contactValue: string;
     note: string | null;
     kvkkAcceptedAt: string;
-    status: 'pending' | 'owner_approved' | 'approved' | 'rejected';
+    status: 'pending' | 'owner_approved' | 'approved' | 'rejected' | 'left';
     rejectedBy: string | null;
     photoUrl: string | null;
     createdAt: string;
@@ -20,13 +20,14 @@ interface Application {
     agency: { id: number; name: string };
 }
 
-const STATUS_LABELS: Record<string, string> = { pending: 'Ajans sahibi bekleniyor', owner_approved: 'Admin onayı bekliyor', approved: 'Onaylandı', rejected: 'Reddedildi' };
+const STATUS_LABELS: Record<string, string> = { pending: 'Ajans sahibi bekleniyor', owner_approved: 'Admin onayı bekliyor', approved: 'Onaylandı', rejected: 'Reddedildi', left: 'Ajanstan ayrıldı' };
 const FILTERS = [
     { key: '', label: 'Tümü' },
     { key: 'owner_approved', label: 'Admin onayı bekleyen' },
     { key: 'pending', label: 'Ajans sahibi bekleyen' },
     { key: 'approved', label: 'Onaylanan' },
     { key: 'rejected', label: 'Reddedilen' },
+    { key: 'left', label: 'Ajanstan ayrılan' },
 ];
 
 export default function AgencyApplicationsPage() {
@@ -67,6 +68,18 @@ export default function AgencyApplicationsPage() {
             const res = await fetch('/api/admin/agency-applications', { method: 'PUT', headers, body: JSON.stringify({ id: a.id, action }) });
             const data = await res.json();
             if (!res.ok) { setError(data.error || 'İşlem yapılamadı.'); return; }
+            await load();
+        } finally { setBusyId(null); }
+    };
+
+    const remove = async (a: Application) => {
+        const who = a.user.fullName || a.user.username;
+        if (!confirm(`${who} kullanıcısının "${a.agency.name}" başvurusu kalıcı olarak silinsin mi? Kullanıcı bu ajansa yeniden başvurabilir. Bu işlem geri alınamaz.`)) return;
+        setError(''); setBusyId(a.id);
+        try {
+            const res = await fetch(`/api/admin/agency-applications?id=${a.id}`, { method: 'DELETE', headers });
+            const data = await res.json();
+            if (!res.ok) { setError(data.error || 'Silinemedi.'); return; }
             await load();
         } finally { setBusyId(null); }
     };
@@ -140,8 +153,9 @@ export default function AgencyApplicationsPage() {
                                         {a.status === 'rejected' && a.rejectedBy && <div className="text-xs text-muted-foreground mt-1">{a.rejectedBy === 'owner' ? 'Ajans sahibi' : 'Admin'} reddetti</div>}
                                     </td>
                                     <td className="px-4 py-4">
+                                        <div className="flex gap-1 justify-end">
                                         {(a.status === 'pending' || a.status === 'owner_approved') && (
-                                            <div className="flex gap-1 justify-end">
+                                            <>
                                                 {a.status === 'owner_approved' && (
                                                     <Button size="sm" variant="ghost" className="h-8 px-2 text-emerald-700 hover:bg-emerald-50" disabled={busyId === a.id} onClick={() => act(a, 'approve')}>
                                                         <Check className="h-3.5 w-3.5 mr-1" /> Onayla
@@ -150,8 +164,12 @@ export default function AgencyApplicationsPage() {
                                                 <Button size="sm" variant="ghost" className="h-8 px-2 text-rose-600 hover:bg-rose-50" disabled={busyId === a.id} onClick={() => act(a, 'reject')}>
                                                     <X className="h-3.5 w-3.5 mr-1" /> Reddet
                                                 </Button>
-                                            </div>
+                                            </>
                                         )}
+                                        <Button size="sm" variant="ghost" className="h-8 px-2 text-zinc-500 hover:text-rose-700 hover:bg-rose-50" disabled={busyId === a.id} onClick={() => remove(a)} title="Başvuruyu sil">
+                                            <Trash2 className="h-3.5 w-3.5 mr-1" /> Sil
+                                        </Button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

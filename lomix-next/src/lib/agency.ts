@@ -31,6 +31,8 @@ export async function closeOpenMembership(tx: Tx, userId: number, when: Date = n
 export async function leaveAgency(tx: Tx, userId: number, when: Date = new Date()) {
     await closeOpenMembership(tx, userId, when);
     await tx.agencyMember.deleteMany({ where: { userId } });
+    // Onaylı başvuru artık geçerli değil: "Onaylandı" görünmesin, kullanıcı yeniden başvurabilsin.
+    await tx.agencyApplication.updateMany({ where: { userId, status: 'approved' }, data: { status: 'left' } });
     await demoteUserRole(tx, userId, ROLE_STREAMER);
 }
 

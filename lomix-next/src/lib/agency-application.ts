@@ -6,6 +6,7 @@ export const APPLICATION_STATUS_TEXT: Record<string, string> = {
     owner_approved: 'Ajans sahibi onayladı, admin onayı bekleniyor',
     approved: 'Onaylandı',
     rejected: 'Reddedildi',
+    left: 'Ajanstan ayrıldı',
 };
 
 /**

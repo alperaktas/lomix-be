@@ -6,7 +6,7 @@ import { joinAgency } from '@/lib/agency';
 import { agencyApplyBlock, AGENCY_APPLICANT_NOT_ELIGIBLE } from '@/lib/gender';
 
 const forbidden = () => NextResponse.json({ error: 'Admin yetkisi gerekli.' }, { status: 403 });
-const STATUSES = ['pending', 'owner_approved', 'approved', 'rejected'];
+const STATUSES = ['pending', 'owner_approved', 'approved', 'rejected', 'left'];
 const PAGE_SIZE = 50;
 
 export async function GET(request: Request) {
@@ -128,6 +128,36 @@ export async function PUT(request: Request) {
         }).catch(() => {});
 
         return NextResponse.json({ success: true, status: action === 'approve' ? 'approved' : 'rejected' });
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
+/**
+ * Başvuruyu siler (test ve yanlış kayıtları temizlemek için); kullanıcı aynı ajansa yeniden başvurabilir.
+ * Kullanıcı o ajansın şu anki üyesiyse silinmez: önce ajanstan çıkarılmalı, yoksa üyelik kaydı başvurusuz kalır.
+ */
+export async function DELETE(request: Request) {
+    if (!(await requireAdmin(request))) return forbidden();
+    try {
+        const id = Number(new URL(request.url).searchParams.get('id'));
+        if (!Number.isInteger(id) || id < 1) return NextResponse.json({ error: 'id zorunludur.' }, { status: 400 });
+
+        const application = await prisma.agencyApplication.findUnique({
+            where: { id },
+            select: { id: true, userId: true, agencyId: true, status: true },
+        });
+        if (!application) return NextResponse.json({ error: 'Başvuru bulunamadı.' }, { status: 404 });
+
+        if (application.status === 'approved') {
+            const member = await prisma.agencyMember.findUnique({ where: { userId: application.userId }, select: { agencyId: true } });
+            if (member && member.agencyId === application.agencyId) {
+                return NextResponse.json({ error: 'Kullanıcı bu ajansın şu anki yayıncısı. Önce ajanstan çıkarın, sonra başvuruyu silin.' }, { status: 409 });
+            }
+        }
+
+        await prisma.agencyApplication.delete({ where: { id } });
+        return NextResponse.json({ success: true });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
