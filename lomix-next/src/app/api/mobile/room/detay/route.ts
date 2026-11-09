@@ -135,6 +135,11 @@ export async function POST(request: Request) {
         const goldAmount = formatGoldAmount(room.owner.wallet?.balance ?? 0);
         const myRole = await getRoomRole(room.id, userId, room.ownerId);
 
+        // Listedeki viewer_count ile aynı kalması için: sayaç gerçek katılımcı sayısından sapmışsa düzelt.
+        if (room.viewerCount !== room.participants.length) {
+            prisma.room.update({ where: { id: room.id }, data: { viewerCount: room.participants.length } }).catch(() => {});
+        }
+
         // roomTheme alani RoomTheme.themeId degerini tutar; gorseli buradan cozuyoruz.
         const theme = room.roomTheme
             ? await prisma.roomTheme.findFirst({ where: { themeId: room.roomTheme } })
@@ -178,7 +183,10 @@ export async function POST(request: Request) {
                 thumbnailUrl: room.thumbnailUrl || "",
                 hostName,
                 hostAvatar,
-                level: room.owner.level,
+                // Oda seviyesi (rooms listesindeki `level` ile aynı kaynak): hediye toplamına göre otomatik; tanımlı değilse null.
+                level: room.level ?? null,
+                // Oda sahibinin hesap seviyesi (eskiden `level` olarak bu dönüyordu).
+                hostLevel: room.owner.level,
                 goldAmount,
                 description: room.description || "",
                 onlineCount: participants.length,

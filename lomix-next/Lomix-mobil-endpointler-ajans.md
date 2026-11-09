@@ -80,7 +80,7 @@ Kullanıcı kendi başvurularını ve sonucunu buradan görüyor. Başvururken g
   }
 }
 ```
-`status` şunlardan biri: `pending` (ajans sahibi bekleniyor), `owner_approved` (ajans sahibi onayladı, son onay bekleniyor), `approved`, `rejected`. Reddedildiyse `rejected_by` içinde kimin reddettiği yazıyor (`owner` ya da `admin`). Son onay da verilince kullanıcı yayıncı oluyor ve `gender_verified` true oluyor.
+`status` şunlardan biri: `pending` (ajans sahibi bekleniyor), `owner_approved` (ajans sahibi onayladı, son onay bekleniyor), `approved`, `rejected`, `left` (onaylanmıştı ama ajanstan çıkarıldı; kullanıcı yeniden başvurabilir). Reddedildiyse `rejected_by` içinde kimin reddettiği yazıyor (`owner` ya da `admin`). Son onay da verilince kullanıcı yayıncı oluyor ve `gender_verified` true oluyor.
 
 ### GET /agency/pending_streamers
 Ajans sahibinin onayını bekleyen başvurular (eski adı `ajans/yayici_onay`). Telefon, e-posta ve fotoğraf burada gösterilmiyor.
@@ -143,7 +143,7 @@ Active listesinde liste adı `active_publishers`, her satırda ek olarak `rank` 
   "updated_at": "2026-11-07T13:43:05.509Z"
 }
 ```
-`status`: `pending` (ajans sahibi bekleniyor), `owner_approved` (admin onayı bekleniyor), `approved`, `rejected`. Reddedildiyse `rejected_by` içinde `owner` ya da `admin` yazıyor. Önerilen davranış: `pending` ve `owner_approved` iken "Ajansa Katıl" formunu açmayıp durumu göster, `rejected` iken sebebi göster ve yeniden başvuruya izin ver. Onaylanınca kullanıcı yayıncı oluyor ve `user_type` `yayıncı` oluyor. Fotoğraf ve iletişim bilgisi bu özette yok, tüm başvuru geçmişi için `agency/my_application`.
+`status`: `pending` (ajans sahibi bekleniyor), `owner_approved` (admin onayı bekleniyor), `approved`, `rejected`, `left` (ajanstan çıkarıldı, yeniden başvurabilir). Reddedildiyse `rejected_by` içinde `owner` ya da `admin` yazıyor. Önerilen davranış: `pending` ve `owner_approved` iken "Ajansa Katıl" formunu açmayıp durumu göster, `rejected` iken sebebi göster ve yeniden başvuruya izin ver. Onaylanınca kullanıcı yayıncı oluyor ve `user_type` `yayıncı` oluyor. Fotoğraf ve iletişim bilgisi bu özette yok, tüm başvuru geçmişi için `agency/my_application`.
 
 ### GET /ben
 `data.user_info` içine `gender_verified` eklendi.
@@ -221,6 +221,9 @@ Oda listesinde her odada artık `level` alanı var (tamsayı). Oda seviyesi otom
 }
 ```
 (Diğer oda alanları eskisi gibi, kısalttım.) `level` aynı şekilde `/rooms/mine` ve `/search` sonuçlarındaki odalarda da geliyor.
+
+### POST /room/detay
+`data.level` artık odanın seviyesi, yani `/rooms` listesindeki `level` ile birebir aynı değer (seviye tanımlı değilse `null`). Eskiden bu alanda oda sahibinin hesap seviyesi dönüyordu, bu yüzden liste ile detay uyuşmuyordu. Oda sahibinin hesap seviyesi gerekirse yeni `data.hostLevel` alanında. `onlineCount` ile listedeki `viewer_count` de aynı sayıya eşitleniyor (detay çağrısı sayacı gerçek katılımcı sayısına düzeltiyor).
 
 ## Hediye
 
