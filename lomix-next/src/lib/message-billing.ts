@@ -78,7 +78,8 @@ export async function areFriends(a: number, b: number): Promise<boolean> {
 /** Karsi taraf bu sohbette daha once yazmis mi. */
 async function hasReplied(senderId: number, receiverId: number): Promise<boolean> {
     const reply = await prisma.directMessage.findFirst({
-        where: { fromId: receiverId, toId: senderId },
+        // Hediye bildirimi cevap sayılmaz
+        where: { fromId: receiverId, toId: senderId, giftId: null },
         select: { id: true },
     });
     return !!reply;
@@ -87,7 +88,8 @@ async function hasReplied(senderId: number, receiverId: number): Promise<boolean
 /** Gonderenin, cevap almadan ust uste kac mesaj yazdigi. */
 async function unansweredCount(senderId: number, receiverId: number): Promise<number> {
     const lastIncoming = await prisma.directMessage.findFirst({
-        where: { fromId: receiverId, toId: senderId },
+        // Karşı tarafın gönderdiği hediye bildirimi "cevap" sayılmaz
+        where: { fromId: receiverId, toId: senderId, giftId: null },
         orderBy: { createdAt: 'desc' },
         select: { createdAt: true },
     });
@@ -96,6 +98,8 @@ async function unansweredCount(senderId: number, receiverId: number): Promise<nu
         where: {
             fromId: senderId,
             toId: receiverId,
+            // Gönderdiğim hediyeler cevapsız mesaj limitine sayılmaz
+            giftId: null,
             ...(lastIncoming ? { createdAt: { gt: lastIncoming.createdAt } } : {}),
         },
     });

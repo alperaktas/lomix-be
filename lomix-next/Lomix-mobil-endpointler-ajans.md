@@ -237,6 +237,16 @@ Odada hediye artık her zaman bir kişiye gönderiliyor, odaya hediye yok. Gövd
 
 Mikrofonda olmayan birinin profilindeki hediye kutusu da bu uçla, kişi önceden seçili olarak çalışmalı.
 
+### POST /gift/send-user
+Yeni isteğe bağlı parametre: **`show_in_dm`** (boolean, verilmezse `true`). `false` gönderirseniz hediye özel mesaj geçmişine yazılmaz ve sohbet listesi güncellenmez (örneğin 1v1 görüşmede gönderilen hediyeler). Coin, elmas ve hediye kaydı aynen işlenir, `rtm_event` yine döner. `message_id` bu durumda `null` gelir. `showInDm` yazımı da kabul edilir.
+
+```json
+{ "giftId": 3, "toUserId": 21, "amount": 1, "show_in_dm": false }
+```
+
+### Cevapsız mesaj limiti ve hediyeler
+Admin panelindeki "ardışık cevapsız mesaj limiti" (varsayılan 3) yalnızca yazılı mesajlar için geçerli. **Gönderilen hediyeler bu sayıya dahil edilmiyor**, hediye göndermek de bu limite takılmıyor. Karşı tarafın gönderdiği hediye de "cevap" sayılmıyor (limit ancak karşı tarafın yazılı mesajıyla açılır). Not: uygulama hediye gönderdikten sonra ayrıca `chat/send` ile "hediye adı • fiyat" metni gönderiyorsa, o metin normal mesaj sayılır ve limite dahil olur. `send-user` zaten hediyeyi kendisi DM geçmişine yazıyor, ek metin göndermeye gerek yok.
+
 ## Sıralama
 
 ### GET /leaderboard
@@ -254,6 +264,23 @@ Cevapta `period` normalleştirilmiş değerdir, `since` pencerenin başlangıcı
 
 ### Odadaki kişi sayısı
 `viewer_count` artık her zaman odadaki gerçek katılımcı sayısı. `room/join`'i tekrar çağırmak (örneğin oda sahibi oda oluşturduktan sonra, yeniden bağlanırken) sayacı artırmıyor. Kullanıcı atılınca ya da engellenince de sayaç düşüyor.
+
+## Yayıncı merkezi
+
+### GET /publisher/center
+Yayıncı merkezi ekranı. Kullanıcı token'dan tanınır, parametre yok. **Yalnızca onaylı yayıncılar** girebilir (ajans onayıyla yayıncı olmuş ya da rolü `yayıncı` olan), diğerine 403 döner:
+```json
+{ "status": false, "success": false, "message": "Bu sayfaya yalnızca onaylı yayıncılar erişebilir.", "data": { "error_code": "NOT_A_STREAMER" } }
+```
+Başarılı yanıt Olcay'ın gönderdiği örnekle aynı biçimde: `data.user_info` (id, username, avatar_url, points, level_label, room_id, room_name), `data.room` (id, name, cover_url, is_locked; odası yoksa `null`), `data.stats` ve `data.tools` (görevler, odam, onay merkezi).
+
+`stats` içindeki gelirler **elmas** ve tamsayı. Dönemler takvim bazlı, Türkiye saatiyle: `daily` bugün 00:00'dan, `weekly` bu haftanın pazartesisinden, `monthly` bu ayın 1'inden beri. `in_app_income` hediye ve mesaj kazancı (bonus ve görev kazancı hariç, yayıncı sıralamasıyla aynı kural), `task_income` görev sistemi gelene kadar hep 0, `total_income` ikisinin toplamı. `level_label` panelde seviyeye ad verildiyse o ad, verilmediyse `VIP<seviye>`. `room`, kullanıcının kapatılmamış odası (canlı olan önce).
+
+### GET /publisher/verification
+Doğrulama (onay) merkezi ekranı, yayıncı olmak gerekmez. `data.verifications.gender`, `photo`, `phone` içinde `status`, `title`, `action_route`; `data.benefits` sabit avantaj listesi. `status`: `completed`, `not_completed`, `not_approved`.
+
+- Cinsiyet ve fotoğraf doğrulaması şimdilik tek süreç (ajans başvurusundaki selfie): admin onayı verilince ikisi birlikte `completed`, son başvuru reddedildiyse ikisi `not_approved`, diğer durumlarda `not_completed`.
+- Telefon doğrulaması (SMS) henüz yok, `phone` her zaman `not_completed` dönüyor. `verify-gender` ve `phone/send-code`, `phone/verify-code` uçları da henüz yok.
 
 ## Not
 Eski Türkçe adlar (`ajans/yayici_onay`, `ajans/yayici_onayla`, `ajans/yayici_reddet`, `profile/ajans_katil`) şimdilik çalışıyor, ileride kaldıracağız. Davet linki ucu henüz yok.

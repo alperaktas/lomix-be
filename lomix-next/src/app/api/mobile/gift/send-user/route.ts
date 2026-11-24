@@ -4,6 +4,7 @@ import { getCurrentUserId } from '@/lib/current-user';
 import { getSetting } from '@/lib/app-settings';
 import { isWalletBlocked, WALLET_BLOCK_MESSAGES } from '@/lib/wallet-guard';
 import { spendOp, syncLevel, levelUpField } from '@/lib/level';
+import type { Prisma } from '@prisma/client';
 
 /**
  * @swagger
@@ -30,6 +31,12 @@ import { spendOp, syncLevel, levelUpField } from '@/lib/level';
  *               amount:
  *                 type: integer
  *                 default: 1
+ *               show_in_dm:
+ *                 type: boolean
+ *                 default: true
+ *                 description: |
+ *                   false ise hediye özel mesaj geçmişine yazılmaz ve sohbet listesi güncellenmez (örn. 1v1 görüşme
+ *                   hediyeleri). Elmas, coin ve hediye kaydı aynen işlenir. Hediyeler cevapsız mesaj limitine sayılmaz.
  *     responses:
  *       200:
  *         description: Hediye başarıyla gönderildi
@@ -46,6 +53,9 @@ export async function POST(request: Request) {
 
         const body = await request.json();
         const { giftId, toUserId, amount = 1 } = body;
+        // false/"false"/0 → DM'e yazma; verilmezse eskisi gibi yazar
+        const rawShow = body.show_in_dm ?? body.showInDm;
+        const showInDm = !(rawShow === false || rawShow === 'false' || rawShow === 0 || rawShow === '0');
 
         if (!giftId || !toUserId) {
             return NextResponse.json({ status: false, message: 'giftId ve toUserId zorunludur' }, { status: 400 });
@@ -85,8 +95,8 @@ export async function POST(request: Request) {
         const origin = new URL(request.url).origin;
         const defaultAvatar = `${origin}/img/default-avatar.svg`;
 
-        // Deduct coins, credit diamonds to receiver, create gift log, save to DM history
-        const [, , , directMessage] = await prisma.$transaction([
+        // Coin düş, alıcıya elmas yaz, hediye kaydı oluştur; show_in_dm ise DM geçmişine de yaz
+        const ops: Prisma.PrismaPromise<unknown>[] = [
             prisma.wallet.update({
                 where: { userId },
                 data: { balance: { decrement: totalCost } },
@@ -107,21 +117,20 @@ export async function POST(request: Request) {
                     diamondAmount,
                 },
             }),
-            prisma.directMessage.create({
-                data: {
-                    fromId: userId,
-                    toId,
-                    giftId: gift.id,
-                    text: null,
-                },
-            }),
             spendOp(userId, totalCost),
-        ]);
+        ];
+        if (showInDm) {
+            ops.push(prisma.directMessage.create({
+                data: { fromId: userId, toId, giftId: gift.id, text: null },
+            }));
+        }
+        const results = await prisma.$transaction(ops);
+        const directMessage = showInDm ? (results[results.length - 1] as { id: number }) : null;
 
         const levelResult = await syncLevel(userId);
 
-        // Ensure conversation exists for both sides
-        await Promise.all([
+        // Ensure conversation exists for both sides (yalnızca DM'e yazıldıysa)
+        if (showInDm) await Promise.all([
             prisma.conversation.upsert({
                 where: { userId_otherUserId: { userId, otherUserId: toId } },
                 create: { userId, otherUserId: toId },
@@ -139,7 +148,7 @@ export async function POST(request: Request) {
             message: 'Hediye gönderildi',
             data: {
                 ...levelUpField(levelResult),
-                message_id: directMessage.id,
+                message_id: directMessage ? directMessage.id : null,
                 remaining_balance: currentBalance - totalCost,
                 rtm_event: {
                     type: 'GIFT_SENT',

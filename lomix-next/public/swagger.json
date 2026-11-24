@@ -1776,6 +1776,11 @@
                   "amount": {
                     "type": "integer",
                     "default": 1
+                  },
+                  "show_in_dm": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "false ise hediye özel mesaj geçmişine yazılmaz ve sohbet listesi güncellenmez (örn. 1v1 görüşme\nhediyeleri). Elmas, coin ve hediye kaydı aynen işlenir. Hediyeler cevapsız mesaj limitine sayılmaz.\n"
                   }
                 }
               }
@@ -2741,6 +2746,53 @@
           },
           "403": {
             "description": "Cinsiyet daha önce seçilmiş, değiştirilemez (GENDER_LOCKED)"
+          }
+        }
+      }
+    },
+    "/api/mobile/publisher/center": {
+      "get": {
+        "summary": "Yayıncı merkezi ekranı verileri",
+        "description": "Yalnızca onaylı yayıncılar için. Kullanıcı JWT'den tanınır. `stats` gelirleri **elmas** cinsindendir ve takvim\nbazlıdır (Türkiye saatiyle): `daily` bugün, `weekly` bu hafta (pazartesiden), `monthly` bu ay. `in_app_income`\nhediye ve mesaj kazançlarıdır (bonus/görev hariç), `task_income` görev sistemi gelene kadar 0'dır,\n`total_income` ikisinin toplamıdır. `room` kullanıcının kendi (kapatılmamış) odası, yoksa `null`.\nYayıncı olmayana 403 `NOT_A_STREAMER`.\n",
+        "tags": [
+          "Mobile Publisher"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "data.user_info, data.room, data.stats, data.tools"
+          },
+          "401": {
+            "description": "Token geçersiz"
+          },
+          "403": {
+            "description": "Yayıncı değil (error_code NOT_A_STREAMER)"
+          }
+        }
+      }
+    },
+    "/api/mobile/publisher/verification": {
+      "get": {
+        "summary": "Doğrulama merkezi (onay merkezi) ekranı verileri",
+        "description": "Kullanıcı JWT'den tanınır (yayıncı olması gerekmez). `verifications.gender|photo|phone.status`:\n`completed`, `not_completed` (henüz yapılmadı ya da incelemede), `not_approved` (reddedildi).\nCinsiyet ve fotoğraf doğrulaması tek süreçtir (ajans başvurusundaki selfie): admin onayı verilince ikisi birlikte\n`completed` olur, başvuru reddedilmişse ikisi `not_approved`. Telefon doğrulaması (SMS) henüz yoktur,\n`phone` şimdilik her zaman `not_completed` döner. `benefits` sabit avantaj listesidir.\n",
+        "tags": [
+          "Mobile Publisher"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "data.verifications, data.benefits"
+          },
+          "401": {
+            "description": "Token geçersiz"
           }
         }
       }
