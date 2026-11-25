@@ -132,7 +132,8 @@ export async function POST(request: Request) {
         const origin = new URL(request.url).origin;
         const defaultAvatar = `${origin}/img/default-avatar.svg`;
         const hostAvatar = room.owner.avatar?.trim() || defaultAvatar;
-        const goldAmount = formatGoldAmount(room.owner.wallet?.balance ?? 0);
+        // Odanın altını: odada kişilere gönderilen hediyelerin toplam coin değeri (sahibin cüzdan bakiyesi başkalarına gösterilmez)
+        const goldAmount = formatGoldAmount(room.giftTotal);
         const myRole = await getRoomRole(room.id, userId, room.ownerId);
 
         // Listedeki viewer_count ile aynı kalması için: sayaç gerçek katılımcı sayısından sapmışsa düzelt.

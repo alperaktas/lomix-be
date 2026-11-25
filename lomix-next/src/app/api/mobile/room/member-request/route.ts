@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { requestRoomMembership } from '@/lib/room-membership';
 import { getCurrentUserId } from '@/lib/current-user';
 
 /**
@@ -36,39 +37,8 @@ export async function POST(request: Request) {
         const { roomId } = await request.json();
         if (!roomId) return NextResponse.json({ status: false, message: 'roomId zorunludur.' }, { status: 400 });
 
-        const room = await prisma.room.findUnique({
-            where: { roomId: String(roomId) },
-            select: { id: true, ownerId: true, isLive: true, isClosed: true },
-        });
-        if (!room) return NextResponse.json({ status: false, message: 'Oda bulunamadı.' }, { status: 404 });
-        if (room.isClosed || !room.isLive) return NextResponse.json({ status: false, message: 'Bu oda aktif değil.' }, { status: 403 });
-        if (room.ownerId === userId) return NextResponse.json({ status: false, message: 'Oda sahibisiniz.' }, { status: 400 });
-
-        // Zaten üye mi?
-        const alreadyMember = await prisma.roomMember.findUnique({
-            where: { roomId_userId: { roomId: room.id, userId } },
-        });
-        if (alreadyMember) return NextResponse.json({ status: false, message: 'Zaten bu odanın üyesisiniz.' }, { status: 409 });
-
-        // Zaten bekleyen istek var mı?
-        const existing = await prisma.roomMemberRequest.findUnique({
-            where: { roomId_userId: { roomId: room.id, userId } },
-        });
-        if (existing) {
-            if (existing.status === 'pending') return NextResponse.json({ status: false, message: 'Zaten bekleyen bir isteğiniz var.' }, { status: 409 });
-            // Reddedilmişse yeniden gönder
-            await prisma.roomMemberRequest.update({
-                where: { id: existing.id },
-                data: { status: 'pending', createdAt: new Date() },
-            });
-            return NextResponse.json({ status: true, message: 'Üyelik isteği yeniden gönderildi.' });
-        }
-
-        await prisma.roomMemberRequest.create({
-            data: { roomId: room.id, userId },
-        });
-
-        return NextResponse.json({ status: true, message: 'Üyelik isteği gönderildi.' });
+        const result = await requestRoomMembership(userId, String(roomId));
+        return NextResponse.json({ status: result.ok, message: result.message }, { status: result.status });
     } catch (error: any) {
         return NextResponse.json({ status: false, message: error.message }, { status: 500 });
     }

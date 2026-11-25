@@ -173,6 +173,25 @@ Bu uçlarda kullanıcı artık token'dan alınıyor. Gövdede `user_id` gönderm
 }
 ```
 
+### POST /diamond/history
+Elmas kazanç geçmişi ("günlük kayıtlar"). Gövde: `{ "user_id": "12345", "year": 2026, "month": 11 }`, hepsi isteğe bağlı. `user_id` verilirse token sahibiyle aynı olmalı (403). `year` ve `month` (1-12) birlikte verilirse yalnızca o ayın (Türkiye saati) kayıtları, verilmezse tüm zamanların son 200 kaydı döner.
+
+```json
+{
+  "status": true,
+  "message": "Elmas geçmişi getirildi.",
+  "data": {
+    "balance": 850,
+    "daily_income": 45,
+    "records": [
+      { "date": "2026-11-24", "amount": 30, "from": "Hediye - Ahmet Y.", "item": "Yıldız Hediye" },
+      { "date": "2026-11-23", "amount": 5, "from": "Mesaj kazancı", "item": "Ücretli mesaj" }
+    ]
+  }
+}
+```
+Kayıtlar en yeniden eskiye. Kaynaklar: kendisine gelen hediyeler (`from: "Hediye - <gönderen>"`, `item` hediye adı, adet varsa `x3`), `Mesaj kazancı`, `Ajans primi` ve `Çekim iadesi` (reddedilen çekimin geri dönen elması). Çekim ve bozdurma harcamaları burada değil, çekim merkezinde ve `diamond/data` içinde. `daily_income` bugünkü (Türkiye saati) kazançtır, çekim iadesi dahil değildir. `date` Türkiye saatiyle `YYYY-MM-DD`.
+
 ### POST /diamond/withdrawal-center
 Elmas çekim merkezi ekranının verileri. Kullanıcı token'dan belirleniyor; gövdedeki `user_id` isteğe bağlı, verilirse token sahibiyle aynı olmalı (değilse 403 `USER_MISMATCH`).
 
@@ -262,8 +281,18 @@ Oda listesinde her odada artık `level` alanı var (tamsayı). Oda seviyesi otom
 ```
 (Diğer oda alanları eskisi gibi, kısalttım.) `level` aynı şekilde `/rooms/mine` ve `/search` sonuçlarındaki odalarda da geliyor.
 
+### POST /room/level
+Oda seviyesi ekranı. Gövde: `{ "roomId": "100008" }`. Yanıt `data` içinde: `roomId`, `currentLevel` (odanın seviyesi, tanımlı değilse 0), `currentXp` (odada kişilere gönderilen hediyelerin toplam coin değeri), `nextLevelXp` (bir sonraki seviyenin gerektirdiği toplam), `roomAvater` (oda görseli), `privileges` (şimdilik boş liste). Son seviyedeyse ya da seviye tanımlı değilse `nextLevelXp` mevcut XP'ye eşit gelir (çubuk dolu görünür, sıfıra bölme olmaz). Oda yoksa 404.
+
+### POST /room/request
+Oda üyeliği isteği. Gövde: `{ "roomId": "100008", "userId": "12345", "requestType": "join" }`. `userId` isteğe bağlı, verilirse token sahibiyle aynı olmalı (403).
+- `requestType: "join"`: oda sahibine üyelik isteği gönderir (`room/member-request` ile aynı kurallar: oda aktif olmalı, sahip değilseniz, zaten üye ya da bekleyen isteği yoksa; reddedilmiş istek yeniden gönderilebilir).
+- `requestType: "leave"`: oda üyeliğinden çıkarır, bekleyen isteği varsa geri çeker. Oda sahibi ayrılamaz (400), üye değilseniz 409.
+
+Başarılı yanıtta mesaj hem `message` hem `data.message` içinde döner. Hata kodları: 400 (geçersiz istek), 403 (başka kullanıcı adına ya da oda aktif değil), 404 (oda yok), 409 (zaten üye, zaten bekleyen istek ya da üye değil).
+
 ### POST /room/detay
-`data.level` artık odanın seviyesi, yani `/rooms` listesindeki `level` ile birebir aynı değer (seviye tanımlı değilse `null`). Eskiden bu alanda oda sahibinin hesap seviyesi dönüyordu, bu yüzden liste ile detay uyuşmuyordu. Oda sahibinin hesap seviyesi gerekirse yeni `data.hostLevel` alanında. `onlineCount` ile listedeki `viewer_count` de aynı sayıya eşitleniyor (detay çağrısı sayacı gerçek katılımcı sayısına düzeltiyor).
+`data.level` artık odanın seviyesi, yani `/rooms` listesindeki `level` ile birebir aynı değer (seviye tanımlı değilse `null`). Eskiden bu alanda oda sahibinin hesap seviyesi dönüyordu, bu yüzden liste ile detay uyuşmuyordu. Oda sahibinin hesap seviyesi gerekirse yeni `data.hostLevel` alanında. `onlineCount` ile listedeki `viewer_count` de aynı sayıya eşitleniyor (detay çağrısı sayacı gerçek katılımcı sayısına düzeltiyor). `data.goldAmount` artık oda sahibinin cüzdan bakiyesi değil, **odanın hediye toplamı** (odada kişilere gönderilen hediyelerin coin değeri, `1.5k`, `4.0M` biçiminde).
 
 ## Hediye
 

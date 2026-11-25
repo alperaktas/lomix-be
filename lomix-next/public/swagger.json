@@ -1553,6 +1553,52 @@
         }
       }
     },
+    "/api/mobile/diamond/history": {
+      "post": {
+        "summary": "Elmas kazanç geçmişi (günlük kayıtlar)",
+        "description": "Kullanıcının elmas kazanç kayıtları, en yeniden eskiye (en fazla 200). Kaynaklar: kendisine gelen hediyeler (oda hediyeleri\ndahil), mesaj kazancı, ajans primi ve çekim iadeleri. Çekim ve bozdurma harcamaları burada değil, çekim merkezinde ve\n`diamond/data` içinde. `year` ve `month` (1-12) verilirse yalnızca o ayın (Türkiye saati) kayıtları döner; verilmezse\ntüm zamanların son 200 kaydı. `daily_income` bugünkü (Türkiye saati) kazançtır, iadeler dahil değildir.\n`date` Türkiye saatiyle `YYYY-MM-DD`. `user_id` isteğe bağlıdır, verilirse token sahibiyle aynı olmalıdır (403).\n",
+        "tags": [
+          "Mobile Diamond"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user_id": {
+                    "type": "string"
+                  },
+                  "year": {
+                    "type": "integer"
+                  },
+                  "month": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "data.balance, data.daily_income, data.records[] (date, amount, from, item)"
+          },
+          "400": {
+            "description": "Geçersiz year/month"
+          },
+          "403": {
+            "description": "Başka kullanıcının verisi"
+          }
+        }
+      }
+    },
     "/api/mobile/diamond/shop": {
       "post": {
         "summary": "Elmas shop verilerini döndürür",
@@ -3374,6 +3420,46 @@
         }
       }
     },
+    "/api/mobile/room/level": {
+      "post": {
+        "summary": "Oda seviyesi ekranı verileri",
+        "description": "`currentLevel` odanın seviyesi (tanımlı değilse 0), `currentXp` odada kişilere gönderilen hediyelerin toplam coin değeri,\n`nextLevelXp` bir sonraki seviyenin gerektirdiği toplam (son seviyedeyse ya da seviye tanımlı değilse mevcut değere eşit,\nilerleme çubuğu dolu görünür). Seviye basamakları admin panelinden (Odalar > Oda Seviyeleri) tanımlanır.\n`privileges` şimdilik boş liste döner.\n",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomId"
+                ],
+                "properties": {
+                  "roomId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "data.roomId, currentLevel, currentXp, nextLevelXp, roomAvater, privileges"
+          },
+          "404": {
+            "description": "Oda bulunamadı"
+          }
+        }
+      }
+    },
     "/api/mobile/room/lock": {
       "post": {
         "summary": "Odayı kilitle / kilidi kaldır (Sahip veya Admin)",
@@ -4090,6 +4176,66 @@
           },
           "404": {
             "description": "Oda bulunamadı"
+          }
+        }
+      }
+    },
+    "/api/mobile/room/request": {
+      "post": {
+        "summary": "Oda üyeliği isteği gönder ya da üyelikten ayrıl",
+        "description": "`requestType: \"join\"` oda sahibine üyelik isteği gönderir (`room/member-request` ile aynı kurallar). `requestType: \"leave\"`\nkullanıcıyı oda üyeliğinden çıkarır; bekleyen isteği varsa geri çeker. `userId` isteğe bağlıdır, verilirse token sahibiyle\naynı olmalıdır. Başarılı yanıtta mesaj hem `message` hem `data.message` içinde döner.\n",
+        "tags": [
+          "Mobile Rooms"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "roomId",
+                  "requestType"
+                ],
+                "properties": {
+                  "roomId": {
+                    "type": "string"
+                  },
+                  "userId": {
+                    "type": "string"
+                  },
+                  "requestType": {
+                    "type": "string",
+                    "enum": [
+                      "join",
+                      "leave"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "İşlem tamamlandı (data.message)"
+          },
+          "400": {
+            "description": "Geçersiz istek ya da oda sahibi ayrılamaz"
+          },
+          "403": {
+            "description": "Başka kullanıcı adına işlem ya da oda aktif değil"
+          },
+          "404": {
+            "description": "Oda bulunamadı"
+          },
+          "409": {
+            "description": "Zaten üye / zaten bekleyen istek / üye değil"
           }
         }
       }
