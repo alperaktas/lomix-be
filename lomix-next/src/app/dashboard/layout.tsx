@@ -54,6 +54,8 @@ const LABELS: Record<string, string> = {
     'auth-test': 'Auth Test',
     'ajans-dokumani': 'Ajans Dökümanı',
     'diamond-exchange': 'Elmas Değişimi',
+    'withdraw-methods': 'Çekim Yöntemleri',
+    withdrawals: 'Çekim Talepleri',
     'room-levels': 'Oda Seviyeleri',
 };
 

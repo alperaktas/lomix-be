@@ -99,6 +99,8 @@ const data: { navMain: NavItem[] } = {
         { title: "Komisyon & Fiyatlar", url: "/dashboard/settings/commissions" },
         { title: "Ajans Prim Oranları", url: "/dashboard/settings/agency-prim" },
         { title: "Elmas Değişimi", url: "/dashboard/settings/diamond-exchange" },
+        { title: "Çekim Yöntemleri", url: "/dashboard/settings/withdraw-methods" },
+        { title: "Çekim Talepleri", url: "/dashboard/withdrawals" },
       ],
     },
     {
