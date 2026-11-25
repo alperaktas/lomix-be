@@ -1609,6 +1609,10 @@
                   },
                   "diamond_amount": {
                     "type": "integer"
+                  },
+                  "method": {
+                    "type": "string",
+                    "description": "Çekim yönteminin adı (`diamond/withdrawal-center` → `withdraw_methods[].name`). Verilirse yeni akış çalışır:\nmiktar yöntemin min/max aralığında olmalı, talep \"Beklemede\" kaydedilir ve elmas hemen düşer\n(reddedilirse iade edilir). Verilmezse eski sabit paket akışı geçerlidir.\n"
                   }
                 }
               }
@@ -1617,10 +1621,56 @@
         },
         "responses": {
           "200": {
-            "description": "Çekim talebi oluşturuldu"
+            "description": "Çekim talebi oluşturuldu (yeni akışta data.withdrawal_id, status)"
           },
           "400": {
-            "description": "Geçersiz paket veya yetersiz bakiye"
+            "description": "Geçersiz paket veya yetersiz bakiye (eski akış)"
+          },
+          "403": {
+            "description": "WITHDRAW_BLOCKED"
+          },
+          "422": {
+            "description": "Yeni akışta error_code INVALID_DIAMOND_AMOUNT, BELOW_MINIMUM, ABOVE_METHOD_LIMIT, INSUFFICIENT_BALANCE, WITHDRAW_METHOD_NOT_FOUND"
+          }
+        }
+      }
+    },
+    "/api/mobile/diamond/withdrawal-center": {
+      "post": {
+        "summary": "Elmas çekim merkezi ekranı verileri",
+        "description": "Kullanıcı Bearer token'dan belirlenir. Gövdedeki `user_id` isteğe bağlıdır; verilirse token sahibiyle aynı olmalıdır,\ndeğilse 403 `USER_MISMATCH`. Çekim yönetici tarafından kapatılmışsa 200 döner, `withdraw_blocked: true` ve\n`withdraw_methods: []` olur. Boş bakiye veya kayıt yokluğu hata değildir (200, boş alanlar).\n`withdrawals` en yeniden eskiye son 10 kayıttır; `status`: `Beklemede`, `Tamamlandı`, `Reddedildi`.\nHatalarda üst düzey `error_code` döner: `UNAUTHENTICATED` (401), `USER_MISMATCH` (403), `INTERNAL_SERVER_ERROR` (500).\n",
+        "tags": [
+          "Mobile Diamond"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "data.balance, withdraw_blocked, withdraw_methods[], amount_options[], withdrawals[]"
+          },
+          "401": {
+            "description": "UNAUTHENTICATED"
+          },
+          "403": {
+            "description": "USER_MISMATCH"
           }
         }
       }

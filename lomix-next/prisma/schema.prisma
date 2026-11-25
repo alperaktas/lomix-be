@@ -99,6 +99,7 @@ model User {
   sentGiftLogs          GiftLog[]            @relation("GiftSender")
   receivedGiftLogs      GiftLog[]            @relation("GiftReceiver")
   diamondTransactions   DiamondTransaction[]
+  diamondWithdrawals    DiamondWithdrawal[]
   coinPurchases         CoinPurchase[]
   notificationReads     NotificationRead[]
   agencyApplications    AgencyApplication[]
@@ -853,6 +854,38 @@ model DiamondTransaction {
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("diamond_transactions")
+}
+
+// Withdraw methods (managed in the admin panel). name is shown to users and sent as method in withdraw requests.
+model WithdrawMethod {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String   @default("")
+  minAmount   Int      @map("min_amount")
+  maxAmount   Int      @map("max_amount")
+  isActive    Boolean  @default(true) @map("is_active")
+  order       Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("withdraw_methods")
+}
+
+// Diamond withdrawal requests. status: pending | completed | rejected. Diamonds are deducted on request and refunded if rejected.
+model DiamondWithdrawal {
+  id            Int       @id @default(autoincrement())
+  userId        Int       @map("user_id")
+  diamondAmount Int       @map("diamond_amount")
+  methodName    String    @map("method_name")
+  status        String    @default("pending")
+  description   String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  processedAt   DateTime? @map("processed_at")
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@map("diamond_withdrawals")
 }
 
 model AppSetting {

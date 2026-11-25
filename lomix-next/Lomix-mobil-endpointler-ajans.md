@@ -173,7 +173,47 @@ Bu uçlarda kullanıcı artık token'dan alınıyor. Gövdede `user_id` gönderm
 }
 ```
 
+### POST /diamond/withdrawal-center
+Elmas çekim merkezi ekranının verileri. Kullanıcı token'dan belirleniyor; gövdedeki `user_id` isteğe bağlı, verilirse token sahibiyle aynı olmalı (değilse 403 `USER_MISMATCH`).
+
+```json
+{
+  "status": true,
+  "message": "Elmas çekim merkezi verileri getirildi.",
+  "data": {
+    "balance": 57281,
+    "withdraw_blocked": false,
+    "withdraw_methods": [
+      { "id": 1, "name": "Payermax_Banktransfer(9108)", "description": "Banka havalesi", "min_amount": 1000, "max_amount": 1000000 }
+    ],
+    "amount_options": [100000, 250000, 1000000],
+    "withdrawals": [
+      { "diamond_amount": 150000, "date": "2026-11-24T14:30:00.000Z", "status": "Tamamlandı", "method": "Payermax_Banktransfer(9108)", "description": "Ref: #987654" }
+    ]
+  }
+}
+```
+- Yöntemler, hızlı miktarlar ve çekim talepleri admin panelinden yönetiliyor (Gelir & Ekonomi > Çekim Yöntemleri, Çekim Talepleri).
+- Çekim bu kullanıcı için kapatılmışsa (`withdraw_blocked: true`) yine 200 döner ve `withdraw_methods` boş olur. Bakiye 0 olması ya da hiç çekim kaydı olmaması hata değil, boş alanlarla 200 döner. Endpoint hiçbir durumda 404 dönmüyor.
+- `withdrawals` en yeniden eskiye son 10 kayıt. `status`: `Beklemede`, `Tamamlandı`, `Reddedildi`. `description` admin'in yazdığı referans ya da red nedeni, yoksa boş metin.
+- Hata biçimi: `{ "status": false, "message": "...", "error_code": "...", "data": null }`. Kodlar: `UNAUTHENTICATED` (401, token yok/geçersiz), `USER_MISMATCH` (403), `INTERNAL_SERVER_ERROR` (500). Not: `UNAUTHENTICATED` artık tüm korumalı uçlarda 401 yanıtına ekleniyor, mevcut `message` aynı kaldı.
+
 ### POST /diamond/withdraw ve /diamond/exchange
+**`diamond/withdraw` yeni akış:** gövdeye `method` (yöntem adı, `withdraw_methods[].name`) eklenirse yeni akış çalışıyor: `{ "diamond_amount": 150000, "method": "Payermax_Banktransfer(9108)" }`. Miktar yöntemin min/max aralığında olmalı. Talep "Beklemede" kaydedilir ve **elmas hemen düşer**; admin reddederse elmaslar iade edilir, onaylarsa talep "Tamamlandı" olur ve kullanıcıya bildirim gider (`type: diamond_withdrawal`). Başarılı yanıt: `data.balance`, `data.diamond_amount`, `data.withdrawal_id`, `data.status` ("Beklemede"), `data.method`. `method` gönderilmezse eski sabit paket akışı aynen çalışıyor.
+
+Yeni akışta hata kodları (üst düzey `error_code`, `message` kullanıcıya gösterilebilir):
+
+| HTTP | `error_code` | Ne zaman |
+| --- | --- | --- |
+| 422 | `INVALID_DIAMOND_AMOUNT` | Miktar pozitif tam sayı değil |
+| 422 | `WITHDRAW_METHOD_NOT_FOUND` | `method` mevcut ve aktif bir yöntem adı değil |
+| 422 | `BELOW_MINIMUM` | Miktar yöntemin `min_amount` değerinden düşük |
+| 422 | `ABOVE_METHOD_LIMIT` | Miktar yöntemin `max_amount` değerinden yüksek |
+| 422 | `INSUFFICIENT_BALANCE` | Miktar güncel bakiyeden yüksek (aynı anda gelen iki istek bakiyeyi aşamaz) |
+| 403 | `WITHDRAW_BLOCKED` | Çekim bu kullanıcı için kapatılmış (`data.error_code` da dolu, eski istemciler için) |
+
+Başkası adına yapılan çekim 403 döner. Ödeme bilgisi (IBAN vb.) alınmıyor, ödeme admin tarafından panelin dışında yapılıyor.
+
 Cevapları eskisi gibi. Bu kullanıcı için kapatıldıysa 403 dönüyor:
 ```json
 { "status": false, "message": "Elmas çekim işleminiz yönetici tarafından kapatılmıştır.", "data": { "error_code": "WITHDRAW_BLOCKED" } }

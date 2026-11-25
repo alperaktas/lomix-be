@@ -162,7 +162,7 @@ export async function proxy(request: NextRequest) {
 
         if (!token) {
             console.warn(`[AUTH 401] ${request.method} ${pathname} - Token yok`);
-            return addCors(NextResponse.json({ message: 'Yetkisiz erişim: Token yok' }, { status: 401 }));
+            return addCors(NextResponse.json({ status: false, success: false, message: 'Yetkisiz erişim: Token yok', error_code: 'UNAUTHENTICATED', data: null }, { status: 401 }));
         }
 
         try {
@@ -190,7 +190,7 @@ export async function proxy(request: NextRequest) {
             return addCors(NextResponse.next());
         } catch {
             console.warn(`[AUTH 401] ${request.method} ${pathname} - Gecersiz veya suresi dolmus token`);
-            return addCors(NextResponse.json({ message: 'Geçersiz veya süresi dolmuş token' }, { status: 401 }));
+            return addCors(NextResponse.json({ status: false, success: false, message: 'Geçersiz veya süresi dolmuş token', error_code: 'UNAUTHENTICATED', data: null }, { status: 401 }));
         }
     }
 
