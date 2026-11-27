@@ -15,6 +15,9 @@ interface Withdrawal {
     methodName: string;
     status: 'pending' | 'completed' | 'rejected';
     description: string | null;
+    bankName: string | null;
+    iban: string | null;
+    accountHolder: string | null;
     createdAt: string;
     processedAt: string | null;
     user: { id: number; username: string; fullName: string | null; email: string; phone: string | null };
@@ -115,7 +118,17 @@ export default function WithdrawalsPage() {
                                         <div className="text-xs text-muted-foreground">{w.user.phone || w.user.email}</div>
                                     </td>
                                     <td className="px-4 py-4 font-semibold whitespace-nowrap">{fmt(w.diamondAmount)}</td>
-                                    <td className="px-4 py-4">{w.methodName}</td>
+                                    <td className="px-4 py-4">
+                                        <div>{w.methodName}</div>
+                                        {w.iban && (
+                                            <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                                                <div>{w.accountHolder} · {w.bankName}</div>
+                                                <button type="button" className="font-mono text-foreground hover:underline" title="IBAN'ı kopyala" onClick={() => navigator.clipboard?.writeText(w.iban as string)}>
+                                                    {w.iban.replace(/(.{4})/g, '$1 ').trim()}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </td>
                                     <td className="px-4 py-4 whitespace-nowrap">
                                         <div>{new Date(w.createdAt).toLocaleString('tr-TR')}</div>
                                         {w.processedAt && <div className="text-xs text-muted-foreground">İşlendi: {new Date(w.processedAt).toLocaleString('tr-TR')}</div>}

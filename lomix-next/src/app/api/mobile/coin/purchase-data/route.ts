@@ -1,12 +1,7 @@
 import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
-
-const PAYMENT_METHODS = [
-    { type: 'credit_card', label: 'Kredi Kartı ile Ödeme' },
-    { type: 'gpay', label: 'GPay' },
-    { type: 'wire_transfer', label: 'Havale/EFT ile Ödeme' },
-];
+import { getPaymentMethods } from '@/lib/payment-methods';
 
 function formatPrice(price: number, currency: string): string {
     try {
@@ -21,7 +16,9 @@ function formatPrice(price: number, currency: string): string {
  * /api/mobile/coin/purchase-data:
  *   post:
  *     summary: Coin bakiyesi ve satın alınabilir coin paketleri
- *     description: Kullanıcı token'dan belirlenir; gövdedeki `user_id` verilirse token'daki kullanıcıyla aynı olmalıdır (aksi halde 403).
+ *     description: |
+ *       Kullanıcı token'dan belirlenir; gövdedeki `user_id` verilirse token'daki kullanıcıyla aynı olmalıdır (aksi halde 403).
+ *       `payment_methods` admin panelinden yönetilir; yalnız aktif yöntemler, panelde tanımlı sırayla döner.
  *     tags: [Mobile Coin]
  *     security:
  *       - bearerAuth: []
@@ -48,12 +45,13 @@ export async function POST(request: Request) {
         const userId = Number(body.user_id ?? authId);
         if (userId !== authId) return ApiResponseHelper.error("Bu veriye erişim yetkiniz yok.", 403);
 
-        const [wallet, packages] = await Promise.all([
+        const [wallet, packages, paymentMethods] = await Promise.all([
             prisma.wallet.findUnique({ where: { userId } }),
             prisma.coinPackage.findMany({
                 where: { isActive: true },
                 orderBy: { order: 'asc' },
             }),
+            getPaymentMethods(),
         ]);
 
         const balance = wallet?.balance ?? 0;
@@ -72,7 +70,8 @@ export async function POST(request: Request) {
                 asset_image: "assets/images/gold_coin.webp",
                 badge: p.badgeText ?? null,
             })),
-            payment_methods: PAYMENT_METHODS,
+            // Admin panelindeki "Ödeme Yöntemleri" sayfasından yönetilir; yalnız aktifler, tanımlı sırayla
+            payment_methods: paymentMethods.filter(m => m.isActive).map(m => ({ type: m.type, label: m.label })),
         }, "Coin satın alma verisi gönderildi.");
     } catch (error: any) {
         return ApiResponseHelper.error(error.message, 500);

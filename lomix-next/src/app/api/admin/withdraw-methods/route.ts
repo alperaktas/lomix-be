@@ -10,8 +10,8 @@ const err = (error: string, status: number) => NextResponse.json({ error }, { st
 const isAmount = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v >= 1 && v <= MAX_AMOUNT;
 const fmt = (n: number) => n.toLocaleString('tr-TR');
 
-const view = (m: { id: number; name: string; description: string; minAmount: number; maxAmount: number; isActive: boolean; order: number }) => ({
-    id: m.id, name: m.name, description: m.description, minAmount: m.minAmount, maxAmount: m.maxAmount, isActive: m.isActive, order: m.order,
+const view = (m: { id: number; name: string; description: string; minAmount: number; maxAmount: number; isActive: boolean; requiresBankInfo: boolean; order: number }) => ({
+    id: m.id, name: m.name, description: m.description, minAmount: m.minAmount, maxAmount: m.maxAmount, isActive: m.isActive, requiresBankInfo: m.requiresBankInfo, order: m.order,
 });
 
 /**
@@ -42,6 +42,7 @@ export async function POST(request: Request) {
         if (!isAmount(body.maxAmount)) return err(`En yüksek miktar 1 ile ${fmt(MAX_AMOUNT)} arasında bir tam sayı olmalıdır.`, 400);
         if (body.minAmount > body.maxAmount) return err('En düşük miktar, en yüksek miktardan büyük olamaz.', 400);
         if (body.isActive !== undefined && typeof body.isActive !== 'boolean') return err('isActive true veya false olmalıdır.', 400);
+        if (body.requiresBankInfo !== undefined && typeof body.requiresBankInfo !== 'boolean') return err('requiresBankInfo true veya false olmalıdır.', 400);
         const description = typeof body.description === 'string' ? body.description.trim().slice(0, 200) : '';
 
         if (await prisma.withdrawMethod.findUnique({ where: { name }, select: { id: true } })) {
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
         }
         const last = await prisma.withdrawMethod.findFirst({ orderBy: { order: 'desc' }, select: { order: true } });
         const method = await prisma.withdrawMethod.create({
-            data: { name, description, minAmount: body.minAmount, maxAmount: body.maxAmount, isActive: body.isActive ?? true, order: (last?.order ?? 0) + 1 },
+            data: { name, description, minAmount: body.minAmount, maxAmount: body.maxAmount, isActive: body.isActive ?? true, requiresBankInfo: body.requiresBankInfo ?? true, order: (last?.order ?? 0) + 1 },
         });
         return NextResponse.json({ method: view(method) }, { status: 201 });
     } catch (error: any) {
@@ -80,7 +81,7 @@ export async function PUT(request: Request) {
         const current = await prisma.withdrawMethod.findUnique({ where: { id } });
         if (!current) return err('Çekim yöntemi bulunamadı.', 404);
 
-        const data: { name?: string; description?: string; minAmount?: number; maxAmount?: number; isActive?: boolean } = {};
+        const data: { name?: string; description?: string; minAmount?: number; maxAmount?: number; isActive?: boolean; requiresBankInfo?: boolean } = {};
         if (body.name !== undefined) {
             const name = typeof body.name === 'string' ? body.name.trim() : '';
             if (!name || name.length > 100) return err('Yöntem adı 1 ile 100 karakter arasında olmalıdır.', 400);
@@ -104,6 +105,10 @@ export async function PUT(request: Request) {
         if (body.isActive !== undefined) {
             if (typeof body.isActive !== 'boolean') return err('isActive true veya false olmalıdır.', 400);
             data.isActive = body.isActive;
+        }
+        if (body.requiresBankInfo !== undefined) {
+            if (typeof body.requiresBankInfo !== 'boolean') return err('requiresBankInfo true veya false olmalıdır.', 400);
+            data.requiresBankInfo = body.requiresBankInfo;
         }
         if (Object.keys(data).length === 0) return err('Güncellenecek alan yok.', 400);
 

@@ -9,10 +9,10 @@ import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 
-interface Method { id: number; name: string; description: string; minAmount: number; maxAmount: number; isActive: boolean }
+interface Method { id: number; name: string; description: string; minAmount: number; maxAmount: number; isActive: boolean; requiresBankInfo: boolean }
 
 const fmt = (n: number) => n.toLocaleString('tr-TR');
-const EMPTY = { name: '', description: '', minAmount: '', maxAmount: '' };
+const EMPTY = { name: '', description: '', minAmount: '', maxAmount: '', requiresBankInfo: true };
 
 export default function WithdrawMethodsPage() {
     const [items, setItems] = useState<Method[]>([]);
@@ -54,7 +54,7 @@ export default function WithdrawMethodsPage() {
     const save = async () => {
         setError(''); setNotice(''); setSaving(true);
         try {
-            const body = { name: form.name.trim(), description: form.description.trim(), minAmount: min, maxAmount: max };
+            const body = { name: form.name.trim(), description: form.description.trim(), minAmount: min, maxAmount: max, requiresBankInfo: form.requiresBankInfo };
             const r = editTarget ? await send('PUT', { id: editTarget.id, ...body }) : await send('POST', body);
             if (!r.ok) { setError(r.data.error || 'Kaydedilemedi.'); return; }
             setAddOpen(false); setEditTarget(null);
@@ -132,7 +132,7 @@ export default function WithdrawMethodsPage() {
                                     <tbody>
                                         {items.map(m => (
                                             <tr key={m.id} className="border-b last:border-0 hover:bg-muted/20">
-                                                <td className="px-5 py-4 font-semibold">{m.name}</td>
+                                                <td className="px-5 py-4 font-semibold">{m.name}{m.requiresBankInfo && <div className="text-xs font-normal text-muted-foreground">IBAN istenir</div>}</td>
                                                 <td className="px-5 py-4 text-muted-foreground">{m.description || '—'}</td>
                                                 <td className="px-5 py-4 whitespace-nowrap">
                                                     <span className="flex items-center gap-1.5"><Diamond className="h-3.5 w-3.5 text-sky-600" /> {fmt(m.minAmount)} – {fmt(m.maxAmount)}</span>
@@ -146,7 +146,7 @@ export default function WithdrawMethodsPage() {
                                                 </td>
                                                 <td className="px-5 py-4">
                                                     <div className="flex justify-end gap-1">
-                                                        <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => { setForm({ name: m.name, description: m.description, minAmount: String(m.minAmount), maxAmount: String(m.maxAmount) }); setError(''); setEditTarget(m); }}><Pencil className="h-3.5 w-3.5 mr-1" /> Düzenle</Button>
+                                                        <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => { setForm({ name: m.name, description: m.description, minAmount: String(m.minAmount), maxAmount: String(m.maxAmount), requiresBankInfo: m.requiresBankInfo }); setError(''); setEditTarget(m); }}><Pencil className="h-3.5 w-3.5 mr-1" /> Düzenle</Button>
                                                         <Button variant="ghost" size="sm" className="h-8 px-2 text-rose-600 hover:bg-rose-50" onClick={() => { setError(''); setDeleteTarget(m); }}><Trash2 className="h-3.5 w-3.5 mr-1" /> Sil</Button>
                                                     </div>
                                                 </td>
@@ -188,6 +188,10 @@ export default function WithdrawMethodsPage() {
                             <div className="space-y-1"><label className="text-xs font-semibold text-zinc-700">En yüksek elmas</label>
                                 <Input type="number" min="1" step="1" placeholder="1000000" value={form.maxAmount} onChange={e => setForm(f => ({ ...f, maxAmount: e.target.value }))} /></div>
                         </div>
+                        <label className="flex items-start gap-2 cursor-pointer">
+                            <input type="checkbox" className="h-4 w-4 mt-0.5 rounded" checked={form.requiresBankInfo} onChange={e => setForm(f => ({ ...f, requiresBankInfo: e.target.checked }))} />
+                            <span className="text-sm">Banka bilgisi iste <span className="block text-xs text-muted-foreground">Açıksa kullanıcı banka adı, IBAN ve hesap sahibini girmeden çekim talebi oluşturamaz (havale / EFT).</span></span>
+                        </label>
                         {error && <p className="text-xs text-rose-600">{error}</p>}
                     </div>
                     <DialogFooter>

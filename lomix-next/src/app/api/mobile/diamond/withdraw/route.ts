@@ -2,7 +2,7 @@ import { ApiResponseHelper } from '@/lib/api-response';
 import prisma from '@/lib/prisma';
 import { getCurrentUserId } from '@/lib/current-user';
 import { isWalletBlocked, WALLET_BLOCK_MESSAGES } from '@/lib/wallet-guard';
-import { withdrawFail } from '@/lib/withdrawal';
+import { parseBankInfo, withdrawFail } from '@/lib/withdrawal';
 
 /**
  * @swagger
@@ -30,15 +30,24 @@ import { withdrawFail } from '@/lib/withdrawal';
  *                   Çekim yönteminin adı (`diamond/withdrawal-center` → `withdraw_methods[].name`). Verilirse yeni akış çalışır:
  *                   miktar yöntemin min/max aralığında olmalı, talep "Beklemede" kaydedilir ve elmas hemen düşer
  *                   (reddedilirse iade edilir). Verilmezse eski sabit paket akışı geçerlidir.
+ *               bank_name:
+ *                 type: string
+ *                 description: Banka bilgisi isteyen yöntemlerde zorunlu (2-100 karakter)
+ *               iban:
+ *                 type: string
+ *                 description: Banka bilgisi isteyen yöntemlerde zorunlu; boşluksuz, TR + 24 rakam
+ *               account_holder_name:
+ *                 type: string
+ *                 description: Banka bilgisi isteyen yöntemlerde zorunlu (2-100 karakter)
  *     responses:
  *       200:
- *         description: Çekim talebi oluşturuldu (yeni akışta data.withdrawal_id, status)
+ *         description: Çekim talebi oluşturuldu (yeni akışta data.request_id, diamond_amount, method, status "pending", submitted_at)
  *       400:
  *         description: Geçersiz paket veya yetersiz bakiye (eski akış)
  *       403:
  *         description: WITHDRAW_BLOCKED
  *       422:
- *         description: Yeni akışta error_code INVALID_DIAMOND_AMOUNT, BELOW_MINIMUM, ABOVE_METHOD_LIMIT, INSUFFICIENT_BALANCE, WITHDRAW_METHOD_NOT_FOUND
+ *         description: Yeni akışta error_code INVALID_DIAMOND_AMOUNT, BELOW_MINIMUM, ABOVE_METHOD_LIMIT, INSUFFICIENT_BALANCE, WITHDRAW_METHOD_NOT_FOUND, INVALID_BANK_NAME, INVALID_IBAN, INVALID_ACCOUNT_HOLDER
  */
 export async function POST(request: Request) {
     try {
@@ -53,7 +62,7 @@ export async function POST(request: Request) {
         const methodName = typeof body.method === 'string' ? body.method.trim() : '';
 
         // Yeni akış: yöntem adıyla çekim talebi (sözleşme: diamond/withdrawal-center)
-        if (methodName) return createWithdrawal(userId, diamondAmount, methodName);
+        if (methodName) return await createWithdrawal(userId, diamondAmount, methodName, body);
 
         if (await isWalletBlocked(userId, 'withdraw')) {
             return ApiResponseHelper.error(WALLET_BLOCK_MESSAGES.withdraw.message, 403, { error_code: WALLET_BLOCK_MESSAGES.withdraw.errorCode });
@@ -97,12 +106,14 @@ export async function POST(request: Request) {
             diamond_amount: diamondAmount,
         }, "Elmas çekim talebi oluşturuldu.");
     } catch (error: any) {
-        return ApiResponseHelper.error(error.message, 500);
+        // Hata metni istek gövdesini (IBAN vb.) içerebilir: yanıta ve loga yalnızca hata türü yazılır
+        console.error('diamond/withdraw error:', error?.name, error?.code ?? '');
+        return withdrawFail('Beklenmeyen bir hata oluştu.', 500, 'INTERNAL_SERVER_ERROR');
     }
 }
 
 /** Yöntemli çekim talebi: doğrulamalar sunucuda yeniden yapılır, elmas atomik düşer, kayıt "pending" açılır. */
-async function createWithdrawal(userId: number, diamondAmount: number, methodName: string) {
+async function createWithdrawal(userId: number, diamondAmount: number, methodName: string, body: unknown) {
     if (await isWalletBlocked(userId, 'withdraw')) {
         // Eski istemciler data.error_code okuyor; ikisi birlikte doluyor
         return withdrawFail(WALLET_BLOCK_MESSAGES.withdraw.message, 403, 'WITHDRAW_BLOCKED', true);
@@ -120,6 +131,14 @@ async function createWithdrawal(userId: number, diamondAmount: number, methodNam
         return withdrawFail(`Bu yöntem için en fazla ${method.maxAmount.toLocaleString('tr-TR')} elmas çekebilirsiniz.`, 422, 'ABOVE_METHOD_LIMIT');
     }
 
+    // Banka bilgisi isteyen yöntemlerde (EFT/havale) üç alan zorunlu; istemeyen yöntemde gönderilse de saklanmaz
+    let bank: { bankName: string; iban: string; accountHolder: string } | null = null;
+    if (method.requiresBankInfo) {
+        const parsed = parseBankInfo(body);
+        if ('error' in parsed) return withdrawFail(parsed.error.message, 422, parsed.error.code);
+        bank = parsed.info;
+    }
+
     class Insufficient extends Error {}
     try {
         const result = await prisma.$transaction(async tx => {
@@ -131,7 +150,7 @@ async function createWithdrawal(userId: number, diamondAmount: number, methodNam
             if (taken.count === 0) throw new Insufficient();
 
             const withdrawal = await tx.diamondWithdrawal.create({
-                data: { userId, diamondAmount, methodName: method.name, status: 'pending' },
+                data: { userId, diamondAmount, methodName: method.name, status: 'pending', ...(bank ?? {}) },
             });
             // diamond/data geçmişi bu kaydı da görsün
             await tx.diamondTransaction.create({ data: { userId, type: 'withdraw', diamondAmount } });
@@ -142,9 +161,11 @@ async function createWithdrawal(userId: number, diamondAmount: number, methodNam
         return ApiResponseHelper.success({
             balance: result.balance,
             diamond_amount: diamondAmount,
+            request_id: String(result.withdrawal.id),
             withdrawal_id: String(result.withdrawal.id),
-            status: 'Beklemede',
             method: method.name,
+            status: 'pending',
+            submitted_at: result.withdrawal.createdAt.toISOString(),
         }, 'Elmas çekim talebiniz alındı.');
     } catch (e) {
         if (e instanceof Insufficient) return withdrawFail('Yetersiz elmas bakiyesi.', 422, 'INSUFFICIENT_BALANCE');

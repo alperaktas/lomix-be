@@ -203,7 +203,7 @@ Elmas çekim merkezi ekranının verileri. Kullanıcı token'dan belirleniyor; g
     "balance": 57281,
     "withdraw_blocked": false,
     "withdraw_methods": [
-      { "id": 1, "name": "Payermax_Banktransfer(9108)", "description": "Banka havalesi", "min_amount": 1000, "max_amount": 1000000 }
+      { "id": 1, "name": "Havale", "description": "Banka havalesi / EFT", "min_amount": 1000, "max_amount": 1000000, "requires_bank_info": true }
     ],
     "amount_options": [100000, 250000, 1000000],
     "withdrawals": [
@@ -218,7 +218,19 @@ Elmas çekim merkezi ekranının verileri. Kullanıcı token'dan belirleniyor; g
 - Hata biçimi: `{ "status": false, "message": "...", "error_code": "...", "data": null }`. Kodlar: `UNAUTHENTICATED` (401, token yok/geçersiz), `USER_MISMATCH` (403), `INTERNAL_SERVER_ERROR` (500). Not: `UNAUTHENTICATED` artık tüm korumalı uçlarda 401 yanıtına ekleniyor, mevcut `message` aynı kaldı.
 
 ### POST /diamond/withdraw ve /diamond/exchange
-**`diamond/withdraw` yeni akış:** gövdeye `method` (yöntem adı, `withdraw_methods[].name`) eklenirse yeni akış çalışıyor: `{ "diamond_amount": 150000, "method": "Payermax_Banktransfer(9108)" }`. Miktar yöntemin min/max aralığında olmalı. Talep "Beklemede" kaydedilir ve **elmas hemen düşer**; admin reddederse elmaslar iade edilir, onaylarsa talep "Tamamlandı" olur ve kullanıcıya bildirim gider (`type: diamond_withdrawal`). Başarılı yanıt: `data.balance`, `data.diamond_amount`, `data.withdrawal_id`, `data.status` ("Beklemede"), `data.method`. `method` gönderilmezse eski sabit paket akışı aynen çalışıyor.
+**`diamond/withdraw` yeni akış:** gövdeye `method` (yöntem adı, `withdraw_methods[].name`) eklenirse yeni akış çalışıyor:
+
+```json
+{ "diamond_amount": 25000, "method": "Havale", "bank_name": "Akbank", "iban": "TR000000000000000000000000", "account_holder_name": "Ad Soyad" }
+```
+
+Yöntemin `requires_bank_info` değeri `true` ise `bank_name` (2-100 karakter), `iban` (boşluksuz, `TR` + 24 rakam) ve `account_holder_name` (2-100 karakter) **zorunlu**; `false` ise gönderilmese de olur ve gönderilirse saklanmaz. IBAN ve hesap sahibi hiçbir mobil yanıtta geri dönmüyor. Miktar yöntemin min/max aralığında olmalı. Talep "Beklemede" kaydedilir ve **elmas hemen düşer**; admin reddederse elmaslar iade edilir, onaylarsa talep "Tamamlandı" olur ve kullanıcıya bildirim gider (`type: diamond_withdrawal`). Başarılı yanıt:
+
+```json
+{ "status": true, "success": true, "message": "Elmas çekim talebiniz alındı.",
+  "data": { "request_id": "12345", "diamond_amount": 25000, "method": "Havale", "status": "pending", "submitted_at": "2026-11-27T10:00:00.000Z", "balance": 32281, "withdrawal_id": "12345" } }
+```
+(`status` bu yanıtta `pending`; çekim merkezi listesinde aynı kayıt `Beklemede` görünür.) `method` gönderilmezse eski sabit paket akışı aynen çalışıyor.
 
 Yeni akışta hata kodları (üst düzey `error_code`, `message` kullanıcıya gösterilebilir):
 
@@ -229,9 +241,12 @@ Yeni akışta hata kodları (üst düzey `error_code`, `message` kullanıcıya g
 | 422 | `BELOW_MINIMUM` | Miktar yöntemin `min_amount` değerinden düşük |
 | 422 | `ABOVE_METHOD_LIMIT` | Miktar yöntemin `max_amount` değerinden yüksek |
 | 422 | `INSUFFICIENT_BALANCE` | Miktar güncel bakiyeden yüksek (aynı anda gelen iki istek bakiyeyi aşamaz) |
+| 422 | `INVALID_BANK_NAME` | Banka adı eksik ya da geçersiz (banka bilgisi isteyen yöntemde) |
+| 422 | `INVALID_IBAN` | IBAN boşluksuz `TR` + 24 rakam değil |
+| 422 | `INVALID_ACCOUNT_HOLDER` | Hesap sahibi adı eksik ya da geçersiz |
 | 403 | `WITHDRAW_BLOCKED` | Çekim bu kullanıcı için kapatılmış (`data.error_code` da dolu, eski istemciler için) |
 
-Başkası adına yapılan çekim 403 döner. Ödeme bilgisi (IBAN vb.) alınmıyor, ödeme admin tarafından panelin dışında yapılıyor.
+Başkası adına yapılan çekim 403 döner. Ödeme, admin tarafından panelde görünen banka bilgisine panelin dışında yapılıyor.
 
 Cevapları eskisi gibi. Bu kullanıcı için kapatıldıysa 403 dönüyor:
 ```json
@@ -245,6 +260,8 @@ Hediye (`/gift/send-user`, `/gift/send-room`), hikaye (`/stories`, ücretliyse) 
 Dikkat: hediye uçlarında bu kod `data` içinde değil, doğrudan kökte geliyor (`{ "status": false, "message": "...", "error_code": "SPEND_BLOCKED" }`). Diğerlerinde `data.error_code` içinde.
 
 ### POST /coin/purchase-data
+`payment_methods` artık admin panelinden yönetiliyor (Gelir & Ekonomi > Ödeme Yöntemleri): yalnız aktif yöntemler, paneldeki sırayla `{ "type", "label" }` olarak dönüyor. Yanıt biçimi değişmedi. Uygulama bilmediği bir `type` gelirse genel ikon göstermeli.
+
 Coin satın alma ekranı (bakiye ve paketler). Cevap aynı, sadece kullanıcı token'dan.
 
 ### POST /coin/purchase-history

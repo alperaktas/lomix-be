@@ -95,6 +95,7 @@ const data: { navMain: NavItem[] } = {
         { title: "Hediyeler", url: "/dashboard/gifts" },
         { title: "Coin Raporları", url: "/dashboard/reports" },
         { title: "Coin Paketleri", url: "/dashboard/settings/coin-packages" },
+        { title: "Ödeme Yöntemleri", url: "/dashboard/settings/payment-methods" },
         { title: "Hikaye Fiyatları", url: "/dashboard/settings/story-prices" },
         { title: "Komisyon & Fiyatlar", url: "/dashboard/settings/commissions" },
         { title: "Ajans Prim Oranları", url: "/dashboard/settings/agency-prim" },

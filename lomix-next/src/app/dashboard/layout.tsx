@@ -56,6 +56,7 @@ const LABELS: Record<string, string> = {
     'diamond-exchange': 'Elmas Değişimi',
     'withdraw-methods': 'Çekim Yöntemleri',
     withdrawals: 'Çekim Talepleri',
+    'payment-methods': 'Ödeme Yöntemleri',
     'room-levels': 'Oda Seviyeleri',
 };
 

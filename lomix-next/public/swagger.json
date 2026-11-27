@@ -1396,7 +1396,7 @@
     "/api/mobile/coin/purchase-data": {
       "post": {
         "summary": "Coin bakiyesi ve satın alınabilir coin paketleri",
-        "description": "Kullanıcı token'dan belirlenir; gövdedeki `user_id` verilirse token'daki kullanıcıyla aynı olmalıdır (aksi halde 403).",
+        "description": "Kullanıcı token'dan belirlenir; gövdedeki `user_id` verilirse token'daki kullanıcıyla aynı olmalıdır (aksi halde 403).\n`payment_methods` admin panelinden yönetilir; yalnız aktif yöntemler, panelde tanımlı sırayla döner.\n",
         "tags": [
           "Mobile Coin"
         ],
@@ -1659,6 +1659,18 @@
                   "method": {
                     "type": "string",
                     "description": "Çekim yönteminin adı (`diamond/withdrawal-center` → `withdraw_methods[].name`). Verilirse yeni akış çalışır:\nmiktar yöntemin min/max aralığında olmalı, talep \"Beklemede\" kaydedilir ve elmas hemen düşer\n(reddedilirse iade edilir). Verilmezse eski sabit paket akışı geçerlidir.\n"
+                  },
+                  "bank_name": {
+                    "type": "string",
+                    "description": "Banka bilgisi isteyen yöntemlerde zorunlu (2-100 karakter)"
+                  },
+                  "iban": {
+                    "type": "string",
+                    "description": "Banka bilgisi isteyen yöntemlerde zorunlu; boşluksuz, TR + 24 rakam"
+                  },
+                  "account_holder_name": {
+                    "type": "string",
+                    "description": "Banka bilgisi isteyen yöntemlerde zorunlu (2-100 karakter)"
                   }
                 }
               }
@@ -1667,7 +1679,7 @@
         },
         "responses": {
           "200": {
-            "description": "Çekim talebi oluşturuldu (yeni akışta data.withdrawal_id, status)"
+            "description": "Çekim talebi oluşturuldu (yeni akışta data.request_id, diamond_amount, method, status \"pending\", submitted_at)"
           },
           "400": {
             "description": "Geçersiz paket veya yetersiz bakiye (eski akış)"
@@ -1676,7 +1688,7 @@
             "description": "WITHDRAW_BLOCKED"
           },
           "422": {
-            "description": "Yeni akışta error_code INVALID_DIAMOND_AMOUNT, BELOW_MINIMUM, ABOVE_METHOD_LIMIT, INSUFFICIENT_BALANCE, WITHDRAW_METHOD_NOT_FOUND"
+            "description": "Yeni akışta error_code INVALID_DIAMOND_AMOUNT, BELOW_MINIMUM, ABOVE_METHOD_LIMIT, INSUFFICIENT_BALANCE, WITHDRAW_METHOD_NOT_FOUND, INVALID_BANK_NAME, INVALID_IBAN, INVALID_ACCOUNT_HOLDER"
           }
         }
       }

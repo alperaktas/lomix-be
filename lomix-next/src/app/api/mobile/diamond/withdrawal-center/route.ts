@@ -77,6 +77,7 @@ export async function POST(request: Request) {
                     description: m.description,
                     min_amount: m.minAmount,
                     max_amount: m.maxAmount,
+                    requires_bank_info: m.requiresBankInfo,
                 })),
                 amount_options: options,
                 withdrawals: withdrawals.map(w => ({

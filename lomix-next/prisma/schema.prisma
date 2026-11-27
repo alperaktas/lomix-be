@@ -864,6 +864,8 @@ model WithdrawMethod {
   minAmount   Int      @map("min_amount")
   maxAmount   Int      @map("max_amount")
   isActive    Boolean  @default(true) @map("is_active")
+  // If true, withdraw requests must include bank name, IBAN and account holder name.
+  requiresBankInfo Boolean @default(true) @map("requires_bank_info")
   order       Int      @default(0)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -879,6 +881,10 @@ model DiamondWithdrawal {
   methodName    String    @map("method_name")
   status        String    @default("pending")
   description   String?
+  // Bank details for EFT payout. Sensitive: never log.
+  bankName      String?   @map("bank_name")
+  iban          String?
+  accountHolder String?   @map("account_holder_name")
   createdAt     DateTime  @default(now()) @map("created_at")
   processedAt   DateTime? @map("processed_at")
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)

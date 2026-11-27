@@ -46,3 +46,20 @@ export function withdrawFail(message: string, status: number, errorCode: string,
         { status },
     );
 }
+
+/** EFT icin banka bilgisi. IBAN: bosluksuz, TR + 24 rakam. Gecersizse hata kodu doner. Degerler asla loglanmaz. */
+export type BankInfo = { bankName: string; iban: string; accountHolder: string };
+
+const IBAN_TR = /^TR\d{24}$/;
+
+export function parseBankInfo(body: any): { info: BankInfo } | { error: { message: string; code: string } } {
+    const text = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+    const bankName = text(body?.bank_name);
+    const iban = text(body?.iban).toUpperCase();
+    const accountHolder = text(body?.account_holder_name);
+
+    if (bankName.length < 2 || bankName.length > 100) return { error: { message: 'Banka adını girin.', code: 'INVALID_BANK_NAME' } };
+    if (!IBAN_TR.test(iban)) return { error: { message: 'IBAN boşluksuz olmalı ve TR ile başlayıp 24 rakam içermelidir.', code: 'INVALID_IBAN' } };
+    if (accountHolder.length < 2 || accountHolder.length > 100) return { error: { message: 'Hesap sahibinin adını ve soyadını girin.', code: 'INVALID_ACCOUNT_HOLDER' } };
+    return { info: { bankName, iban, accountHolder } };
+}
